@@ -1,8 +1,9 @@
-﻿// 闆呬笟浼?Supabase 閰嶇疆 V2锛?026-05-25锛?// 妯箙/椤佃剼鍚庡彴鍙敼銆佺敤鎴锋敞鍐屻€佽秴绾х鐞嗗憳
+// 雅业会 Supabase 配置 V2
+// 横幅/页脚后台可改、用户注册、超级管理员
 
 const SUPABASE_CONFIG = {
     url: 'https://wrodvjsbdrxunaiwoaml.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indyb2R2anNiZHJ4dW5haXdvYW1sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1MTg1OTYsImV4cCI6MjA5NTA5NDU5Nn0.fQF-gyK53zsaqyojHxXrCBR5lZ6Ioib4rNvgPZ4J4Ww'
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indyb2R2anNiZHJ4dW5haXdvYW1sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxMTcwMDAsImV4cCI6MjA2MTY5MzAwMH0.K4AXxMHVd0VqeFR9gUGMSyq-zVYHj4pH1vsH5KGT2Bg'
 };
 
 const STORAGE_KEYS = {
@@ -42,7 +43,7 @@ async function supabaseFetch(table, options = {}) {
     const response = await fetch(url.toString(), fetchOptions);
     if (!response.ok) {
         const error = await response.text();
-        console.error(`Supabase Error [${table}]:`, error);
+        console.error('Supabase Error [' + table + ']:', error);
         return null;
     }
     if (method === 'DELETE' || method === 'PATCH') return true;
@@ -51,113 +52,96 @@ async function supabaseFetch(table, options = {}) {
 }
 
 const db = {
-    // 鍏憡
     announcements: {
         getAll: () => supabaseFetch('announcements', { params: { order: 'date.desc' } }),
         create: (item) => supabaseFetch('announcements', { method: 'POST', body: item }),
-        update: (id, item) => supabaseFetch(`announcements?id=eq.${id}`, { method: 'PATCH', body: item }),
-        delete: (id) => supabaseFetch(`announcements?id=eq.${id}`, { method: 'DELETE' })
+        update: (id, item) => supabaseFetch('announcements?id=eq.' + id, { method: 'PATCH', body: item }),
+        delete: (id) => supabaseFetch('announcements?id=eq.' + id, { method: 'DELETE' })
     },
-    // 宸ヤ綔鍔ㄦ€?    dynamics: {
+    dynamics: {
         getAll: () => supabaseFetch('dynamics', { params: { order: 'date.desc' } }),
         create: (item) => supabaseFetch('dynamics', { method: 'POST', body: item }),
-        update: (id, item) => supabaseFetch(`dynamics?id=eq.${id}`, { method: 'PATCH', body: item }),
-        delete: (id) => supabaseFetch(`dynamics?id=eq.${id}`, { method: 'DELETE' })
+        update: (id, item) => supabaseFetch('dynamics?id=eq.' + id, { method: 'PATCH', body: item }),
+        delete: (id) => supabaseFetch('dynamics?id=eq.' + id, { method: 'DELETE' })
     },
-    // 鎴愬憳
     members: {
         getAll: () => supabaseFetch('members'),
         create: (item) => supabaseFetch('members', { method: 'POST', body: item }),
-        update: (id, item) => supabaseFetch(`members?id=eq.${id}`, { method: 'PATCH', body: item }),
-        delete: (id) => supabaseFetch(`members?id=eq.${id}`, { method: 'DELETE' })
+        update: (id, item) => supabaseFetch('members?id=eq.' + id, { method: 'PATCH', body: item }),
+        delete: (id) => supabaseFetch('members?id=eq.' + id, { method: 'DELETE' })
     },
-    // 鎶曠エ
     polls: {
         getAll: () => supabaseFetch('polls', { params: { order: 'created_at.desc' } }),
         getActive: () => supabaseFetch('polls', { params: { is_active: 'eq.true', order: 'created_at.desc' } }),
         create: (item) => supabaseFetch('polls', { method: 'POST', body: item }),
-        update: (id, item) => supabaseFetch(`polls?id=eq.${id}`, { method: 'PATCH', body: item }),
-        delete: (id) => supabaseFetch(`polls?id=eq.${id}`, { method: 'DELETE' })
+        update: (id, item) => supabaseFetch('polls?id=eq.' + id, { method: 'PATCH', body: item }),
+        delete: (id) => supabaseFetch('polls?id=eq.' + id, { method: 'DELETE' })
     },
-    // 鎶曠エ閫夐」
     pollOptions: {
-        getByPollId: (pollId) => supabaseFetch('poll_options', { params: { poll_id: `eq.${pollId}` } }),
+        getByPollId: (pollId) => supabaseFetch('poll_options', { params: { poll_id: 'eq.' + pollId } }),
         create: (item) => supabaseFetch('poll_options', { method: 'POST', body: item }),
-        delete: (pollId) => supabaseFetch(`poll_options?poll_id=eq.${pollId}`, { method: 'DELETE' })
+        delete: (pollId) => supabaseFetch('poll_options?poll_id=eq.' + pollId, { method: 'DELETE' })
     },
-    // 鎶曠エ璁板綍
     votes: {
-        getByPollId: (pollId) => supabaseFetch('votes', { params: { poll_id: `eq.${pollId}` } }),
+        getByPollId: (pollId) => supabaseFetch('votes', { params: { poll_id: 'eq.' + pollId } }),
         create: (item) => supabaseFetch('votes', { method: 'POST', body: item }),
-        checkVoted: (pollId, voterName) => supabaseFetch('votes', { params: { poll_id: `eq.${pollId}`, voter_name: `eq.${voterName}` } })
+        checkVoted: (pollId, voterName) => supabaseFetch('votes', { params: { poll_id: 'eq.' + pollId, voter_name: 'eq.' + voterName } })
     },
-    // 璐圭敤
     expenses: {
         getAll: () => supabaseFetch('expenses', { params: { order: 'date.desc' } }),
         create: (item) => supabaseFetch('expenses', { method: 'POST', body: item }),
-        update: (id, item) => supabaseFetch(`expenses?id=eq.${id}`, { method: 'PATCH', body: item }),
-        delete: (id) => supabaseFetch(`expenses?id=eq.${id}`, { method: 'DELETE' })
+        update: (id, item) => supabaseFetch('expenses?id=eq.' + id, { method: 'PATCH', body: item }),
+        delete: (id) => supabaseFetch('expenses?id=eq.' + id, { method: 'DELETE' })
     },
-    // 涓婚
     topics: {
         getAll: () => supabaseFetch('topics', { params: { order: 'created_at.desc' } }),
-        getById: (id) => supabaseFetch(`topics?id=eq.${id}`),
+        getById: (id) => supabaseFetch('topics?id=eq.' + id),
         create: (item) => supabaseFetch('topics', { method: 'POST', body: item }),
-        update: (id, item) => supabaseFetch(`topics?id=eq.${id}`, { method: 'PATCH', body: item }),
-        delete: (id) => supabaseFetch(`topics?id=eq.${id}`, { method: 'DELETE' })
+        update: (id, item) => supabaseFetch('topics?id=eq.' + id, { method: 'PATCH', body: item }),
+        delete: (id) => supabaseFetch('topics?id=eq.' + id, { method: 'DELETE' })
     },
-    // 璺熷笘
     replies: {
-        getByTopicId: (topicId) => supabaseFetch('replies', { params: { topic_id: `eq.${topicId}`, order: 'created_at.asc' } }),
+        getByTopicId: (topicId) => supabaseFetch('replies', { params: { topic_id: 'eq.' + topicId, order: 'created_at.asc' } }),
         create: (item) => supabaseFetch('replies', { method: 'POST', body: item }),
-        delete: (id) => supabaseFetch(`replies?id=eq.${id}`, { method: 'DELETE' })
+        delete: (id) => supabaseFetch('replies?id=eq.' + id, { method: 'DELETE' })
     },
-
-    // ===== 鏂板锛氱珯鐐硅缃紙妯箙/椤佃剼鍐呭锛?=====
     siteSettings: {
         getAll: () => supabaseFetch('site_settings', { params: { order: 'id.asc' } }),
-        getByKey: (key) => supabaseFetch('site_settings', { params: { setting_key: `eq.${key}` } }),
+        getByKey: (key) => supabaseFetch('site_settings', { params: { setting_key: 'eq.' + key } }),
         create: (item) => supabaseFetch('site_settings', { method: 'POST', body: item }),
-        update: (id, item) => supabaseFetch(`site_settings?id=eq.${id}`, { method: 'PATCH', body: item }),
+        update: (id, item) => supabaseFetch('site_settings?id=eq.' + id, { method: 'PATCH', body: item }),
         upsert: async (key, value) => {
-            const existing = await supabaseFetch('site_settings', { params: { setting_key: `eq.${key}` } });
+            const existing = await supabaseFetch('site_settings', { params: { setting_key: 'eq.' + key } });
             if (existing && existing.length > 0) {
-                return supabaseFetch(`site_settings?id=eq.${existing[0].id}`, { method: 'PATCH', body: { setting_value: value } });
+                return supabaseFetch('site_settings?id=eq.' + existing[0].id, { method: 'PATCH', body: { setting_value: value } });
             } else {
                 return supabaseFetch('site_settings', { method: 'POST', body: { setting_key: key, setting_value: value } });
             }
         }
     },
-
-    // ===== 鏂板锛氭敞鍐屼笟涓荤敤鎴?=====
     registeredUsers: {
         getAll: () => supabaseFetch('registered_users', { params: { order: 'created_at.desc' } }),
-        getById: (id) => supabaseFetch(`registered_users?id=eq.${id}`),
+        getById: (id) => supabaseFetch('registered_users?id=eq.' + id),
         create: (item) => supabaseFetch('registered_users', { method: 'POST', body: item }),
-        delete: (id) => supabaseFetch(`registered_users?id=eq.${id}`, { method: 'DELETE' })
+        update: (id, item) => supabaseFetch('registered_users?id=eq.' + id, { method: 'PATCH', body: item }),
+        delete: (id) => supabaseFetch('registered_users?id=eq.' + id, { method: 'DELETE' })
     },
-
-    // ===== 鏂板锛氭埧浜у湴鍧€棰勫鍏?=====
     propertyAddresses: {
         getAll: () => supabaseFetch('property_addresses', { params: { order: 'id.asc' } }),
         create: (item) => supabaseFetch('property_addresses', { method: 'POST', body: item }),
-        delete: (id) => supabaseFetch(`property_addresses?id=eq.${id}`, { method: 'DELETE' }),
-        markRegistered: (address) => supabaseFetch('property_addresses', { params: { address: `eq.${address}` }, method: 'PATCH', body: { is_registered: true } })
+        delete: (id) => supabaseFetch('property_addresses?id=eq.' + id, { method: 'DELETE' }),
+        markRegistered: (address) => supabaseFetch('property_addresses', { params: { address: 'eq.' + address }, method: 'PATCH', body: { is_registered: true } })
     },
-
-    // ===== 鏂板锛氱鐞嗗憳璐﹀彿琛?=====
     adminAccounts: {
         getAll: () => supabaseFetch('admin_accounts', { params: { order: 'id.asc' } }),
         create: (item) => supabaseFetch('admin_accounts', { method: 'POST', body: item }),
-        delete: (username) => supabaseFetch(`admin_accounts?username=eq.${username}`, { method: 'DELETE' }),
-        updatePwd: (username, newPwd) => supabaseFetch(`admin_accounts?username=eq.${username}`, { method: 'PATCH', body: { password: newPwd } })
+        delete: (username) => supabaseFetch('admin_accounts?username=eq.' + username, { method: 'DELETE' }),
+        updatePwd: (username, newPwd) => supabaseFetch('admin_accounts?username=eq.' + username, { method: 'PATCH', body: { password: newPwd } })
     },
-
-    // ===== 鏂板锛氱鐞嗗憳鐧诲綍鏃ュ織 =====
     adminLoginLogs: {
         getAll: () => supabaseFetch('admin_login_logs', { params: { order: 'login_time.desc' } }),
         create: (item) => supabaseFetch('admin_login_logs', { method: 'POST', body: item }),
-        delete: (id) => supabaseFetch(`admin_login_logs?id=eq.${id}`, { method: 'DELETE' })
+        delete: (id) => supabaseFetch('admin_login_logs?id=eq.' + id, { method: 'DELETE' })
     }
 };
 
@@ -167,4 +151,6 @@ async function checkDatabase() {
         return result.ok;
     } catch { return false; }
 }
+
 window.db = db;
+    
