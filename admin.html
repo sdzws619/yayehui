@@ -126,16 +126,43 @@
 
 <script src="supabase-config.js"></script>
 <script>
-// 操作锁工具
+// 操作锁工具（防止并发操作）
     const opLock = {
-        show() { const el = document.getElementById('opLockOverlay'); if (el) el.classList.add('active'); },
-        hide() { const el = document.getElementById('opLockOverlay'); if (el) el.classList.remove('active'); }
+        isOperating: false,
+        pendingOp: null,
+        show() { 
+            this.isOperating = true;
+            const el = document.getElementById('opLockOverlay'); 
+            if (el) el.classList.add('active'); 
+        },
+        hide() { 
+            this.isOperating = false;
+            this.pendingOp = null;
+            const el = document.getElementById('opLockOverlay'); 
+            if (el) el.classList.remove('active'); 
+        },
+        // 检查是否可以执行操作
+        canOperate(opType) {
+            if (this.isOperating) {
+                alert('上一次操作尚未完成，请稍后重试');
+                return false;
+            }
+            this.pendingOp = opType;
+            return true;
+        }
     };
-    function withLock(fn) {
+    
+    function withLock(fn, opType) {
         return async function(...args) {
-
-            try { return await fn.apply(this, args); }
-            finally {  }
+            if (!opLock.canOperate(opType)) return;
+            opLock.show();
+            try { 
+                return await fn.apply(this, args); 
+            } catch(e) {
+                alert('操作失败：' + e.message);
+            } finally { 
+                opLock.hide();
+            }
         };
     }
     
@@ -466,7 +493,18 @@
                 opLock.hide();
             }
         };
-    window.exportPolls = async () => { const polls=await getAllPolls(); const options=await getAllPollOptions(); const data=polls.map(p=>{const opts=options.filter(o=>o.poll_id===p.id).map(o=>o.option_text).join(';');return{...p,options:opts};}); exportData(data,'投票数据',[{key:'title',label:'标题'},{key:'description',label:'描述'},{key:'start_date',label:'开始日期'},{key:'end_date',label:'结束日期'},{key:'options',label:'选项'}]); };
+    window.exportPolls = async () => { const polls=await getAllPolls(); const options=await getAllPollOptions(); const votes=await getAllVotes(); const data=polls.map(p=>{const opts=options.filter(o=>o.poll_id===p.id).map(o=>o.option_text).join(';');return{...p,options:opts};}); exportData(data,'投票数据',[{key:'title',label:'标题'},{key:'description',label:'描述'},{key:'start_date',label:'开始日期'},{key:'end_date',label:'结束日期'},{key:'options',label:'选项'}]);
+        
+        // 导出投票明细
+        if(votes.length > 0) {
+            const voteDetails = votes.map(v => {
+                const poll = polls.find(p => p.id === v.poll_id);
+                const opt = options.find(o => o.id === v.option_id);
+                return { poll_title:poll?.title||'', option_text:opt?.option_text||'', voter_name:v.voter_name||'', property_address:v.property_address||'', vote_time:v.vote_time||'' };
+            });
+            exportData(voteDetails,'投票明细',[{key:'poll_title',label:'投票标题'},{key:'option_text',label:'投票选项'},{key:'voter_name',label:'投票人'},{key:'property_address',label:'房产地址'},{key:'vote_time',label:'投票时间'}]);
+        }
+    };
     window.downloadPollsTemplate = () => downloadTemplate([{key:'title',label:'标题'},{key:'description',label:'描述'},{key:'start_date',label:'开始日期'},{key:'end_date',label:'结束日期'},{key:'options',label:'选项（逗号分隔）'}],'投票');
     window.importPolls = async () => {
             opLock.show();
@@ -480,9 +518,35 @@
     async function renderExpensesPanel() {
         const container = document.getElementById('panelExpenses');
         if (!container) return;
+        
+        // 获取统计数据
+        let allExpenses = [];
+        if (USE_SUPABASE) allExpenses = await db.expenses.getAll() || [];
+        else allExpenses = JSON.parse(localStorage.getItem('yayehui_expenses') || '[]');
+        
+        let totalIncome = 0, totalExpense = 0;
+        allExpenses.forEach(e => { if (e.category === '收入') totalIncome += parseFloat(e.amount || 0); else totalExpense += parseFloat(e.amount || 0); });
+        const balance = totalIncome - totalExpense;
+        
         container.innerHTML = `
             <div class="card-panel">
-                <h3><i class="fas fa-chart-pie"></i> 费用公示管理 <button class="export-btn" onclick="exportExpenses()"><i class="fas fa-download"></i> 导出</button></h3>
+                <h3><i class="fas fa-chart-pie"></i> 费用公示管理 
+                    <button class="export-btn" onclick="exportExpenses()"><i class="fas fa-download"></i> 导出</button>
+                </h3>
+                <div class="stats-row" style="margin-bottom:16px;">
+                    <div class="stat-card" style="background:linear-gradient(135deg,#10b981,#34d399);">
+                        <div class="num">¥${totalIncome.toFixed(2)}</div>
+                        <div class="label">总收入</div>
+                    </div>
+                    <div class="stat-card" style="background:linear-gradient(135deg,#ef4444,#f87171);">
+                        <div class="num">¥${totalExpense.toFixed(2)}</div>
+                        <div class="label">总支出</div>
+                    </div>
+                    <div class="stat-card" style="background:linear-gradient(135deg,#2c6e49,#4c9f70);">
+                        <div class="num">¥${balance.toFixed(2)}</div>
+                        <div class="label">结余</div>
+                    </div>
+                </div>
                 <div class="import-section">
                     <h4><i class="fas fa-file-import"></i> 批量导入</h4>
                     <p>下载模板 → 填写 → 粘贴 → 点击导入</p>
@@ -497,7 +561,7 @@
                     <input type="number" id="expAmount" placeholder="金额">
                     <input type="date" id="expDate">
                     <input type="text" id="expRemark" placeholder="备注">
-                    <button onclick="addExpense()">➕ 新增费用</button>
+                    <button onclick="addExpense()">➕ 新增</button>
                 </div>
             </div>`;
         renderExpenseList();
@@ -696,20 +760,22 @@
         let settings = [];
         if (USE_SUPABASE) { settings = await db.siteSettings.getAll() || []; } else { settings = JSON.parse(localStorage.getItem('yayehui_site_settings')||'[]'); }
         const keyMap = {
-            hero_title: '首页横幅主标题（第一行）',
-            hero_subtitle: '首页横幅主标题（第二行）',
-            hero_desc: '首页横幅描述文字',
-            hero_stat_1: '横幅统计项1 数字（如 12+）',
-            hero_stat_1_label: '横幅统计项1 标签',
-            hero_stat_2: '横幅统计项2 数字（如 98%）',
-            hero_stat_2_label: '横幅统计项2 标签',
-            hero_stat_3: '横幅统计项3 数字（如 24h）',
-            hero_stat_3_label: '横幅统计项3 标签',
-            nav_menu_left_text: '导航菜单左侧文字',
-            footer_banner_left_text: '底部横幅左侧文字',
-            footer_banner_text: '底部横幅文字',
+            nav_menu_left_text: '导航菜单左侧主标题（显示在"雅业会"左侧）',
+            nav_menu_left_subtext: '导航菜单左侧副标题（显示在"雅居·共治·美好"位置）',
+            footer_banner_left_text: '底部横幅左侧文字（显示在"雅业会"位置）',
+            footer_banner_text: '底部横幅中间文字',
             footer_address: '底部地址',
-            footer_copyright: '底部版权信息'
+            footer_copyright: '底部版权信息',
+            hero_title: '首页横幅主标题',
+            hero_subtitle: '首页横幅副标题',
+            hero_desc: '首页横幅描述',
+            hero_stat_1: '统计项1数字',
+            hero_stat_1_label: '统计项1标签',
+            hero_stat_2: '统计项2数字',
+            hero_stat_2_label: '统计项2标签',
+            hero_stat_3: '统计项3数字',
+            hero_stat_3_label: '统计项3标签',
+            contact_content: '联系我们弹窗内容（支持换行）'
         };
         let html = '';
         const keys = Object.keys(keyMap);

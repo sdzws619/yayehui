@@ -83,10 +83,23 @@
         .modal-content { background: white; max-width: 600px; width: 90%; border-radius: 32px; padding: 28px; position: relative; max-height: 80vh; overflow-y: auto; }
         .modal-close { position: absolute; top: 16px; right: 20px; font-size: 28px; cursor: pointer; }
         .modal-title { font-size: 1.4rem; font-weight: 700; color: #1f4f2d; margin-bottom: 16px; }
-        .pager { display: flex; justify-content: center; gap: 8px; margin-top: 24px; }
+        .pager { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 24px; flex-wrap: wrap; }
         .pager-btn { padding: 6px 16px; border-radius: 40px; border: 1px solid #cfdfd3; cursor: pointer; background: white; font-weight: 500; transition: 0.2s; }
         .pager-btn.active { background: #2c6e49; color: white; border-color: #2c6e49; }
         .pager-btn:hover { background: #eef2f0; }
+        .pager-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pager-info { color: #6c7a91; font-size: 0.85rem; margin: 0 8px; }
+        .pager input.page-jump { width: 50px; padding: 4px 8px; border: 1px solid #cfdfd3; border-radius: 16px; text-align: center; font-size: 0.85rem; }
+        .page-size-select { padding: 4px 12px; border: 1px solid #cfdfd3; border-radius: 20px; font-size: 0.85rem; background: white; }
+        .empty-state { text-align: center; padding: 40px 20px; color: #6c7a91; }
+        .empty-state i { font-size: 3rem; color: #cfdfd3; margin-bottom: 12px; display: block; }
+        .vote-result-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+        .vote-result-label { min-width: 80px; font-weight: 600; color: #1e293b; }
+        .vote-result-track { flex: 1; height: 28px; background: #e2e8f0; border-radius: 14px; overflow: hidden; position: relative; }
+        .vote-result-fill { height: 100%; background: linear-gradient(90deg, #2c6e49, #4c9f70); border-radius: 14px; transition: width 0.5s ease; min-width: 4px; }
+        .vote-result-stats { min-width: 100px; text-align: right; font-weight: 700; color: #2c6e49; font-size: 0.9rem; }
+        .vote-total { font-size: 0.8rem; color: #6c7a91; margin-top: 8px; }
+        .contact-modal-content { max-width: 500px; }
         .back2top { position: fixed; bottom: 24px; right: 24px; background: #2c6e49; color: white; width: 44px; height: 44px; border-radius: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; opacity: 0; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 99; }
         .back2top.show { opacity: 1; }
         .loading { text-align: center; padding: 40px; color: #6c7a91; }
@@ -353,7 +366,10 @@
 <script src="supabase-config.js"></script>
 <script>
     const USE_SUPABASE = false;
-    const PAGE_SIZE = 3;
+    let pageSizes = {
+        ann: 3, dyn: 3, topics: 3, members: 3, expenses: 3
+    };
+    let votePollInterval = null;
 
     // 当前登录用户（从 localStorage 读取）
     let currentUser = JSON.parse(localStorage.getItem('yayehui_current_user') || 'null');
@@ -419,20 +435,64 @@
     // 辅助函数
     function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'); }
     function formatDate(dateStr) { if (!dateStr) return ''; return new Date(dateStr).toLocaleString(); }
-    function paginationHTML(current, total, prefixId) {
+    // 分页组件（支持用户选择每页行数）
+    function paginationHTML(current, total, prefixId, totalCount) {
         if (total <= 1) return '';
-        let html = '';
-        for (let i = 1; i <= total; i++) {
+        const maxVisible = 5;
+        let startPage = Math.max(1, current - Math.floor(maxVisible / 2));
+        let endPage = Math.min(total, startPage + maxVisible - 1);
+        if (endPage - startPage + 1 < maxVisible) {
+            startPage = Math.max(1, endPage - maxVisible + 1);
+        }
+        
+        let html = `<div class="pager-info">共 ${totalCount} 条</div>`;
+        html += `<button class="pager-btn" onclick="goPage('${prefixId}',${current-1})" ${current===1?'disabled':''}><i class="fas fa-chevron-left"></i></button>`;
+        
+        for (let i = startPage; i <= endPage; i++) {
             html += `<button class="pager-btn ${i === current ? 'active' : ''}" onclick="goPage('${prefixId}',${i})">${i}</button>`;
         }
+        
+        html += `<button class="pager-btn" onclick="goPage('${prefixId}',${current+1})" ${current===total?'disabled':''}><i class="fas fa-chevron-right"></i></button>`;
+        html += `<div class="pager-info">到<input type="number" class="page-jump" id="jump-${prefixId}" min="1" max="${total}" placeholder="页">`;
+        html += `<button class="pager-btn" style="padding:4px 10px;" onclick="jumpToPage('${prefixId}',${total})">跳转</button></div>`;
+        
+        // 每页行数选择
+        html += `<div class="pager-info" style="margin-left:12px;">每页<select class="page-size-select" onchange="changePageSize('${prefixId}',this.value)">`;
+        for (let i = 1; i <= 10; i++) html += `<option value="${i}" ${pageSizes[prefixId]===i?'selected':''}>${i}</option>`;
+        for (let i = 15; i <= 100; i+=5) html += `<option value="${i}" ${pageSizes[prefixId]===i?'selected':''}>${i}</option>`;
+        html += `</select>条</div>`;
+        
         return html;
     }
+    
+    window.changePageSize = function(prefix, size) {
+        pageSizes[prefix] = parseInt(size);
+        window['page_' + prefix] = 1;
+        if (prefix === 'ann') renderAnnouncements();
+        else if (prefix === 'dyn') renderDynamics();
+        else if (prefix === 'topics') renderTopics();
+        else if (prefix === 'members') renderMembers();
+        else if (prefix === 'exp') renderExpenses();
+    };
+    
+    window.jumpToPage = function(prefix, total) {
+        const input = document.getElementById('jump-' + prefix);
+        if (!input) return;
+        const page = parseInt(input.value);
+        if (page >= 1 && page <= total) {
+            goPage(prefix, page);
+        } else {
+            alert('请输入有效的页码');
+        }
+    };
+    
     window.goPage = function(prefix, page) {
         window['page_' + prefix] = page;
         if (prefix === 'ann') renderAnnouncements();
         else if (prefix === 'dyn') renderDynamics();
         else if (prefix === 'topics') renderTopics();
         else if (prefix === 'members') renderMembers();
+        else if (prefix === 'exp') renderExpenses();
     };
 
     // 加载站点配置
@@ -477,8 +537,16 @@
                 if (items.length === 0) items = DEFAULT_DATA.announcements;
             }
             const page = window.page_ann || 1;
-            const total = Math.ceil(items.length / PAGE_SIZE);
-            const pageItems = items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+            const pageSize = pageSizes['ann'] || 3;
+            const total = Math.ceil(items.length / pageSize);
+            const pageItems = items.slice((page - 1) * pageSize, page * pageSize);
+            
+            if (items.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>';
+                document.getElementById('announcementPager').innerHTML = '';
+                return;
+            }
+            
             container.innerHTML = '';
             if (pageItems.length === 0) { container.innerHTML = '<p style="text-align:center;color:#6c7a91;">暂无公告</p>'; return; }
             pageItems.forEach(item => {
@@ -488,7 +556,7 @@
                 div.onclick = () => alert(item.content);
                 container.appendChild(div);
             });
-            document.getElementById('announcementPager').innerHTML = paginationHTML(page, total, 'ann');
+            document.getElementById('announcementPager').innerHTML = paginationHTML(page, total, 'ann', items.length);
         } catch (e) { container.innerHTML = '<p style="text-align:center;color:#c2410c;">加载失败，请稍后重试</p>'; }
     }
 
@@ -506,9 +574,17 @@
                 items = JSON.parse(localStorage.getItem('yayehui_dynamics') || '[]');
                 if (items.length === 0) items = DEFAULT_DATA.dynamics;
             }
+            
+            if (items.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>';
+                document.getElementById('dynamicPager').innerHTML = '';
+                return;
+            }
+            
             const page = window.page_dyn || 1;
-            const total = Math.ceil(items.length / PAGE_SIZE);
-            const pageItems = items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+            const pageSize = pageSizes['dyn'] || 3;
+            const total = Math.ceil(items.length / pageSize);
+            const pageItems = items.slice((page - 1) * pageSize, page * pageSize);
             container.innerHTML = '';
             if (pageItems.length === 0) { container.innerHTML = '<p style="text-align:center;color:#6c7a91;">暂无动态</p>'; return; }
             pageItems.forEach(item => {
@@ -518,7 +594,7 @@
                 div.onclick = () => alert(item.content);
                 container.appendChild(div);
             });
-            document.getElementById('dynamicPager').innerHTML = paginationHTML(page, total, 'dyn');
+            document.getElementById('dynamicPager').innerHTML = paginationHTML(page, total, 'dyn', items.length);
         } catch (e) { container.innerHTML = '<p style="text-align:center;color:#c2410c;">加载失败</p>'; }
     }
 
@@ -536,12 +612,20 @@
                 members = JSON.parse(localStorage.getItem('yayehui_members') || '[]');
                 if (members.length === 0) members = DEFAULT_DATA.members;
             }
+            
+            if (members.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>';
+                document.getElementById('memberPager').innerHTML = '';
+                return;
+            }
+            
             const page = window.page_members || 1;
-            const total = Math.ceil(members.length / PAGE_SIZE);
-            const pageMembers = members.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+            const pageSize = pageSizes['members'] || 3;
+            const total = Math.ceil(members.length / pageSize);
+            const pageMembers = members.slice((page - 1) * pageSize, page * pageSize);
             if (pageMembers.length === 0) { container.innerHTML = '<p style="text-align:center;color:#6c7a91;">暂无成员信息</p>'; return; }
             container.innerHTML = pageMembers.map(m => `<div class="member-card"><div class="member-avatar"><i class="${m.avatar_icon || 'fas fa-user-circle'} fa-3x"></i></div><div class="member-name">${escapeHtml(m.name)}</div><div class="member-role">${escapeHtml(m.role || '')}</div><div style="font-size:0.8rem;">${escapeHtml(m.description || '')}</div></div>`).join('');
-            document.getElementById('memberPager').innerHTML = paginationHTML(page, total, 'members');
+            document.getElementById('memberPager').innerHTML = paginationHTML(page, total, 'members', members.length);
         } catch (e) { container.innerHTML = '<p style="text-align:center;color:#c2410c;">加载失败</p>'; }
     }
 
@@ -559,10 +643,14 @@
         document.querySelectorAll('.service-card').forEach(c => c.onclick = () => alert('✨ 该功能正在完善中，请联系业委会。'));
     }
 
-    // ========== 投票系统（含条形图 + 注册提醒） ==========
+    // ========== 投票系统（含条形图 + 注册提醒 + 实时更新） ==========
     async function renderPolls() {
         const container = document.getElementById('pollsList');
         if (!container) return;
+        
+        // 清除之前的轮询
+        if (votePollInterval) { clearInterval(votePollInterval); votePollInterval = null; }
+        
         try {
             let polls;
             if (USE_SUPABASE) {
@@ -573,104 +661,148 @@
                 if (polls.length === 0) polls = DEFAULT_DATA.polls;
             }
             container.innerHTML = '';
-            if (polls.length === 0) { container.innerHTML = '<p style="text-align:center;color:#6c7a91;">暂无进行中的投票</p>'; return; }
+            if (polls.length === 0) { container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>'; return; }
 
             for (const poll of polls) {
-                let options, votes;
-                if (USE_SUPABASE) {
-                    options = await db.pollOptions.getByPollId(poll.id);
-                    options = options || [];
-                    votes = await db.votes.getByPollId(poll.id);
-                    votes = votes || [];
-                    if (options.length === 0) options = DEFAULT_DATA.pollOptions.filter(o => o.poll_id === poll.id);
-                } else {
-                    options = JSON.parse(localStorage.getItem('yayehui_poll_options') || '[]').filter(o => o.poll_id === poll.id);
-                    votes = JSON.parse(localStorage.getItem('yayehui_votes') || '[]');
-                    if (options.length === 0) options = DEFAULT_DATA.pollOptions.filter(o => o.poll_id === poll.id);
-                }
-
-                const totalVotes = votes.length;
-                const maxVotes = Math.max(...options.map(o => votes.filter(v => v.option_id === o.id).length), 1);
-
-                const pollDiv = document.createElement('div');
-                pollDiv.className = 'poll-card';
-                pollDiv.innerHTML = `
-                    <h3>${escapeHtml(poll.title)}</h3>
-                    <p>${escapeHtml(poll.description || '')}</p>
-                    <p><small>有效期：${poll.start_date || ''} 至 ${poll.end_date || ''}</small></p>
-                    <div class="vote-bar-container" id="voteBarPoll${poll.id}"></div>
-                    <div id="voteOptionsPoll${poll.id}" style="margin-top:16px;"></div>
-                    <div id="voteBtnPoll${poll.id}" style="margin-top:12px;"></div>
-                `;
-                container.appendChild(pollDiv);
-
-                // 条形图显示投票结果
-                const barContainer = document.getElementById('voteBarPoll' + poll.id);
-                let barHtml = '';
-                options.forEach(opt => {
-                    const count = votes.filter(v => v.option_id === opt.id).length;
-                    const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
-                    const barWidth = totalVotes > 0 ? Math.round((count / maxVotes) * 100) : 0;
-                    barHtml += `
-                        <div class="vote-bar-row">
-                            <div class="vote-bar-label">${escapeHtml(opt.option_text)}</div>
-                            <div class="vote-bar-track"><div class="vote-bar-fill" style="width:${barWidth}%"></div></div>
-                            <div class="vote-bar-count">${count}票 (${pct}%)</div>
-                        </div>`;
-                });
-                barHtml += `<div style="font-size:0.8rem;color:#6c7a91;margin-top:8px;">共 ${totalVotes} 人参与投票</div>`;
-                barContainer.innerHTML = barHtml;
-
-                // 选项 + 投票按钮
-                const hasVoted = currentUser && votes.some(v => v.property_address === currentUser.property_address);
-                const optionsDiv = document.getElementById('voteOptionsPoll' + poll.id);
-                const btnDiv = document.getElementById('voteBtnPoll' + poll.id);
-
-                if (!hasVoted) {
-                    let selectedOptionId = null;
-                    let optsHtml = '';
-                    options.forEach(opt => {
-                        optsHtml += `<span class="poll-option" data-opt-id="${opt.id}">${escapeHtml(opt.option_text)}</span>`;
-                    });
-                    optionsDiv.innerHTML = optsHtml;
-                    optionsDiv.querySelectorAll('.poll-option').forEach(span => {
-                        span.onclick = () => {
-                            if (!currentUser) {
-                                // 未注册：弹出注册提醒
-                                showVoteNeedRegModal();
-                                return;
-                            }
-                            optionsDiv.querySelectorAll('.poll-option').forEach(s => s.classList.remove('selected'));
-                            span.classList.add('selected');
-                            selectedOptionId = parseInt(span.dataset.optId);
-                        };
-                    });
-                    btnDiv.innerHTML = `<button class="vote-btn" id="voteBtn${poll.id}">确认投票</button>`;
-                    document.getElementById('voteBtn' + poll.id).onclick = async () => {
-                        if (!currentUser) { showVoteNeedRegModal(); return; }
-                        if (!selectedOptionId) { alert('请先选择一个选项'); return; }
-                        const voteData = {
-                            poll_id: poll.id,
-                            option_id: selectedOptionId,
-                            voter_name: currentUser.user_name,
-                            registered_user_id: currentUser.id,
-                            property_address: currentUser.property_address,
-                            vote_time: new Date().toISOString()
-                        };
-                        if (USE_SUPABASE) await db.votes.create(voteData);
-                        else {
-                            votes.push(voteData);
-                            localStorage.setItem('yayehui_votes', JSON.stringify(votes));
-                        }
-                        renderPolls();
-                        alert('投票成功！');
-                    };
-                } else {
-                    optionsDiv.innerHTML = `<p style="color:#2c6e49;font-weight:600;"><i class="fas fa-check-circle"></i> 您已参与投票</p>`;
-                    btnDiv.innerHTML = '';
-                }
+                await renderSinglePoll(poll, container);
             }
+            
+            // 启动实时更新轮询（每5秒刷新一次投票结果）
+            votePollInterval = setInterval(async () => {
+                const activePolls = JSON.parse(localStorage.getItem('yayehui_polls') || '[]').filter(p => p.is_active);
+                if (activePolls.length > 0) {
+                    const pollContainer = document.getElementById('pollsList');
+                    if (pollContainer && pollContainer.style.display !== 'none') {
+                        for (const poll of activePolls) {
+                            await renderSinglePoll(poll, pollContainer, true);
+                        }
+                    }
+                }
+            }, 5000);
+            
         } catch (e) { container.innerHTML = '<p style="text-align:center;color:#c2410c;">加载失败</p>'; }
+    }
+    
+    // 渲染单个投票
+    async function renderSinglePoll(poll, container, isUpdate = false) {
+        let options, votes;
+        if (USE_SUPABASE) {
+            options = await db.pollOptions.getByPollId(poll.id);
+            options = options || [];
+            votes = await db.votes.getByPollId(poll.id);
+            votes = votes || [];
+            if (options.length === 0) options = DEFAULT_DATA.pollOptions.filter(o => o.poll_id === poll.id);
+        } else {
+            options = JSON.parse(localStorage.getItem('yayehui_poll_options') || '[]').filter(o => o.poll_id === poll.id);
+            votes = JSON.parse(localStorage.getItem('yayehui_votes') || '[]');
+            if (options.length === 0) options = DEFAULT_DATA.pollOptions.filter(o => o.poll_id === poll.id);
+        }
+
+        const totalVotes = votes.length;
+        const maxVotes = Math.max(...options.map(o => votes.filter(v => v.option_id === o.id).length), 1);
+
+        let pollDiv = document.getElementById('pollCard' + poll.id);
+        if (!pollDiv) {
+            pollDiv = document.createElement('div');
+            pollDiv.id = 'pollCard' + poll.id;
+            pollDiv.className = 'poll-card';
+            container.appendChild(pollDiv);
+        }
+        
+        pollDiv.innerHTML = `
+            <h3>${escapeHtml(poll.title)}</h3>
+            <p>${escapeHtml(poll.description || '')}</p>
+            <p><small>有效期：${poll.start_date || ''} 至 ${poll.end_date || ''}</small></p>
+            <div class="vote-result-container" id="voteResultPoll${poll.id}"></div>
+            <div id="voteOptionsPoll${poll.id}" style="margin-top:16px;"></div>
+            <div id="voteBtnPoll${poll.id}" style="margin-top:12px;"></div>
+        `;
+
+        // 渲染投票结果（水平条形图）
+        const resultContainer = document.getElementById('voteResultPoll' + poll.id);
+        let resultHtml = '';
+        options.forEach(opt => {
+            const count = votes.filter(v => v.option_id === opt.id).length;
+            const pct = totalVotes > 0 ? (count / totalVotes * 100).toFixed(1) : 0;
+            const barWidth = totalVotes > 0 ? (count / maxVotes * 100) : 0;
+            resultHtml += `
+                <div class="vote-result-bar">
+                    <div class="vote-result-label">${escapeHtml(opt.option_text)}</div>
+                    <div class="vote-result-track"><div class="vote-result-fill" style="width:${barWidth}%"></div></div>
+                    <div class="vote-result-stats">${count}票 (${pct}%)</div>
+                </div>`;
+        });
+        resultHtml += `<div class="vote-total">共 ${totalVotes} 人参与投票</div>`;
+        resultContainer.innerHTML = resultHtml;
+
+        // 检查是否已投票
+        const hasVoted = currentUser && votes.some(v => v.property_address === currentUser.property_address);
+        const optionsDiv = document.getElementById('voteOptionsPoll' + poll.id);
+        const btnDiv = document.getElementById('voteBtnPoll' + poll.id);
+
+        if (hasVoted) {
+            optionsDiv.innerHTML = `<p style="color:#2c6e49;font-weight:600;"><i class="fas fa-check-circle"></i> 您已参与投票</p>`;
+            btnDiv.innerHTML = '';
+        } else if (!currentUser) {
+            // 未登录：显示投票选项，点击时弹出登录提示
+            let selectedOptionId = null;
+            let optsHtml = '';
+            options.forEach(opt => {
+                optsHtml += `<span class="poll-option" data-opt-id="${opt.id}">${escapeHtml(opt.option_text)}</span>`;
+            });
+            optionsDiv.innerHTML = optsHtml;
+            optionsDiv.querySelectorAll('.poll-option').forEach(span => {
+                span.onclick = () => {
+                    // 弹出登录提示
+                    showVoteNeedRegModal();
+                };
+            });
+            btnDiv.innerHTML = '';
+        } else {
+            // 已登录但未投票
+            let selectedOptionId = null;
+            let optsHtml = '';
+            options.forEach(opt => {
+                optsHtml += `<span class="poll-option" data-opt-id="${opt.id}">${escapeHtml(opt.option_text)}</span>`;
+            });
+            optionsDiv.innerHTML = optsHtml;
+            optionsDiv.querySelectorAll('.poll-option').forEach(span => {
+                span.onclick = () => {
+                    optionsDiv.querySelectorAll('.poll-option').forEach(s => s.classList.remove('selected'));
+                    span.classList.add('selected');
+                    selectedOptionId = parseInt(span.dataset.optId);
+                };
+            });
+            btnDiv.innerHTML = `<button class="vote-btn" id="voteBtn${poll.id}">确认投票</button>`;
+            document.getElementById('voteBtn' + poll.id).onclick = async () => {
+                if (!currentUser) { showVoteNeedRegModal(); return; }
+                if (!selectedOptionId) { alert('请先选择一个选项'); return; }
+                
+                // 检查是否已投票（防重复）
+                const existingVotes = JSON.parse(localStorage.getItem('yayehui_votes') || '[]');
+                if (existingVotes.some(v => v.poll_id === poll.id && v.property_address === currentUser.property_address)) {
+                    alert('一个地址只能投一票');
+                    renderPolls();
+                    return;
+                }
+                
+                const voteData = {
+                    poll_id: poll.id,
+                    option_id: selectedOptionId,
+                    voter_name: currentUser.user_name,
+                    registered_user_id: currentUser.id,
+                    property_address: currentUser.property_address,
+                    vote_time: new Date().toISOString()
+                };
+                if (USE_SUPABASE) await db.votes.create(voteData);
+                else {
+                    votes.push(voteData);
+                    localStorage.setItem('yayehui_votes', JSON.stringify(votes));
+                }
+                renderPolls();
+                alert('投票成功！');
+            };
+        }
     }
 
     function showVoteNeedRegModal() {
@@ -687,7 +819,7 @@
         document.getElementById('register').scrollIntoView({ behavior: 'smooth' });
     });
 
-    // 费用公示（不限制条数）
+    // 费用公示（分页 + 实时统计）
     async function renderExpenses() {
         const container = document.getElementById('expensesList');
         if (!container) return;
@@ -700,16 +832,34 @@
                 expenses = JSON.parse(localStorage.getItem('yayehui_expenses') || '[]');
                 if (expenses.length === 0) expenses = DEFAULT_DATA.expenses;
             }
-            if (expenses.length === 0) { container.innerHTML = '<p style="text-align:center;color:#6c7a91;">暂无费用数据</p>'; return; }
+            
+            // 计算统计数据
             let totalIncome = 0, totalExpense = 0;
             expenses.forEach(e => { if (e.category === '收入') totalIncome += parseFloat(e.amount || 0); else totalExpense += parseFloat(e.amount || 0); });
             const balance = totalIncome - totalExpense;
-const page = window.page_exp || 1;
-            const total = Math.ceil(expenses.length / PAGE_SIZE);
-            const pageExpenses = expenses.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-            container.innerHTML = `<div style="background:white;border-radius:20px;padding:20px;margin-bottom:20px;"><div>总收入：<strong style="color:#2c6e49;">¥${totalIncome.toFixed(2)}</strong></div><div>总支出：<strong style="color:#c2410c;">¥${totalExpense.toFixed(2)}</strong></div><div>结余：<strong>¥${balance.toFixed(2)}</strong></div></div><table class="expense-table"><thead><tr><th>日期</th><th>类别</th><th>项目</th><th>金额</th><th>备注</th></tr></thead><tbody>${pageExpenses.map(e => `<tr><td>${e.date || ''}</td><td>${e.category || ''}</td><td>${escapeHtml(e.item_name || '')}</td><td>¥${parseFloat(e.amount || 0).toFixed(2)}</td><td>${escapeHtml(e.remark || '')}</td></tr>`).join('')}</tbody></table>`;
+            
+            if (expenses.length === 0) { 
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>'; 
+                document.getElementById('expensesPager').innerHTML = '';
+                return; 
+            }
+            
+            const page = window.page_exp || 1;
+            const pageSize = pageSizes['exp'] || 3;
+            const total = Math.ceil(expenses.length / pageSize);
+            const pageExpenses = expenses.slice((page - 1) * pageSize, page * pageSize);
+            
+            container.innerHTML = `
+                <div style="background:white;border-radius:20px;padding:20px;margin-bottom:20px;display:flex;gap:24px;flex-wrap:wrap;justify-content:center;">
+                    <div>总收入：<strong style="color:#2c6e49;font-size:1.2rem;">¥${totalIncome.toFixed(2)}</strong></div>
+                    <div>总支出：<strong style="color:#c2410c;font-size:1.2rem;">¥${totalExpense.toFixed(2)}</strong></div>
+                    <div>结余：<strong style="font-size:1.2rem;">¥${balance.toFixed(2)}</strong></div>
+                </div>
+                <table class="expense-table"><thead><tr><th>日期</th><th>类别</th><th>项目</th><th>金额</th><th>备注</th></tr></thead><tbody>
+                ${pageExpenses.map(e => `<tr><td>${e.date || ''}</td><td>${e.category || ''}</td><td>${escapeHtml(e.item_name || '')}</td><td style="color:${e.category==='收入'?'#2c6e49':'#c2410c'};font-weight:600;">¥${parseFloat(e.amount || 0).toFixed(2)}</td><td>${escapeHtml(e.remark || '')}</td></tr>`).join('')}
+                </tbody></table>`;
             const pagerEl = document.getElementById('expensesPager');
-            if (pagerEl) pagerEl.innerHTML = paginationHTML(page, total, 'exp');
+            if (pagerEl) pagerEl.innerHTML = paginationHTML(page, total, 'exp', expenses.length);
         } catch (e) { container.innerHTML = '<p style="text-align:center;color:#c2410c;">加载失败</p>'; }
     }
 
@@ -736,9 +886,17 @@ const page = window.page_exp || 1;
                 replies = JSON.parse(localStorage.getItem('yayehui_replies') || '[]');
                 if (topics.length === 0) { topics = DEFAULT_DATA.topics; replies = DEFAULT_DATA.replies; }
             }
+            
+            if (topics.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>';
+                document.getElementById('topicsPager').innerHTML = '';
+                return;
+            }
+            
             const page = window.page_topics || 1;
-            const total = Math.ceil(topics.length / PAGE_SIZE);
-            const pageTopics = topics.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+            const pageSize = pageSizes['topics'] || 3;
+            const total = Math.ceil(topics.length / pageSize);
+            const pageTopics = topics.slice((page - 1) * pageSize, page * pageSize);
             container.innerHTML = '';
             if (pageTopics.length === 0) { container.innerHTML = '<p style="text-align:center;color:#6c7a91;">暂无帖子</p>'; return; }
             pageTopics.forEach(topic => {
@@ -749,7 +907,7 @@ const page = window.page_exp || 1;
                 div.innerHTML = `<h3>${escapeHtml(topic.title)}</h3><p>${escapeHtml((topic.content || '').substring(0, 100))}${(topic.content || '').length > 100 ? '...' : ''}</p><div class="topic-meta"><span>作者：${escapeHtml(topic.author || '')}</span><span>浏览 ${topic.view_count || 0}</span><span>回复 ${replyCount}</span><span>${new Date(topic.created_at).toLocaleDateString()}</span></div>`;
                 container.appendChild(div);
             });
-            document.getElementById('topicsPager').innerHTML = paginationHTML(page, total, 'topics');
+            document.getElementById('topicsPager').innerHTML = paginationHTML(page, total, 'topics', topics.length);
 
             document.querySelectorAll('.topic-card').forEach(card => {
                 card.onclick = async () => {
