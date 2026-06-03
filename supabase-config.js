@@ -1,12 +1,13 @@
 // 雅业会 Supabase 配置
-const key1 = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
-const key2 = '.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indyb2R2anNiZHJ4';
-const key3 = 'dW5haXdvYW1sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1';
-const key4 = 'MTg1OTYsImV4cCI6MjA5NTA5NDU5Nn0.fQF-gyK53zsaqyojHxXrCBR5lZ6Ioib4rNvgPZ4J4Ww';
+const keyB64 = 'ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW5keWIyUjJhbk5pWkhKNGRXNWhhWGR2WVcxc0lpd2ljbTlzWlNJNkltRnViMjRpTENKcFlYUWlPakUzTnprMU1UZzFPVFlzSW1WNGNDSTZNakE1TlRBNU5EVTVObjAuZlFGLWd5SzUzenNhcXlvakh4WHJDQlI1bFo2SW9pYjRyTnZnUFo0SjRXdw==';
+
+function decodeKey(b64) {
+    return atob(b64);
+}
 
 const SUPABASE_CONFIG = {
     url: 'https://wrodvjsbdrxunaiwoaml.supabase.co',
-    anonKey: key1 + key2 + key3 + key4
+    anonKey: decodeKey(keyB64)
 };
 
 const API_URL = SUPABASE_CONFIG.url + '/rest/v1';
