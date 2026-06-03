@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -352,7 +352,7 @@
 
 <script src="supabase-config.js"></script>
 <script>
-    const USE_SUPABASE = true;
+    const USE_SUPABASE = false;
     const PAGE_SIZE = 3;
 
     // 当前登录用户（从 localStorage 读取）
@@ -932,51 +932,6 @@ const page = window.page_exp || 1;
         renderRegister();
     };
 
-
-// ===== 调试：初始化日志 =====
-console.log('[Init] Starting... USE_SUPABASE:', typeof USE_SUPABASE !== 'undefined');
-console.log('[Init] db object:', typeof db !== 'undefined' ? 'OK' : 'MISSING');
-console.log('[Init] showLoginModal:', typeof showLoginModal !== 'undefined' ? 'OK' : 'MISSING');
-
-// 主动暴露关键函数到 window（双重保险）
-if (typeof showLoginModal === 'function') window.showLoginModal = showLoginModal;
-if (typeof hideLoginModal === 'function') window.hideLoginModal = hideLoginModal;
-if (typeof handleLogin === 'function') window.handleLogin = handleLogin;
-if (typeof handleLogout === 'function') window.handleLogout = handleLogout;
-
-
-
-// ===== 调试：初始化日志 =====
-console.log('[Init] Starting... USE_SUPABASE:', typeof USE_SUPABASE !== 'undefined');
-console.log('[Init] db object:', typeof db !== 'undefined' ? 'OK' : 'MISSING');
-console.log('[Init] showLoginModal:', typeof showLoginModal !== 'undefined' ? 'OK' : 'MISSING');
-console.log('[Init] navLoginBtn listeners:', typeof navLoginBtn !== 'undefined' ? 'OK' : 'MISSING');
-
-// 主动暴露关键函数到 window（双重保险）
-window.SHOW_LOGIN = function() { 
-    console.log('[DEBUG] SHOW_LOGIN called'); 
-    document.getElementById('loginModal').style.display = 'flex'; 
-};
-if (typeof showLoginModal === 'function') window.showLoginModal = showLoginModal;
-if (typeof hideLoginModal === 'function') window.hideLoginModal = hideLoginModal;
-if (typeof handleLogin === 'function') window.handleLogin = handleLogin;
-if (typeof handleLogout === 'function') window.handleLogout = handleLogout;
-
-// 手动添加登录事件监听作为备用方案
-setTimeout(function() {
-    var btn = document.getElementById('navLogin');
-    if (btn) {
-        btn.onclick = function(e) {
-            e.preventDefault(); 
-            console.log('[DEBUG] navLogin clicked'); 
-            if (typeof showLoginModal === 'function') showLoginModal(); 
-            else document.getElementById('loginModal').style.display = 'flex';
-        };
-        console.log('[DEBUG] navLogin onclick set manually');
-    }
-}, 500);
-
-
 // ========== 登录/用户资料/注册/重置密码 功能 ==========
 
 // 显示登录模态框
@@ -1523,6 +1478,4 @@ getElementById('submitTopicBtn')?.addEventListener('click', async () => {
 </script>
 </body>
 </html>
-
-
 
