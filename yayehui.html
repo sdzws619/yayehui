@@ -132,7 +132,7 @@
                 <li><a href="#expenses">费用</a></li>
                 <li><a href="#topics">心声</a></li>
                 <li><a href="#committee">业委会</a></li>
-                <li><a href="#" id="navLogin">登录</a></li>
+                <li><a href="javascript:void(0)" id="navLogin" onclick="handleNavLoginClick(event)">登录</a></li>
             </ul>
         </div>
     </div>
@@ -159,7 +159,7 @@
         <section><h2 class="section-title"><i class="fas fa-newspaper"></i> 工作动态</h2><div id="dynamicList"><div class="loading">加载中...</div></div><div class="pager" id="dynamicPager"></div></section>
         <section id="polls"><h2 class="section-title"><i class="fas fa-vote-yea"></i> 业主决策投票</h2><div id="pollsList"><div class="loading">加载中...</div></div></section>
         <section id="expenses"><h2 class="section-title"><i class="fas fa-chart-pie"></i> 费用公示</h2><div id="expensesList"><div class="loading">加载中...</div></div><div class="pager" id="expensesPager"></div></section>
-        <section id="topics"><h2 class="section-title"><i class="fas fa-comments"></i> 业主心声</h2><div id="topicsList"><div class="loading">加载中...</div></div><div class="pager" <div style="text-align:center;margin:16px 0;"><button class="btn" id="newTopicBtn" style="background:#2c6e49;color:white;padding:10px 24px;border-radius:20px;border:none;cursor:pointer;font-size:0.95rem;"><i class="fas fa-pen"></i> 发表心声</button></div>id="topicsPager"></div></section>
+        <section id="topics"><h2 class="section-title"><i class="fas fa-comments"></i> 业主心声</h2><div id="topicsList"><div class="loading">加载中...</div></div><div class="pager" id="topicsPager"></div><div style="text-align:center;margin:16px 0;"><button class="btn" id="newTopicBtn" style="background:#2c6e49;color:white;padding:10px 24px;border-radius:20px;border:none;cursor:pointer;font-size:0.95rem;"><i class="fas fa-pen"></i> 发表心声</button></div></section>
         <section id="committee"><h2 class="section-title"><i class="fas fa-user-tie"></i> 业委会成员</h2><div class="card-grid" id="memberGrid"><div class="loading">加载中...</div></div><div class="pager" id="memberPager"></div></section>
         <section id="services"><h2 class="section-title"><i class="fas fa-concierge-bell"></i> 便民服务直通车</h2><div class="card-grid" id="serviceGrid"></div></section>
         <section id="register"><h2 class="section-title"><i class="fas fa-user-plus"></i> 用户注册</h2><div id="registerSection"><div class="loading">加载中...</div></div></section>
@@ -534,7 +534,11 @@
                 if (!items || items.length === 0) items = DEFAULT_DATA.announcements;
             } else {
                 items = JSON.parse(localStorage.getItem('yayehui_announcements') || '[]');
-                if (items.length === 0) items = DEFAULT_DATA.announcements;
+                if (items.length === 0) {
+                    items = DEFAULT_DATA.announcements;
+                    // 保存默认数据到 localStorage，以便管理后台能看到
+                    localStorage.setItem('yayehui_announcements', JSON.stringify(items));
+                }
             }
             const page = window.page_ann || 1;
             const pageSize = pageSizes['ann'] || 3;
@@ -572,7 +576,11 @@
                 if (!items || items.length === 0) items = DEFAULT_DATA.dynamics;
             } else {
                 items = JSON.parse(localStorage.getItem('yayehui_dynamics') || '[]');
-                if (items.length === 0) items = DEFAULT_DATA.dynamics;
+                if (items.length === 0) {
+                    items = DEFAULT_DATA.dynamics;
+                    // 保存默认数据到 localStorage，以便管理后台能看到
+                    localStorage.setItem('yayehui_dynamics', JSON.stringify(items));
+                }
             }
             
             if (items.length === 0) {
@@ -610,7 +618,11 @@
                 if (!members || members.length === 0) members = DEFAULT_DATA.members;
             } else {
                 members = JSON.parse(localStorage.getItem('yayehui_members') || '[]');
-                if (members.length === 0) members = DEFAULT_DATA.members;
+                if (members.length === 0) {
+                    members = DEFAULT_DATA.members;
+                    // 保存默认数据到 localStorage，以便管理后台能看到
+                    localStorage.setItem('yayehui_members', JSON.stringify(members));
+                }
             }
             
             if (members.length === 0) {
@@ -657,8 +669,19 @@
                 polls = await db.polls.getActive();
                 if (!polls || polls.length === 0) polls = DEFAULT_DATA.polls;
             } else {
-                polls = JSON.parse(localStorage.getItem('yayehui_polls') || '[]').filter(p => p.is_active);
-                if (polls.length === 0) polls = DEFAULT_DATA.polls;
+                const allPolls = JSON.parse(localStorage.getItem('yayehui_polls') || '[]');
+                polls = allPolls.filter(p => p.is_active);
+                if (polls.length === 0) {
+                    polls = DEFAULT_DATA.polls;
+                    // 保存默认投票数据到 localStorage，以便管理后台能看到
+                    const existingPolls = JSON.parse(localStorage.getItem('yayehui_polls') || '[]');
+                    if (existingPolls.length === 0) {
+                        localStorage.setItem('yayehui_polls', JSON.stringify(polls));
+                        // 同时保存投票选项
+                        localStorage.setItem('yayehui_poll_options', JSON.stringify(DEFAULT_DATA.pollOptions));
+                        localStorage.setItem('yayehui_votes', JSON.stringify(DEFAULT_DATA.votes));
+                    }
+                }
             }
             container.innerHTML = '';
             if (polls.length === 0) { container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>'; return; }
@@ -753,8 +776,45 @@
             optionsDiv.innerHTML = optsHtml;
             optionsDiv.querySelectorAll('.poll-option').forEach(span => {
                 span.onclick = () => {
-                    // 弹出登录提示
-                    showVoteNeedRegModal();
+                    if (!currentUser) {
+                        // 未登录，弹出登录提示
+                        showVoteNeedRegModal();
+                    } else {
+                        // 已登录但未投票，选择选项
+                        optionsDiv.querySelectorAll('.poll-option').forEach(s => s.classList.remove('selected'));
+                        span.classList.add('selected');
+                        const selectedOptionId = parseInt(span.dataset.optId);
+                        // 如果没有投票按钮，添加一个
+                        if (!document.getElementById('voteBtn' + poll.id)) {
+                            btnDiv.innerHTML = `<button class="vote-btn" id="voteBtn${poll.id}">确认投票</button>`;
+                            document.getElementById('voteBtn' + poll.id).onclick = async () => {
+                                if (!currentUser) { showVoteNeedRegModal(); return; }
+                                // 检查是否已投票（防重复）
+                                const existingVotes = JSON.parse(localStorage.getItem('yayehui_votes') || '[]');
+                                if (existingVotes.some(v => v.poll_id === poll.id && v.property_address === currentUser.property_address)) {
+                                    alert('一个地址只能投一票');
+                                    renderPolls();
+                                    return;
+                                }
+                                
+                                const voteData = {
+                                    poll_id: poll.id,
+                                    option_id: selectedOptionId,
+                                    voter_name: currentUser.user_name,
+                                    registered_user_id: currentUser.id,
+                                    property_address: currentUser.property_address,
+                                    vote_time: new Date().toISOString()
+                                };
+                                if (USE_SUPABASE) await db.votes.create(voteData);
+                                else {
+                                    votes.push(voteData);
+                                    localStorage.setItem('yayehui_votes', JSON.stringify(votes));
+                                }
+                                renderPolls();
+                                alert('投票成功！');
+                            };
+                        }
+                    }
                 };
             });
             btnDiv.innerHTML = '';
@@ -830,7 +890,11 @@
                 if (!expenses || expenses.length === 0) expenses = DEFAULT_DATA.expenses;
             } else {
                 expenses = JSON.parse(localStorage.getItem('yayehui_expenses') || '[]');
-                if (expenses.length === 0) expenses = DEFAULT_DATA.expenses;
+                if (expenses.length === 0) {
+                    expenses = DEFAULT_DATA.expenses;
+                    // 保存默认数据到 localStorage，以便管理后台能看到
+                    localStorage.setItem('yayehui_expenses', JSON.stringify(expenses));
+                }
             }
             
             // 计算统计数据
@@ -884,7 +948,13 @@
             } else {
                 topics = JSON.parse(localStorage.getItem('yayehui_topics') || '[]');
                 replies = JSON.parse(localStorage.getItem('yayehui_replies') || '[]');
-                if (topics.length === 0) { topics = DEFAULT_DATA.topics; replies = DEFAULT_DATA.replies; }
+                if (topics.length === 0) { 
+                    topics = DEFAULT_DATA.topics; 
+                    replies = DEFAULT_DATA.replies;
+                    // 保存默认数据到 localStorage，以便管理后台能看到
+                    localStorage.setItem('yayehui_topics', JSON.stringify(topics));
+                    localStorage.setItem('yayehui_replies', JSON.stringify(replies));
+                }
             }
             
             if (topics.length === 0) {
@@ -1434,12 +1504,15 @@ window.checkSession = function() {
             document.getElementById('newTopicModal').style.display = 'none';
         });
         document.getElementById('newTopicBtn')?.addEventListener('click', () => {
-            if (!currentUser) { showVoteNeedRegModal(); return; }
+            if (!currentUser) { 
+                showLoginModal(); 
+                return; 
+            }
             document.getElementById('topicAuthor').value = currentUser.user_name || '';
             document.getElementById('newTopicModal').style.display = 'flex';
         });
 
-getElementById('submitTopicBtn')?.addEventListener('click', async () => {
+        document.getElementById('submitTopicBtn')?.addEventListener('click', async () => {
             const title = document.getElementById('topicTitle').value.trim();
             const content = document.getElementById('topicContent').value.trim();
             const author = document.getElementById('topicAuthor').value.trim();
@@ -1482,24 +1555,40 @@ getElementById('submitTopicBtn')?.addEventListener('click', async () => {
         });
         // ========== 登录/用户资料/注册/重置密码 事件监听 ==========
         
-        // 导航栏"登录"按钮 - 检查会话状态
+    // 导航栏"登录"按钮 - 检查会话状态
         const navLoginBtn = document.getElementById('navLogin');
         if (navLoginBtn) {
             navLoginBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                if (currentUser) {
-                    // 已登录，显示用户资料
-                    showProfileModal();
-                } else {
-                    // 未登录，显示登录框
-                    showLoginModal();
-                }
+                handleNavLoginClick(e);
             });
             // 更新导航栏显示
             if (currentUser) {
                 navLoginBtn.textContent = '已登录';
             }
         }
+        
+        // 处理导航登录按钮点击
+        window.handleNavLoginClick = function(e) {
+            if (e) e.preventDefault();
+            // 重新从 localStorage 读取最新登录状态
+            const savedUser = localStorage.getItem('yayehui_current_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                } catch (e) {
+                    currentUser = null;
+                }
+            }
+            
+            if (currentUser) {
+                // 已登录，显示用户资料
+                showProfileModal();
+            } else {
+                // 未登录，显示登录框
+                showLoginModal();
+            }
+        };
         
         // 登录模态框事件
         document.getElementById('closeLoginModal')?.addEventListener('click', hideLoginModal);

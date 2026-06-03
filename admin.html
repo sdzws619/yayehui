@@ -245,10 +245,13 @@
                 <h3><i class="fas fa-bullhorn"></i> 公告管理 <button class="export-btn" onclick="exportAnnouncements()"><i class="fas fa-download"></i> 导出</button></h3>
                 <div class="import-section">
                     <h4><i class="fas fa-file-import"></i> 批量导入</h4>
-                    <p>下载模板 → 填写 → 粘贴内容到下方 → 点击导入</p>
+                    <p>选择 CSV/TXT 文件或粘贴内容 → 点击导入</p>
                     <div class="template-btns">
+                        <button class="btn-sm primary" onclick="document.getElementById('annFileInput').click()"><i class="fas fa-file-upload"></i> 选择文件</button>
                         <button class="btn-sm primary" onclick="downloadAnnouncementTemplate()"><i class="fas fa-file-csv"></i> 下载模板</button>
                     </div>
+                    <input type="file" id="annFileInput" accept=".csv,.txt" style="display:none" onchange="handleAnnFileSelect(this)">
+                    <div id="annFileName" style="font-size:0.8rem;color:#2c6e49;margin:6px 0;"></div>
                     <textarea id="annImportData" placeholder="粘贴 CSV 数据（首行为标题,日期,内容）" style="margin-top:8px;width:100%;height:80px;border-radius:16px;border:1px solid #cfdfd3;padding:10px;font-family:inherit;resize:vertical;"></textarea>
                     <button class="btn-sm success" style="margin-top:8px;" onclick="importAnnouncements()"><i class="fas fa-upload"></i> 导入数据</button>
                 </div>
@@ -301,6 +304,16 @@
         };
     window.exportAnnouncements = async () => { const items=await getAllAnnouncements(); exportData(items,'公告数据',[{key:'title',label:'标题'},{key:'date',label:'日期'},{key:'content',label:'内容'}]); };
     window.downloadAnnouncementTemplate = () => downloadTemplate([{key:'title',label:'标题'},{key:'date',label:'日期'},{key:'content',label:'内容'}],'公告');
+    window.handleAnnFileSelect = function(input) {
+        const file = input.files[0];
+        if (!file) return;
+        document.getElementById('annFileName').textContent = '已选择: ' + file.name;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('annImportData').value = e.target.result;
+        };
+        reader.readAsText(file);
+    };
     window.importAnnouncements = async () => {
             opLock.show();
             try {
@@ -318,8 +331,13 @@
                 <h3><i class="fas fa-chart-line"></i> 工作动态管理 <button class="export-btn" onclick="exportDynamics()"><i class="fas fa-download"></i> 导出</button></h3>
                 <div class="import-section">
                     <h4><i class="fas fa-file-import"></i> 批量导入</h4>
-                    <p>下载模板 → 填写 → 粘贴内容到下方 → 点击导入</p>
-                    <div class="template-btns"><button class="btn-sm primary" onclick="downloadDynamicsTemplate()"><i class="fas fa-file-csv"></i> 下载模板</button></div>
+                    <p>选择 CSV/TXT 文件或粘贴内容 → 点击导入</p>
+                    <div class="template-btns">
+                        <button class="btn-sm primary" onclick="document.getElementById('dynFileInput').click()"><i class="fas fa-file-upload"></i> 选择文件</button>
+                        <button class="btn-sm primary" onclick="downloadDynamicsTemplate()"><i class="fas fa-file-csv"></i> 下载模板</button>
+                    </div>
+                    <input type="file" id="dynFileInput" accept=".csv,.txt" style="display:none" onchange="handleDynFileSelect(this)">
+                    <div id="dynFileName" style="font-size:0.8rem;color:#2c6e49;margin:6px 0;"></div>
                     <textarea id="dynImportData" placeholder="粘贴 CSV 数据（标题,日期,摘要,详细内容）" style="margin-top:8px;width:100%;height:80px;border-radius:16px;border:1px solid #cfdfd3;padding:10px;font-family:inherit;resize:vertical;"></textarea>
                     <button class="btn-sm success" style="margin-top:8px;" onclick="importDynamics()"><i class="fas fa-upload"></i> 导入数据</button>
                 </div>
@@ -366,6 +384,16 @@
         };
     window.exportDynamics = async () => { const items=await getAllDynamics(); exportData(items,'工作动态',[{key:'title',label:'标题'},{key:'date',label:'日期'},{key:'summary',label:'摘要'},{key:'content',label:'内容'}]); };
     window.downloadDynamicsTemplate = () => downloadTemplate([{key:'title',label:'标题'},{key:'date',label:'日期'},{key:'summary',label:'摘要'},{key:'content',label:'内容'}],'工作动态');
+    window.handleDynFileSelect = function(input) {
+        const file = input.files[0];
+        if (!file) return;
+        document.getElementById('dynFileName').textContent = '已选择: ' + file.name;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('dynImportData').value = e.target.result;
+        };
+        reader.readAsText(file);
+    };
     window.importDynamics = async () => {
             opLock.show();
             try {
@@ -383,8 +411,13 @@
                 <h3><i class="fas fa-users"></i> 业委会成员管理 <button class="export-btn" onclick="exportMembers()"><i class="fas fa-download"></i> 导出</button></h3>
                 <div class="import-section">
                     <h4><i class="fas fa-file-import"></i> 批量导入</h4>
-                    <p>下载模板 → 填写 → 粘贴 → 点击导入</p>
-                    <div class="template-btns"><button class="btn-sm primary" onclick="downloadMembersTemplate()"><i class="fas fa-file-csv"></i> 下载模板</button></div>
+                    <p>选择 CSV/TXT 文件或粘贴内容 → 点击导入</p>
+                    <div class="template-btns">
+                        <button class="btn-sm primary" onclick="document.getElementById('memFileInput').click()"><i class="fas fa-file-upload"></i> 选择文件</button>
+                        <button class="btn-sm primary" onclick="downloadMembersTemplate()"><i class="fas fa-file-csv"></i> 下载模板</button>
+                    </div>
+                    <input type="file" id="memFileInput" accept=".csv,.txt" style="display:none" onchange="handleMemFileSelect(this)">
+                    <div id="memFileName" style="font-size:0.8rem;color:#2c6e49;margin:6px 0;"></div>
                     <textarea id="memImportData" placeholder="粘贴 CSV（姓名,职务,职责描述）" style="margin-top:8px;width:100%;height:80px;border-radius:16px;border:1px solid #cfdfd3;padding:10px;font-family:inherit;resize:vertical;"></textarea>
                     <button class="btn-sm success" style="margin-top:8px;" onclick="importMembers()"><i class="fas fa-upload"></i> 导入数据</button>
                 </div>
@@ -430,6 +463,16 @@
         };
     window.exportMembers = async () => { const items=await getAllMembers(); exportData(items,'业委会成员',[{key:'name',label:'姓名'},{key:'role',label:'职务'},{key:'description',label:'职责描述'}]); };
     window.downloadMembersTemplate = () => downloadTemplate([{key:'name',label:'姓名'},{key:'role',label:'职务'},{key:'description',label:'职责描述'}],'业委会成员');
+    window.handleMemFileSelect = function(input) {
+        const file = input.files[0];
+        if (!file) return;
+        document.getElementById('memFileName').textContent = '已选择: ' + file.name;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('memImportData').value = e.target.result;
+        };
+        reader.readAsText(file);
+    };
     window.importMembers = async () => {
             opLock.show();
             try {
@@ -447,8 +490,13 @@
                 <h3><i class="fas fa-vote-yea"></i> 投票管理 <button class="export-btn" onclick="exportPolls()"><i class="fas fa-download"></i> 导出</button></h3>
                 <div class="import-section">
                     <h4><i class="fas fa-file-import"></i> 批量导入投票选项</h4>
-                    <p>下载模板 → 填写 → 粘贴 → 点击导入</p>
-                    <div class="template-btns"><button class="btn-sm primary" onclick="downloadPollsTemplate()"><i class="fas fa-file-csv"></i> 下载模板</button></div>
+                    <p>选择 CSV/TXT 文件或粘贴内容 → 点击导入</p>
+                    <div class="template-btns">
+                        <button class="btn-sm primary" onclick="document.getElementById('pollFileInput').click()"><i class="fas fa-file-upload"></i> 选择文件</button>
+                        <button class="btn-sm primary" onclick="downloadPollsTemplate()"><i class="fas fa-file-csv"></i> 下载模板</button>
+                    </div>
+                    <input type="file" id="pollFileInput" accept=".csv,.txt" style="display:none" onchange="handlePollFileSelect(this)">
+                    <div id="pollFileName" style="font-size:0.8rem;color:#2c6e49;margin:6px 0;"></div>
                     <textarea id="pollImportData" placeholder="粘贴 CSV（投票标题,描述,开始日期,结束日期,选项1,选项2,选项3...）" style="margin-top:8px;width:100%;height:80px;border-radius:16px;border:1px solid #cfdfd3;padding:10px;font-family:inherit;resize:vertical;"></textarea>
                     <button class="btn-sm success" style="margin-top:8px;" onclick="importPolls()"><i class="fas fa-upload"></i> 导入数据</button>
                 </div>
@@ -506,6 +554,16 @@
         }
     };
     window.downloadPollsTemplate = () => downloadTemplate([{key:'title',label:'标题'},{key:'description',label:'描述'},{key:'start_date',label:'开始日期'},{key:'end_date',label:'结束日期'},{key:'options',label:'选项（逗号分隔）'}],'投票');
+    window.handlePollFileSelect = function(input) {
+        const file = input.files[0];
+        if (!file) return;
+        document.getElementById('pollFileName').textContent = '已选择: ' + file.name;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('pollImportData').value = e.target.result;
+        };
+        reader.readAsText(file);
+    };
     window.importPolls = async () => {
             opLock.show();
             try {
@@ -549,8 +607,13 @@
                 </div>
                 <div class="import-section">
                     <h4><i class="fas fa-file-import"></i> 批量导入</h4>
-                    <p>下载模板 → 填写 → 粘贴 → 点击导入</p>
-                    <div class="template-btns"><button class="btn-sm primary" onclick="downloadExpensesTemplate()"><i class="fas fa-file-csv"></i> 下载模板</button></div>
+                    <p>选择 CSV/TXT 文件或粘贴内容 → 点击导入</p>
+                    <div class="template-btns">
+                        <button class="btn-sm primary" onclick="document.getElementById('expFileInput').click()"><i class="fas fa-file-upload"></i> 选择文件</button>
+                        <button class="btn-sm primary" onclick="downloadExpensesTemplate()"><i class="fas fa-file-csv"></i> 下载模板</button>
+                    </div>
+                    <input type="file" id="expFileInput" accept=".csv,.txt" style="display:none" onchange="handleExpFileSelect(this)">
+                    <div id="expFileName" style="font-size:0.8rem;color:#2c6e49;margin:6px 0;"></div>
                     <textarea id="expImportData" placeholder="粘贴 CSV（项目名称,类别(收入/支出),金额,日期,备注）" style="margin-top:8px;width:100%;height:80px;border-radius:16px;border:1px solid #cfdfd3;padding:10px;font-family:inherit;resize:vertical;"></textarea>
                     <button class="btn-sm success" style="margin-top:8px;" onclick="importExpenses()"><i class="fas fa-upload"></i> 导入数据</button>
                 </div>
@@ -598,6 +661,16 @@
         };
     window.exportExpenses = async () => { const items=await getAllExpenses(); exportData(items,'费用公示',[{key:'category',label:'类别'},{key:'item_name',label:'项目名称'},{key:'amount',label:'金额'},{key:'date',label:'日期'},{key:'remark',label:'备注'}]); };
     window.downloadExpensesTemplate = () => downloadTemplate([{key:'category',label:'类别'},{key:'item_name',label:'项目名称'},{key:'amount',label:'金额'},{key:'date',label:'日期'},{key:'remark',label:'备注'}],'费用公示');
+    window.handleExpFileSelect = function(input) {
+        const file = input.files[0];
+        if (!file) return;
+        document.getElementById('expFileName').textContent = '已选择: ' + file.name;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('expImportData').value = e.target.result;
+        };
+        reader.readAsText(file);
+    };
     window.importExpenses = async () => {
             opLock.show();
             try {
