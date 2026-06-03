@@ -3,7 +3,7 @@
 
 const SUPABASE_CONFIG = {
     url: 'https://wrodvjsbdrxunaiwoaml.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indyb2R2anNiZHJ4dW5haXdvYW1sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxMTcwMDAsImV4cCI6MjA2MTY5MzAwMH0.K4AXxMHVd0VqeFR9gUGMSyq-zVYHj4pH1vsH5KGT2Bg'
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indyb2R2anNiZHJ4dW5haXdvYW1sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1MTg1OTYsImV4cCI6MjA5NTA5NDU5Nn0.fQF-gyK53zsaqyojHxXrCBR5lZ6Ioib4rNvgPZ4J4Ww'
 };
 
 const STORAGE_KEYS = {
@@ -153,4 +153,3 @@ async function checkDatabase() {
 }
 
 window.db = db;
-    
