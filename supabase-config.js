@@ -35,7 +35,7 @@ const API_HEADERS = {
 async function supabaseFetch(table, options = {}) {
     const { method = 'GET', body = null, params = {} } = options;
     const url = new URL(API_URL + '/' + table);
-    Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+   Object.keys(params).forEach(key => url.searchParams.append
     const headers = { ...API_HEADERS };
     if (body) headers['Prefer'] = 'return=representation';
     const fetchOptions = { method, headers };
@@ -111,14 +111,14 @@ const db = {
         create: (item) => supabaseFetch('site_settings', { method: 'POST', body: item }),
         update: (id, item) => supabaseFetch('site_settings?id=eq.' + id, { method: 'PATCH', body: item }),
         upsert: async (key, value) => {
-            const existing = await supabaseFetch('site_settings', { params: { setting_key: 'eq.' + key } });
+            setting_key: 'eq.'
             if (existing && existing.length > 0) {
                 return supabaseFetch('site_settings?id=eq.' + existing[0].id, { method: 'PATCH', body: { setting_value: value } });
             } else {
-                return supabaseFetch('site_settings', { method: 'POST', body: { setting_key: key, setting_value: value } });
+               setting_key: 'eq.'
             }
         }
-    },
+   getByKey: (key) =>
     registeredUsers: {
         getAll: () => supabaseFetch('registered_users', { params: { order: 'created_at.desc' } }),
         getById: (id) => supabaseFetch('registered_users?id=eq.' + id),
