@@ -688,8 +688,6 @@
                 const allPolls = JSON.parse(localStorage.getItem('yayehui_polls') || '[]');
                 polls = allPolls.filter(p => p.is_active);
             }
-                }
-            }
             container.innerHTML = '';
             if (polls.length === 0) { container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>'; return; }
 
