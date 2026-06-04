@@ -176,7 +176,7 @@
     function nextId(arr) { return arr.length ? Math.max(...arr.map(i => i.id)) + 1 : 1; }
     function formatDate(str) { if (!str) return ''; return new Date(str).toLocaleString(); }
     
-    // 文件读取辅助函数 - 支持 GBK/UTF-8 自动识别，带BOM处理
+    // 文件读取辅助函数 - 支持 UTF-8/GBK/GB2312 自动识别，带BOM处理
     function readTextFileWithEncoding(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -191,20 +191,25 @@
                     }
                     resolve(text);
                 } catch (err) {
-                    // UTF-8 失败，尝试 GBK
-                    const reader2 = new FileReader();
-                    reader2.onload = function(e2) {
+                    // UTF-8 失败，尝试 GBK（Windows中文Excel默认编码）
+                    try {
+                        const text = new TextDecoder('gbk').decode(e.target.result);
+                        resolve(text);
+                    } catch (err2) {
+                        // 再尝试 GB2312
                         try {
-                            const text = new TextDecoder('gbk').decode(e2.target.result);
+                            const text = new TextDecoder('gb2312').decode(e.target.result);
                             resolve(text);
-                        } catch (err2) {
-                            reject(err2);
+                        } catch (err3) {
+                            // 最后尝试 Latin1 作为后备
+                            try {
+                                const text = new TextDecoder('latin1').decode(e.target.result);
+                                resolve(text);
+                            } catch (err4) {
+                                reject(new Error('无法识别文件编码，请将文件保存为UTF-8编码的CSV'));
+                            }
                         }
-                    };
-                    reader2.onerror = function() {
-                        reject(new Error('文件读取失败'));
-                    };
-                    reader2.readAsArrayBuffer(file);
+                    }
                 }
             };
             reader.onerror = function() {
@@ -412,10 +417,17 @@
     window.handleAnnFileSelect = function(input) {
         const file = input.files[0];
         if (!file) return;
-        document.getElementById('annFileName').textContent = '已选择: ' + file.name;
+        document.getElementById('annFileName').textContent = '已选择: ' + file.name + ' (读取中...)';
         readTextFileWithEncoding(file).then(text => {
             document.getElementById('annImportData').value = text;
+            document.getElementById('annFileName').textContent = '已选择: ' + file.name + ' ✓';
+            // 自动显示预览
+            const lines = text.split('\n').filter(l => l.trim());
+            if (lines.length > 1) {
+                alert('文件读取成功！共 ' + (lines.length - 1) + ' 条数据，请点击"导入数据"按钮完成导入。');
+            }
         }).catch(err => {
+            document.getElementById('annFileName').textContent = '读取失败: ' + err.message;
             alert('文件读取失败: ' + err.message);
         });
     };
@@ -507,10 +519,16 @@
     window.handleDynFileSelect = function(input) {
         const file = input.files[0];
         if (!file) return;
-        document.getElementById('dynFileName').textContent = '已选择: ' + file.name;
+        document.getElementById('dynFileName').textContent = '已选择: ' + file.name + ' (读取中...)';
         readTextFileWithEncoding(file).then(text => {
             document.getElementById('dynImportData').value = text;
+            document.getElementById('dynFileName').textContent = '已选择: ' + file.name + ' ✓';
+            const lines = text.split('\n').filter(l => l.trim());
+            if (lines.length > 1) {
+                alert('文件读取成功！共 ' + (lines.length - 1) + ' 条数据，请点击"导入数据"按钮完成导入。');
+            }
         }).catch(err => {
+            document.getElementById('dynFileName').textContent = '读取失败: ' + err.message;
             alert('文件读取失败: ' + err.message);
         });
     };
@@ -601,11 +619,19 @@
     window.handleMemFileSelect = function(input) {
         const file = input.files[0];
         if (!file) return;
-        document.getElementById('memFileName').textContent = '已选择: ' + file.name;
+        document.getElementById('memFileName').textContent = '已选择: ' + file.name + ' (读取中...)';
         readTextFileWithEncoding(file).then(text => {
             document.getElementById('memImportData').value = text;
+            document.getElementById('memFileName').textContent = '已选择: ' + file.name + ' ✓';
+            const lines = text.split('\n').filter(l => l.trim());
+            if (lines.length > 1) {
+                alert('文件读取成功！共 ' + (lines.length - 1) + ' 条数据，请点击"导入数据"按钮完成导入。');
+            }
         }).catch(err => {
+            document.getElementById('memFileName').textContent = '读取失败: ' + err.message;
             alert('文件读取失败: ' + err.message);
+        });
+    };
         });
     };
     window.importMembers = async () => {
@@ -707,9 +733,19 @@
     window.handlePollFileSelect = function(input) {
         const file = input.files[0];
         if (!file) return;
-        document.getElementById('pollFileName').textContent = '已选择: ' + file.name;
+        document.getElementById('pollFileName').textContent = '已选择: ' + file.name + ' (读取中...)';
         readTextFileWithEncoding(file).then(text => {
             document.getElementById('pollImportData').value = text;
+            document.getElementById('pollFileName').textContent = '已选择: ' + file.name + ' ✓';
+            const lines = text.split('\n').filter(l => l.trim());
+            if (lines.length > 1) {
+                alert('文件读取成功！共 ' + (lines.length - 1) + ' 条数据，请点击"导入数据"按钮完成导入。');
+            }
+        }).catch(err => {
+            document.getElementById('pollFileName').textContent = '读取失败: ' + err.message;
+            alert('文件读取失败: ' + err.message);
+        });
+    };
         }).catch(err => {
             alert('文件读取失败: ' + err.message);
         });
@@ -829,10 +865,16 @@
     window.handleExpFileSelect = function(input) {
         const file = input.files[0];
         if (!file) return;
-        document.getElementById('expFileName').textContent = '已选择: ' + file.name;
+        document.getElementById('expFileName').textContent = '已选择: ' + file.name + ' (读取中...)';
         readTextFileWithEncoding(file).then(text => {
             document.getElementById('expImportData').value = text;
+            document.getElementById('expFileName').textContent = '已选择: ' + file.name + ' ✓';
+            const lines = text.split('\n').filter(l => l.trim());
+            if (lines.length > 1) {
+                alert('文件读取成功！共 ' + (lines.length - 1) + ' 条数据，请点击"导入数据"按钮完成导入。');
+            }
         }).catch(err => {
+            document.getElementById('expFileName').textContent = '读取失败: ' + err.message;
             alert('文件读取失败: ' + err.message);
         });
     };
