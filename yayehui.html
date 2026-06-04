@@ -169,12 +169,12 @@
     <div class="container">
         <div class="footer-content">
             <div class="footer-logo">
-                <h3>雅业会</h3>
+                <h3 id="footerBannerLeftText">雅业会</h3>
                 <p id="footerBannerText">公开·信任·共建美好社区</p>
                 <p id="footerAddress"><i class="fas fa-map-marker-alt"></i> <span id="footerAddressText">雅居花园 · 业委会办公室</span></p>
             </div>
             <div class="footer-links">
-                <div><a href="#">关于我们</a><br><a href="#">业委会章程</a><br><a href="#">联系我们</a></div>
+                <div><a href="#">关于我们</a><br><a href="#">业委会章程</a><br><a href="#" onclick="showContactModal(); return false;">联系我们</a></div>
                 <div><a href="#">服务协议</a><br><a href="#">隐私政策</a><br><a href="#">技术支持</a></div>
             </div>
         </div>
@@ -361,6 +361,18 @@
     </div>
 </div>
 
+<!-- 联系我们模态框 -->
+<div id="contactModal" class="modal">
+    <div class="modal-content">
+        <span class="modal-close" id="closeContactModal">&times;</span>
+        <div class="modal-title"><i class="fas fa-address-book" style="color:#2c6e49;"></i> 联系我们</div>
+        <div id="contactContent" style="color:#475569; line-height:1.8; white-space:pre-wrap;"></div>
+        <div style="margin-top:20px; text-align:center;">
+            <button class="btn btn-secondary" onclick="document.getElementById('contactModal').style.display='none'">关闭</button>
+        </div>
+    </div>
+</div>
+
 <div class="back2top" id="back2top"><i class="fas fa-arrow-up"></i></div>
 
 <script src="supabase-config.js"></script>
@@ -525,9 +537,12 @@
                 if (map.hero_stat_3) document.getElementById('heroStat3Num').textContent = map.hero_stat_3;
                 if (map.hero_stat_3_label) document.getElementById('heroStat3Label').textContent = map.hero_stat_3_label;
                 // 底部信息
+                if (map.footer_banner_left_text) document.getElementById('footerBannerLeftText').textContent = map.footer_banner_left_text;
                 if (map.footer_banner_text) document.getElementById('footerBannerText').textContent = map.footer_banner_text;
                 if (map.footer_address) document.getElementById('footerAddressText').textContent = map.footer_address;
                 if (map.footer_copyright) document.getElementById('footerCopyright').textContent = map.footer_copyright;
+                // 联系我们内容
+                if (map.contact_content) window.contact_content = map.contact_content;
                 // 导航菜单（更新 logo 区域）
                 if (map.nav_menu_left_text || map.nav_menu_left_subtext) {
                     const logoArea = document.querySelector('.logo-area');
@@ -1189,6 +1204,17 @@ window.showLoginModal = function() {
     document.getElementById('loginPassword').value = '';
 };
 
+// 显示联系我们模态框
+window.showContactModal = function() {
+    const contactEl = document.getElementById('contactContent');
+    if (window.contact_content) {
+        contactEl.textContent = window.contact_content;
+    } else {
+        contactEl.textContent = '联系电话：xxx\nEmail：xxx';
+    }
+    document.getElementById('contactModal').style.display = 'flex';
+};
+
 // 隐藏登录模态框
 window.hideLoginModal = function() {
     document.getElementById('loginModal').style.display = 'none';
@@ -1612,6 +1638,7 @@ window.checkSession = function() {
         
         // 登录模态框事件
         document.getElementById('closeLoginModal')?.addEventListener('click', hideLoginModal);
+        document.getElementById('closeContactModal')?.addEventListener('click', () => document.getElementById('contactModal').style.display = 'none');
         document.getElementById('loginSubmitBtn')?.addEventListener('click', handleLogin);
         document.getElementById('goRegisterLink')?.addEventListener('click', (e) => {
             e.preventDefault();
