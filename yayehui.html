@@ -565,15 +565,9 @@
         try {
             let items;
             if (USE_SUPABASE) {
-                items = await db.announcements.getAll();
-                if (!items || items.length === 0) items = DEFAULT_DATA.announcements;
+                items = await db.announcements.getAll() || [];
             } else {
                 items = JSON.parse(localStorage.getItem('yayehui_announcements') || '[]');
-                if (items.length === 0) {
-                    items = DEFAULT_DATA.announcements;
-                    // 保存默认数据到 localStorage，以便管理后台能看到
-                    localStorage.setItem('yayehui_announcements', JSON.stringify(items));
-                }
             }
             const page = window.page_ann || 1;
             const pageSize = pageSizes['ann'] || 3;
@@ -607,15 +601,9 @@
         try {
             let items;
             if (USE_SUPABASE) {
-                items = await db.dynamics.getAll();
-                if (!items || items.length === 0) items = DEFAULT_DATA.dynamics;
+                items = await db.dynamics.getAll() || [];
             } else {
                 items = JSON.parse(localStorage.getItem('yayehui_dynamics') || '[]');
-                if (items.length === 0) {
-                    items = DEFAULT_DATA.dynamics;
-                    // 保存默认数据到 localStorage，以便管理后台能看到
-                    localStorage.setItem('yayehui_dynamics', JSON.stringify(items));
-                }
             }
             
             if (items.length === 0) {
@@ -649,17 +637,11 @@
         try {
             let members;
             if (USE_SUPABASE) {
-                members = await db.members.getAll();
-                if (!members || members.length === 0) members = DEFAULT_DATA.members;
+                members = await db.members.getAll() || [];
             } else {
                 members = JSON.parse(localStorage.getItem('yayehui_members') || '[]');
-                if (members.length === 0) {
-                    members = DEFAULT_DATA.members;
-                    // 保存默认数据到 localStorage，以便管理后台能看到
-                    localStorage.setItem('yayehui_members', JSON.stringify(members));
-                }
             }
-            
+             
             if (members.length === 0) {
                 container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>';
                 document.getElementById('memberPager').innerHTML = '';
@@ -701,21 +683,11 @@
         try {
             let polls;
             if (USE_SUPABASE) {
-                polls = await db.polls.getActive();
-                if (!polls || polls.length === 0) polls = DEFAULT_DATA.polls;
+                polls = await db.polls.getActive() || [];
             } else {
                 const allPolls = JSON.parse(localStorage.getItem('yayehui_polls') || '[]');
                 polls = allPolls.filter(p => p.is_active);
-                if (polls.length === 0) {
-                    polls = DEFAULT_DATA.polls;
-                    // 保存默认投票数据到 localStorage，以便管理后台能看到
-                    const existingPolls = JSON.parse(localStorage.getItem('yayehui_polls') || '[]');
-                    if (existingPolls.length === 0) {
-                        localStorage.setItem('yayehui_polls', JSON.stringify(polls));
-                        // 同时保存投票选项
-                        localStorage.setItem('yayehui_poll_options', JSON.stringify(DEFAULT_DATA.pollOptions));
-                        localStorage.setItem('yayehui_votes', JSON.stringify(DEFAULT_DATA.votes));
-                    }
+            }
                 }
             }
             container.innerHTML = '';
@@ -749,11 +721,9 @@
             options = options || [];
             votes = await db.votes.getByPollId(poll.id);
             votes = votes || [];
-            if (options.length === 0) options = DEFAULT_DATA.pollOptions.filter(o => o.poll_id === poll.id);
         } else {
             options = JSON.parse(localStorage.getItem('yayehui_poll_options') || '[]').filter(o => o.poll_id === poll.id);
             votes = JSON.parse(localStorage.getItem('yayehui_votes') || '[]');
-            if (options.length === 0) options = DEFAULT_DATA.pollOptions.filter(o => o.poll_id === poll.id);
         }
 
         const totalVotes = votes.length;
@@ -921,15 +891,9 @@
         try {
             let expenses;
             if (USE_SUPABASE) {
-                expenses = await db.expenses.getAll();
-                if (!expenses || expenses.length === 0) expenses = DEFAULT_DATA.expenses;
+                expenses = await db.expenses.getAll() || [];
             } else {
                 expenses = JSON.parse(localStorage.getItem('yayehui_expenses') || '[]');
-                if (expenses.length === 0) {
-                    expenses = DEFAULT_DATA.expenses;
-                    // 保存默认数据到 localStorage，以便管理后台能看到
-                    localStorage.setItem('yayehui_expenses', JSON.stringify(expenses));
-                }
             }
             
             // 计算统计数据
@@ -971,27 +935,17 @@
         try {
             let topics, replies;
             if (USE_SUPABASE) {
-                topics = await db.topics.getAll();
-                if (!topics || topics.length === 0) { topics = DEFAULT_DATA.topics; replies = DEFAULT_DATA.replies; }
-                else {
-                    replies = [];
-                    for (const t of topics) {
-                        const r = await db.replies.getByTopicId(t.id);
-                        if (r) replies.push(...r);
-                    }
+                topics = await db.topics.getAll() || [];
+                replies = [];
+                for (const t of topics) {
+                    const r = await db.replies.getByTopicId(t.id);
+                    if (r) replies.push(...r);
                 }
             } else {
                 topics = JSON.parse(localStorage.getItem('yayehui_topics') || '[]');
                 replies = JSON.parse(localStorage.getItem('yayehui_replies') || '[]');
-                if (topics.length === 0) { 
-                    topics = DEFAULT_DATA.topics; 
-                    replies = DEFAULT_DATA.replies;
-                    // 保存默认数据到 localStorage，以便管理后台能看到
-                    localStorage.setItem('yayehui_topics', JSON.stringify(topics));
-                    localStorage.setItem('yayehui_replies', JSON.stringify(replies));
-                }
             }
-            
+             
             if (topics.length === 0) {
                 container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>';
                 document.getElementById('topicsPager').innerHTML = '';

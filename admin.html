@@ -176,28 +176,39 @@
     function nextId(arr) { return arr.length ? Math.max(...arr.map(i => i.id)) + 1 : 1; }
     function formatDate(str) { if (!str) return ''; return new Date(str).toLocaleString(); }
     
-    // 文件读取辅助函数 - 支持 GBK/UTF-8 自动识别
+    // 文件读取辅助函数 - 支持 GBK/UTF-8 自动识别，带BOM处理
     function readTextFileWithEncoding(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = function(e) {
-                const buffer = e.target.result;
-                // 先尝试 UTF-8 解码
-                let text = new TextDecoder('utf-8', { fatal: true }).decode(buffer);
-                resolve(text);
+                try {
+                    const buffer = e.target.result;
+                    // 先尝试 UTF-8 解码
+                    let text = new TextDecoder('utf-8', { fatal: true }).decode(buffer);
+                    // 移除 BOM 字符
+                    if (text.charCodeAt(0) === 0xFEFF) {
+                        text = text.slice(1);
+                    }
+                    resolve(text);
+                } catch (err) {
+                    // UTF-8 失败，尝试 GBK
+                    const reader2 = new FileReader();
+                    reader2.onload = function(e2) {
+                        try {
+                            const text = new TextDecoder('gbk').decode(e2.target.result);
+                            resolve(text);
+                        } catch (err2) {
+                            reject(err2);
+                        }
+                    };
+                    reader2.onerror = function() {
+                        reject(new Error('文件读取失败'));
+                    };
+                    reader2.readAsArrayBuffer(file);
+                }
             };
             reader.onerror = function() {
-                // UTF-8 失败，尝试 GBK
-                const reader2 = new FileReader();
-                reader2.onload = function(e2) {
-                    try {
-                        const text = new TextDecoder('gbk').decode(e2.target.result);
-                        resolve(text);
-                    } catch (err) {
-                        reject(err);
-                    }
-                };
-                reader2.readAsArrayBuffer(file);
+                reject(new Error('文件读取失败'));
             };
             reader.readAsArrayBuffer(file);
         });
