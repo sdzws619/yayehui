@@ -498,24 +498,44 @@
     // 加载站点配置
     async function loadSiteSettings() {
         try {
+            let settings = [];
             if (USE_SUPABASE) {
-                const settings = await db.siteSettings.getAll() || [];
-                if (settings && settings.length > 0) {
-                    const map = {};
-                    settings.forEach(s => map[s.setting_key] = s.setting_value);
+                settings = await db.siteSettings.getAll() || [];
+            } else {
+                // 从 localStorage 读取站点设置
+                settings = JSON.parse(localStorage.getItem('yayehui_site_settings') || '[]');
+            }
+            
+            if (settings && settings.length > 0) {
+                const map = {};
+                settings.forEach(s => map[s.setting_key] = s.setting_value);
+                
+                // 更新首页横幅
+                if (map.hero_title || map.hero_subtitle) {
                     document.getElementById('heroTitle').innerHTML = (map.hero_title || DEFAULT_SETTINGS.hero_title) + '<br>' + (map.hero_subtitle || DEFAULT_SETTINGS.hero_subtitle);
-                    document.getElementById('heroDesc').textContent = map.hero_desc || DEFAULT_SETTINGS.hero_desc;
-                    document.getElementById('heroStat1Num').textContent = map.hero_stat_1 || DEFAULT_SETTINGS.hero_stat_1;
-                    document.getElementById('heroStat1Label').textContent = map.hero_stat_1_label || DEFAULT_SETTINGS.hero_stat_1_label;
-                    document.getElementById('heroStat2Num').textContent = map.hero_stat_2 || DEFAULT_SETTINGS.hero_stat_2;
-                    document.getElementById('heroStat2Label').textContent = map.hero_stat_2_label || DEFAULT_SETTINGS.hero_stat_2_label;
-                    document.getElementById('heroStat3Num').textContent = map.hero_stat_3 || DEFAULT_SETTINGS.hero_stat_3;
-                    document.getElementById('heroStat3Label').textContent = map.hero_stat_3_label || DEFAULT_SETTINGS.hero_stat_3_label;
-                    document.getElementById('footerBannerText').textContent = map.footer_banner_text || DEFAULT_SETTINGS.footer_banner_text;
-                    document.getElementById('footerAddressText').textContent = map.footer_address || DEFAULT_SETTINGS.footer_address;
-                    document.getElementById('footerCopyright').textContent = map.footer_copyright || DEFAULT_SETTINGS.footer_copyright;
-                    return;
                 }
+                if (map.hero_desc) {
+                    document.getElementById('heroDesc').textContent = map.hero_desc || DEFAULT_SETTINGS.hero_desc;
+                }
+                // 统计数字和标签
+                if (map.hero_stat_1) document.getElementById('heroStat1Num').textContent = map.hero_stat_1;
+                if (map.hero_stat_1_label) document.getElementById('heroStat1Label').textContent = map.hero_stat_1_label;
+                if (map.hero_stat_2) document.getElementById('heroStat2Num').textContent = map.hero_stat_2;
+                if (map.hero_stat_2_label) document.getElementById('heroStat2Label').textContent = map.hero_stat_2_label;
+                if (map.hero_stat_3) document.getElementById('heroStat3Num').textContent = map.hero_stat_3;
+                if (map.hero_stat_3_label) document.getElementById('heroStat3Label').textContent = map.hero_stat_3_label;
+                // 底部信息
+                if (map.footer_banner_text) document.getElementById('footerBannerText').textContent = map.footer_banner_text;
+                if (map.footer_address) document.getElementById('footerAddressText').textContent = map.footer_address;
+                if (map.footer_copyright) document.getElementById('footerCopyright').textContent = map.footer_copyright;
+                // 导航菜单（更新 logo 区域）
+                if (map.nav_menu_left_text || map.nav_menu_left_subtext) {
+                    const logoArea = document.querySelector('.logo-area');
+                    if (logoArea) {
+                        logoArea.innerHTML = `<i class="fas fa-building-user logo-icon"></i><div><span class="logo-text">${map.nav_menu_left_text || '雅业会'}</span><div class="logo-sub">${map.nav_menu_left_subtext || '雅居·共治·美好'}</div></div>`;
+                    }
+                }
+                return;
             }
         } catch(e) { console.error('loadSiteSettings error:', e); }
         // 使用默认

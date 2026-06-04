@@ -39,6 +39,8 @@
         .card-panel h3 { display: flex; align-items: center; gap: 10px; border-left: 4px solid #2c6e49; padding-left: 14px; margin-bottom: 16px; font-size: 1.25rem; }
         .item-list { max-height: 380px; overflow-y: auto; margin-bottom: 16px; padding-right: 6px; }
         .admin-item { background: #f9fbf8; border-radius: 20px; padding: 12px 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; border: 1px solid #eef2f0; gap: 8px; }
+        .item-checkbox-wrap { display: flex; align-items: center; padding-right: 8px; }
+        .item-checkbox { width: 18px; height: 18px; cursor: pointer; }
         .item-info { flex: 1; font-size: 0.9rem; min-width: 0; }
         .item-info strong { display: block; margin-bottom: 4px; word-break: break-all; }
         .item-info small { color: #6c7a91; }
@@ -173,6 +175,44 @@
     function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'); }
     function nextId(arr) { return arr.length ? Math.max(...arr.map(i => i.id)) + 1 : 1; }
     function formatDate(str) { if (!str) return ''; return new Date(str).toLocaleString(); }
+    
+    // 文件读取辅助函数 - 支持 GBK/UTF-8 自动识别
+    function readTextFileWithEncoding(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const buffer = e.target.result;
+                // 先尝试 UTF-8 解码
+                let text = new TextDecoder('utf-8', { fatal: true }).decode(buffer);
+                resolve(text);
+            };
+            reader.onerror = function() {
+                // UTF-8 失败，尝试 GBK
+                const reader2 = new FileReader();
+                reader2.onload = function(e2) {
+                    try {
+                        const text = new TextDecoder('gbk').decode(e2.target.result);
+                        resolve(text);
+                    } catch (err) {
+                        reject(err);
+                    }
+                };
+                reader2.readAsArrayBuffer(file);
+            };
+            reader.readAsArrayBuffer(file);
+        });
+    }
+
+    // 批量选择辅助函数
+    function getSelectedIds(prefix) {
+        const checkboxes = document.querySelectorAll(`#${prefix}List .item-checkbox:checked`);
+        return Array.from(checkboxes).map(cb => parseInt(cb.value));
+    }
+    
+    function toggleSelectAll(prefix, masterCheckbox) {
+        const checkboxes = document.querySelectorAll(`#${prefix}List .item-checkbox`);
+        checkboxes.forEach(cb => cb.checked = masterCheckbox.checked);
+    }
 
     // ========== 数据库操作 ==========
     async function getAllAnnouncements() { if (USE_SUPABASE) return await db.announcements.getAll() || []; return JSON.parse(localStorage.getItem('yayehui_announcements') || '[]'); }
@@ -195,7 +235,18 @@
     }
     async function getAllRegisteredUsers() { if (USE_SUPABASE) return await db.registeredUsers.getAll() || []; return JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]'); }
     async function getAllPropertyAddresses() { if (USE_SUPABASE) return await db.propertyAddresses.getAll() || []; return JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]'); }
-    async function getAllAdminAccounts() { if (USE_SUPABASE) return await db.adminAccounts.getAll() || []; return JSON.parse(localStorage.getItem('yayehui_admin_accounts') || []); }
+    async function getAllAdminAccounts() { 
+        if (USE_SUPABASE) return await db.adminAccounts.getAll() || []; 
+        // 初始化默认账号（如果不存在）
+        if (!localStorage.getItem('yayehui_admin_accounts')) {
+            const defaultAccounts = [
+                {username: 'admin', password: 'yayehui2025', role: 'admin', created_at: new Date().toISOString()},
+                {username: 'superadmin', password: 'super2025', role: 'super_admin', created_at: new Date().toISOString()}
+            ];
+            localStorage.setItem('yayehui_admin_accounts', JSON.stringify(defaultAccounts));
+        }
+        return JSON.parse(localStorage.getItem('yayehui_admin_accounts') || '[]'); 
+    }
     async function getAllLoginLogs() { if (USE_SUPABASE) return await db.adminLoginLogs.getAll() || []; return JSON.parse(localStorage.getItem('yayehui_login_logs') || '[]'); }
 
     // ========== 导出功能 ==========
@@ -255,6 +306,10 @@
                     <textarea id="annImportData" placeholder="粘贴 CSV 数据（首行为标题,日期,内容）" style="margin-top:8px;width:100%;height:80px;border-radius:16px;border:1px solid #cfdfd3;padding:10px;font-family:inherit;resize:vertical;"></textarea>
                     <button class="btn-sm success" style="margin-top:8px;" onclick="importAnnouncements()"><i class="fas fa-upload"></i> 导入数据</button>
                 </div>
+                <div class="batch-actions" style="margin-bottom:10px;display:flex;align-items:center;gap:10px;">
+                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" onchange="toggleSelectAll('ann', this)"> 全选</label>
+                    <button class="btn-sm danger" onclick="deleteSelectedAnnouncements()"><i class="fas fa-trash-alt"></i> 删除所选</button>
+                </div>
                 <div class="item-list" id="annList"><div class="loading">加载中...</div></div>
                 <div class="add-form">
                     <input type="text" id="annTitle" placeholder="标题">
@@ -271,6 +326,7 @@
         const items = await getAllAnnouncements();
         list.innerHTML = items.map(item => `
             <div class="admin-item">
+                <div class="item-checkbox-wrap"><input type="checkbox" class="item-checkbox" value="${item.id}"></div>
                 <div class="item-info"><strong>${escapeHtml(item.title)}</strong><small> ${item.date || ''}</small><div>${escapeHtml((item.content||'').substring(0,60))}</div></div>
                 <div class="item-actions">
                     <button class="btn-sm" onclick="editAnnouncement(${item.id})"><i class="fas fa-edit"></i></button>
@@ -286,6 +342,24 @@
                 opLock.hide();
             }
         };
+    window.deleteSelectedAnnouncements = async () => {
+        const ids = getSelectedIds('ann');
+        if (ids.length === 0) return alert('请先选择要删除的项');
+        if (!confirm('确定删除选中的 ' + ids.length + ' 项？')) return;
+        opLock.show();
+        try {
+            if (USE_SUPABASE) {
+                for (const id of ids) await db.announcements.delete(id);
+            } else {
+                let a = JSON.parse(localStorage.getItem('yayehui_announcements')||'[]');
+                a = a.filter(i => !ids.includes(i.id));
+                localStorage.setItem('yayehui_announcements',JSON.stringify(a));
+            }
+            renderAnnouncementList();
+        } finally {
+            opLock.hide();
+        }
+    };
     window.addAnnouncement = async () => {
             opLock.show();
             try {
@@ -308,11 +382,11 @@
         const file = input.files[0];
         if (!file) return;
         document.getElementById('annFileName').textContent = '已选择: ' + file.name;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById('annImportData').value = e.target.result;
-        };
-        reader.readAsText(file);
+        readTextFileWithEncoding(file).then(text => {
+            document.getElementById('annImportData').value = text;
+        }).catch(err => {
+            alert('文件读取失败: ' + err.message);
+        });
     };
     window.importAnnouncements = async () => {
             opLock.show();
@@ -341,6 +415,10 @@
                     <textarea id="dynImportData" placeholder="粘贴 CSV 数据（标题,日期,摘要,详细内容）" style="margin-top:8px;width:100%;height:80px;border-radius:16px;border:1px solid #cfdfd3;padding:10px;font-family:inherit;resize:vertical;"></textarea>
                     <button class="btn-sm success" style="margin-top:8px;" onclick="importDynamics()"><i class="fas fa-upload"></i> 导入数据</button>
                 </div>
+                <div class="batch-actions" style="margin-bottom:10px;display:flex;align-items:center;gap:10px;">
+                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" onchange="toggleSelectAll('dyn', this)"> 全选</label>
+                    <button class="btn-sm danger" onclick="deleteSelectedDynamics()"><i class="fas fa-trash-alt"></i> 删除所选</button>
+                </div>
                 <div class="item-list" id="dynList"><div class="loading">加载中...</div></div>
                 <div class="add-form">
                     <input type="text" id="dynTitle" placeholder="标题">
@@ -356,7 +434,7 @@
         const list = document.getElementById('dynList');
         if (!list) return;
         const items = await getAllDynamics();
-        list.innerHTML = items.map(item => `<div class="admin-item"><div class="item-info"><strong>${escapeHtml(item.title)}</strong><small> ${item.date||''}</small><div>${escapeHtml(item.summary||'')}</div></div><div class="item-actions"><button class="btn-sm" onclick="editDynamic(${item.id})"><i class="fas fa-edit"></i></button><button class="btn-sm danger" onclick="deleteDynamic(${item.id})"><i class="fas fa-trash-alt"></i></button></div></div>`).join('') || '<p class="loading">暂无动态</p>';
+        list.innerHTML = items.map(item => `<div class="admin-item"><div class="item-checkbox-wrap"><input type="checkbox" class="item-checkbox" value="${item.id}"></div><div class="item-info"><strong>${escapeHtml(item.title)}</strong><small> ${item.date||''}</small><div>${escapeHtml(item.summary||'')}</div></div><div class="item-actions"><button class="btn-sm" onclick="editDynamic(${item.id})"><i class="fas fa-edit"></i></button><button class="btn-sm danger" onclick="deleteDynamic(${item.id})"><i class="fas fa-trash-alt"></i></button></div></div>`).join('') || '<p class="loading">暂无动态</p>';
     }
     window.deleteDynamic = async (id) => {
             opLock.show();
@@ -366,6 +444,17 @@
                 opLock.hide();
             }
         };
+    window.deleteSelectedDynamics = async () => {
+        const ids = getSelectedIds('dyn');
+        if (ids.length === 0) return alert('请先选择要删除的项');
+        if (!confirm('确定删除选中的 ' + ids.length + ' 项？')) return;
+        opLock.show();
+        try {
+            if (USE_SUPABASE) { for (const id of ids) await db.dynamics.delete(id); }
+            else { let a = JSON.parse(localStorage.getItem('yayehui_dynamics')||'[]'); a = a.filter(i => !ids.includes(i.id)); localStorage.setItem('yayehui_dynamics',JSON.stringify(a)); }
+            renderDynamicList();
+        } finally { opLock.hide(); }
+    };
     window.addDynamic = async () => {
             opLock.show();
             try {
@@ -388,11 +477,11 @@
         const file = input.files[0];
         if (!file) return;
         document.getElementById('dynFileName').textContent = '已选择: ' + file.name;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById('dynImportData').value = e.target.result;
-        };
-        reader.readAsText(file);
+        readTextFileWithEncoding(file).then(text => {
+            document.getElementById('dynImportData').value = text;
+        }).catch(err => {
+            alert('文件读取失败: ' + err.message);
+        });
     };
     window.importDynamics = async () => {
             opLock.show();
@@ -421,6 +510,10 @@
                     <textarea id="memImportData" placeholder="粘贴 CSV（姓名,职务,职责描述）" style="margin-top:8px;width:100%;height:80px;border-radius:16px;border:1px solid #cfdfd3;padding:10px;font-family:inherit;resize:vertical;"></textarea>
                     <button class="btn-sm success" style="margin-top:8px;" onclick="importMembers()"><i class="fas fa-upload"></i> 导入数据</button>
                 </div>
+                <div class="batch-actions" style="margin-bottom:10px;display:flex;align-items:center;gap:10px;">
+                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" onchange="toggleSelectAll('mem', this)"> 全选</label>
+                    <button class="btn-sm danger" onclick="deleteSelectedMembers()"><i class="fas fa-trash-alt"></i> 删除所选</button>
+                </div>
                 <div class="item-list" id="memList"><div class="loading">加载中...</div></div>
                 <div class="add-form">
                     <input type="text" id="memberName" placeholder="姓名">
@@ -435,7 +528,7 @@
         const list = document.getElementById('memList');
         if (!list) return;
         const items = await getAllMembers();
-        list.innerHTML = items.map(item => `<div class="admin-item"><div class="item-info"><strong>${escapeHtml(item.name)}</strong><br><small>${escapeHtml(item.role||'')}</small><div>${escapeHtml(item.description||'')}</div></div><div class="item-actions"><button class="btn-sm" onclick="editMember(${item.id})"><i class="fas fa-edit"></i></button><button class="btn-sm danger" onclick="deleteMember(${item.id})"><i class="fas fa-trash-alt"></i></button></div></div>`).join('') || '<p class="loading">暂无成员</p>';
+        list.innerHTML = items.map(item => `<div class="admin-item"><div class="item-checkbox-wrap"><input type="checkbox" class="item-checkbox" value="${item.id}"></div><div class="item-info"><strong>${escapeHtml(item.name)}</strong><br><small>${escapeHtml(item.role||'')}</small><div>${escapeHtml(item.description||'')}</div></div><div class="item-actions"><button class="btn-sm" onclick="editMember(${item.id})"><i class="fas fa-edit"></i></button><button class="btn-sm danger" onclick="deleteMember(${item.id})"><i class="fas fa-trash-alt"></i></button></div></div>`).join('') || '<p class="loading">暂无成员</p>';
     }
     window.deleteMember = async (id) => {
             opLock.show();
@@ -445,6 +538,17 @@
                 opLock.hide();
             }
         };
+    window.deleteSelectedMembers = async () => {
+        const ids = getSelectedIds('mem');
+        if (ids.length === 0) return alert('请先选择要删除的项');
+        if (!confirm('确定删除选中的 ' + ids.length + ' 项？')) return;
+        opLock.show();
+        try {
+            if (USE_SUPABASE) { for (const id of ids) await db.members.delete(id); }
+            else { let a = JSON.parse(localStorage.getItem('yayehui_members')||'[]'); a = a.filter(i => !ids.includes(i.id)); localStorage.setItem('yayehui_members',JSON.stringify(a)); }
+            renderMemberList();
+        } finally { opLock.hide(); }
+    };
     window.addMember = async () => {
             opLock.show();
             try {
@@ -467,11 +571,11 @@
         const file = input.files[0];
         if (!file) return;
         document.getElementById('memFileName').textContent = '已选择: ' + file.name;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById('memImportData').value = e.target.result;
-        };
-        reader.readAsText(file);
+        readTextFileWithEncoding(file).then(text => {
+            document.getElementById('memImportData').value = text;
+        }).catch(err => {
+            alert('文件读取失败: ' + err.message);
+        });
     };
     window.importMembers = async () => {
             opLock.show();
@@ -500,6 +604,10 @@
                     <textarea id="pollImportData" placeholder="粘贴 CSV（投票标题,描述,开始日期,结束日期,选项1,选项2,选项3...）" style="margin-top:8px;width:100%;height:80px;border-radius:16px;border:1px solid #cfdfd3;padding:10px;font-family:inherit;resize:vertical;"></textarea>
                     <button class="btn-sm success" style="margin-top:8px;" onclick="importPolls()"><i class="fas fa-upload"></i> 导入数据</button>
                 </div>
+                <div class="batch-actions" style="margin-bottom:10px;display:flex;align-items:center;gap:10px;">
+                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" onchange="toggleSelectAll('poll', this)"> 全选</label>
+                    <button class="btn-sm danger" onclick="deleteSelectedPolls()"><i class="fas fa-trash-alt"></i> 删除所选</button>
+                </div>
                 <div class="item-list" id="pollList"><div class="loading">加载中...</div></div>
                 <div class="add-form">
                     <input type="text" id="pollTitle" placeholder="投票标题">
@@ -521,7 +629,7 @@
         list.innerHTML = polls.map(poll => {
             const pollOpts = options.filter(o => o.poll_id === poll.id);
             const totalVotes = votes.filter(v => pollOpts.some(po => po.id === v.option_id)).length;
-            return `<div class="admin-item"><div class="item-info"><strong>${escapeHtml(poll.title)}</strong><br><small>${poll.start_date||''} ~ ${poll.end_date||''}</small><br><span style="font-size:0.8rem;">参与: ${totalVotes}人</span><div>选项: ${pollOpts.map(o=>o.option_text).join(', ')}</div></div><div class="item-actions"><button class="btn-sm" onclick="viewPollResult(${poll.id})"><i class="fas fa-chart-bar"></i></button><button class="btn-sm danger" onclick="deletePoll(${poll.id})"><i class="fas fa-trash-alt"></i></button></div></div>`;
+            return `<div class="admin-item"><div class="item-checkbox-wrap"><input type="checkbox" class="item-checkbox" value="${poll.id}"></div><div class="item-info"><strong>${escapeHtml(poll.title)}</strong><br><small>${poll.start_date||''} ~ ${poll.end_date||''}</small><br><span style="font-size:0.8rem;">参与: ${totalVotes}人</span><div>选项: ${pollOpts.map(o=>o.option_text).join(', ')}</div></div><div class="item-actions"><button class="btn-sm" onclick="viewPollResult(${poll.id})"><i class="fas fa-chart-bar"></i></button><button class="btn-sm danger" onclick="deletePoll(${poll.id})"><i class="fas fa-trash-alt"></i></button></div></div>`;
         }).join('') || '<p class="loading">暂无投票</p>';
     }
     window.deletePoll = async (id) => {
@@ -532,6 +640,17 @@
                 opLock.hide();
             }
         };
+    window.deleteSelectedPolls = async () => {
+        const ids = getSelectedIds('poll');
+        if (ids.length === 0) return alert('请先选择要删除的项');
+        if (!confirm('确定删除选中的 ' + ids.length + ' 项？')) return;
+        opLock.show();
+        try {
+            if (USE_SUPABASE) { for (const id of ids) { await db.pollOptions.delete(id); await db.polls.delete(id); } }
+            else { let p = JSON.parse(localStorage.getItem('yayehui_polls')||'[]').filter(p => !ids.includes(p.id)); let o = JSON.parse(localStorage.getItem('yayehui_poll_options')||'[]').filter(o => !ids.includes(o.poll_id)); localStorage.setItem('yayehui_polls',JSON.stringify(p)); localStorage.setItem('yayehui_poll_options',JSON.stringify(o)); }
+            renderPollList();
+        } finally { opLock.hide(); }
+    };
     window.viewPollResult = async (pollId) => { const options=await getAllPollOptions();const votes=await getAllVotes();const pollOpts=options.filter(o=>o.poll_id===pollId);const result=pollOpts.map(o=>({text:o.option_text,count:votes.filter(v=>v.option_id===o.id).length})); alert('投票结果：\n'+result.map(r=>`${r.text}: ${r.count}票`).join('\n')); };
     window.addPoll = async () => {
             opLock.show();
@@ -558,11 +677,11 @@
         const file = input.files[0];
         if (!file) return;
         document.getElementById('pollFileName').textContent = '已选择: ' + file.name;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById('pollImportData').value = e.target.result;
-        };
-        reader.readAsText(file);
+        readTextFileWithEncoding(file).then(text => {
+            document.getElementById('pollImportData').value = text;
+        }).catch(err => {
+            alert('文件读取失败: ' + err.message);
+        });
     };
     window.importPolls = async () => {
             opLock.show();
@@ -617,6 +736,10 @@
                     <textarea id="expImportData" placeholder="粘贴 CSV（项目名称,类别(收入/支出),金额,日期,备注）" style="margin-top:8px;width:100%;height:80px;border-radius:16px;border:1px solid #cfdfd3;padding:10px;font-family:inherit;resize:vertical;"></textarea>
                     <button class="btn-sm success" style="margin-top:8px;" onclick="importExpenses()"><i class="fas fa-upload"></i> 导入数据</button>
                 </div>
+                <div class="batch-actions" style="margin-bottom:10px;display:flex;align-items:center;gap:10px;">
+                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" onchange="toggleSelectAll('exp', this)"> 全选</label>
+                    <button class="btn-sm danger" onclick="deleteSelectedExpenses()"><i class="fas fa-trash-alt"></i> 删除所选</button>
+                </div>
                 <div class="item-list" id="expList"><div class="loading">加载中...</div></div>
                 <div class="add-form">
                     <input type="text" id="expItem" placeholder="项目名称">
@@ -633,7 +756,7 @@
         const list = document.getElementById('expList');
         if (!list) return;
         const items = await getAllExpenses();
-        list.innerHTML = items.map(item => `<div class="admin-item"><div class="item-info"><strong>${escapeHtml(item.item_name)}</strong> | ${item.category||''} | ¥${parseFloat(item.amount||0).toFixed(2)} | ${item.date||''}<div>${escapeHtml(item.remark||'')}</div></div><div class="item-actions"><button class="btn-sm" onclick="editExpense(${item.id})"><i class="fas fa-edit"></i></button><button class="btn-sm danger" onclick="deleteExpense(${item.id})"><i class="fas fa-trash-alt"></i></button></div></div>`).join('') || '<p class="loading">暂无费用</p>';
+        list.innerHTML = items.map(item => `<div class="admin-item"><div class="item-checkbox-wrap"><input type="checkbox" class="item-checkbox" value="${item.id}"></div><div class="item-info"><strong>${escapeHtml(item.item_name)}</strong> | ${item.category||''} | ¥${parseFloat(item.amount||0).toFixed(2)} | ${item.date||''}<div>${escapeHtml(item.remark||'')}</div></div><div class="item-actions"><button class="btn-sm" onclick="editExpense(${item.id})"><i class="fas fa-edit"></i></button><button class="btn-sm danger" onclick="deleteExpense(${item.id})"><i class="fas fa-trash-alt"></i></button></div></div>`).join('') || '<p class="loading">暂无费用</p>';
     }
     window.deleteExpense = async (id) => {
             opLock.show();
@@ -643,6 +766,17 @@
                 opLock.hide();
             }
         };
+    window.deleteSelectedExpenses = async () => {
+        const ids = getSelectedIds('exp');
+        if (ids.length === 0) return alert('请先选择要删除的项');
+        if (!confirm('确定删除选中的 ' + ids.length + ' 项？')) return;
+        opLock.show();
+        try {
+            if (USE_SUPABASE) { for (const id of ids) await db.expenses.delete(id); }
+            else { let a = JSON.parse(localStorage.getItem('yayehui_expenses')||'[]'); a = a.filter(i => !ids.includes(i.id)); localStorage.setItem('yayehui_expenses',JSON.stringify(a)); }
+            renderExpenseList();
+        } finally { opLock.hide(); }
+    };
     window.addExpense = async () => {
             opLock.show();
             try {
@@ -665,11 +799,11 @@
         const file = input.files[0];
         if (!file) return;
         document.getElementById('expFileName').textContent = '已选择: ' + file.name;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById('expImportData').value = e.target.result;
-        };
-        reader.readAsText(file);
+        readTextFileWithEncoding(file).then(text => {
+            document.getElementById('expImportData').value = text;
+        }).catch(err => {
+            alert('文件读取失败: ' + err.message);
+        });
     };
     window.importExpenses = async () => {
             opLock.show();
@@ -686,6 +820,10 @@
         container.innerHTML = `
             <div class="card-panel">
                 <h3><i class="fas fa-comments"></i> 业主心声管理（不支持批量导入）<button class="export-btn" onclick="exportTopics()"><i class="fas fa-download"></i> 导出</button></h3>
+                <div class="batch-actions" style="margin-bottom:10px;display:flex;align-items:center;gap:10px;">
+                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" onchange="toggleSelectAll('topics', this)"> 全选</label>
+                    <button class="btn-sm danger" onclick="deleteSelectedTopics()"><i class="fas fa-trash-alt"></i> 删除所选</button>
+                </div>
                 <div class="item-list" id="topicsList"><div class="loading">加载中...</div></div>
                 <div class="add-form">
                     <input type="text" id="newTopicTitle" placeholder="标题">
@@ -703,7 +841,7 @@
         const replies = await getAllReplies();
         list.innerHTML = topics.map(topic => {
             const rc = replies.filter(r => r.topic_id === topic.id).length;
-            return `<div class="admin-item"><div class="item-info"><strong>${escapeHtml(topic.title)}</strong><br><small>作者: ${escapeHtml(topic.author||'')} | 浏览 ${topic.view_count||0} | 回复 ${rc}</small><div>${escapeHtml((topic.content||'').substring(0,60))}</div></div><div class="item-actions"><button class="btn-sm" onclick="viewTopicReplies(${topic.id})"><i class="fas fa-comments"></i></button><button class="btn-sm danger" onclick="deleteTopic(${topic.id})"><i class="fas fa-trash-alt"></i></button></div></div>`;
+            return `<div class="admin-item"><div class="item-checkbox-wrap"><input type="checkbox" class="item-checkbox" value="${topic.id}"></div><div class="item-info"><strong>${escapeHtml(topic.title)}</strong><br><small>作者: ${escapeHtml(topic.author||'')} | 浏览 ${topic.view_count||0} | 回复 ${rc}</small><div>${escapeHtml((topic.content||'').substring(0,60))}</div></div><div class="item-actions"><button class="btn-sm" onclick="viewTopicReplies(${topic.id})"><i class="fas fa-comments"></i></button><button class="btn-sm danger" onclick="deleteTopic(${topic.id})"><i class="fas fa-trash-alt"></i></button></div></div>`;
         }).join('') || '<p class="loading">暂无帖子</p>';
     }
     window.deleteTopic = async (id) => {
@@ -714,6 +852,17 @@
                 opLock.hide();
             }
         };
+    window.deleteSelectedTopics = async () => {
+        const ids = getSelectedIds('topics');
+        if (ids.length === 0) return alert('请先选择要删除的项');
+        if (!confirm('确定删除选中的 ' + ids.length + ' 项？')) return;
+        opLock.show();
+        try {
+            if (USE_SUPABASE) { for (const id of ids) await db.topics.delete(id); }
+            else { let t = JSON.parse(localStorage.getItem('yayehui_topics')||'[]').filter(t => !ids.includes(t.id)); let r = JSON.parse(localStorage.getItem('yayehui_replies')||'[]').filter(r => !ids.includes(r.topic_id)); localStorage.setItem('yayehui_topics',JSON.stringify(t)); localStorage.setItem('yayehui_replies',JSON.stringify(r)); }
+            renderTopicsList();
+        } finally { opLock.hide(); }
+    };
     window.viewTopicReplies = async (id) => { const topics=await getAllTopics();const topic=topics.find(t=>t.id===id);const replies=await getAllReplies();const trs=replies.filter(r=>r.topic_id===id); const html=`<span style="float:right;cursor:pointer;font-size:24px;" onclick="closeModal()">&times;</span><h3>${escapeHtml(topic?.title||'')} 的跟帖</h3>${trs.map(r=>`<div class="reply-item"><div class="reply-meta">${escapeHtml(r.author||'')} · ${formatDate(r.created_at)}</div><div>${escapeHtml(r.content||'')}</div><button class="btn-sm danger" style="margin-top:6px;" onclick="deleteReplyAdmin(${r.id},${id})">删除</button></div>`).join('')}${trs.length===0?'<p style="color:#6c7a91;text-align:center;padding:20px;">暂无跟帖</p>':''}<div class="modal-footer"><button class="modal-btn cancel" onclick="closeModal()">关闭</button></div>`; showModal(html); };
     window.deleteReplyAdmin = async (replyId, topicId) => {
             opLock.show();
@@ -831,7 +980,30 @@
         const list = document.getElementById('siteSettingsList');
         if (!list) return;
         let settings = [];
+        // 从 localStorage 读取站点设置
         if (USE_SUPABASE) { settings = await db.siteSettings.getAll() || []; } else { settings = JSON.parse(localStorage.getItem('yayehui_site_settings')||'[]'); }
+        
+        // 如果没有设置，加载默认值
+        if (settings.length === 0) {
+            settings = [
+                { setting_key: 'nav_menu_left_text', setting_value: '雅业会' },
+                { setting_key: 'nav_menu_left_subtext', setting_value: '雅居·共治·美好' },
+                { setting_key: 'footer_banner_text', setting_value: '公开·信任·共建美好社区' },
+                { setting_key: 'footer_address', setting_value: '雅居花园 · 业委会办公室' },
+                { setting_key: 'footer_copyright', setting_value: '© 2025 雅业会业主委员会平台 | 携手共创宜居家园' },
+                { setting_key: 'hero_title', setting_value: '共建·共治·共享' },
+                { setting_key: 'hero_subtitle', setting_value: '雅业会与您携手' },
+                { setting_key: 'hero_desc', setting_value: '业委会透明服务，智慧小区管理，让家园更温暖。业主沟通零距离，共创宜居环境。' },
+                { setting_key: 'hero_stat_1', setting_value: '12+' },
+                { setting_key: 'hero_stat_1_label', setting_value: '年度议题' },
+                { setting_key: 'hero_stat_2', setting_value: '98%' },
+                { setting_key: 'hero_stat_2_label', setting_value: '业主满意度' },
+                { setting_key: 'hero_stat_3', setting_value: '24h' },
+                { setting_key: 'hero_stat_3_label', setting_value: '快速响应' },
+                { setting_key: 'contact_content', setting_value: '联系电话：xxx\nEmail：xxx' }
+            ];
+        }
+        
         const keyMap = {
             nav_menu_left_text: '导航菜单左侧主标题（显示在"雅业会"左侧）',
             nav_menu_left_subtext: '导航菜单左侧副标题（显示在"雅居·共治·美好"位置）',
@@ -1009,6 +1181,8 @@
             if (acc) {
                 currentUser = username;
                 isSuperAdmin = acc.role === 'super_admin';
+                // 保存登录会话
+                saveSession();
                 // 记录登录日志
                 await db.adminLoginLogs.create({ username, login_time: new Date().toISOString(), ip_address: '' });
                 showAdminPanel();
@@ -1021,6 +1195,8 @@
         if (acc) {
             currentUser = username;
             isSuperAdmin = acc.role === 'super_admin';
+            // 保存登录会话
+            saveSession();
             let logs = JSON.parse(localStorage.getItem('yayehui_login_logs') || '[]');
             logs.unshift({ username, login_time: new Date().toISOString(), ip_address: '' });
             if (logs.length > 100) logs = logs.slice(0, 100);
@@ -1055,6 +1231,37 @@
             }
         });
     }
+    
+    // 检查保存的登录会话
+    function checkSavedSession() {
+        const savedSession = localStorage.getItem('yayehui_admin_session');
+        if (savedSession) {
+            try {
+                const session = JSON.parse(savedSession);
+                if (session && session.username && session.isSuperAdmin !== undefined) {
+                    currentUser = session.username;
+                    isSuperAdmin = session.isSuperAdmin;
+                    return true;
+                }
+            } catch (e) {
+                localStorage.removeItem('yayehui_admin_session');
+            }
+        }
+        return false;
+    }
+    
+    // 保存登录会话
+    function saveSession() {
+        localStorage.setItem('yayehui_admin_session', JSON.stringify({
+            username: currentUser,
+            isSuperAdmin: isSuperAdmin
+        }));
+    }
+    
+    // 清除登录会话
+    function clearSession() {
+        localStorage.removeItem('yayehui_admin_session');
+    }
 
     function showAdminPanel() {
         const superAdminTab = isSuperAdmin ? `<button class="tab-btn" data-panel="SuperAdmin" onclick="showPanel('SuperAdmin')"><i class="fas fa-shield-alt"></i> 超级管理</button>` : '';
@@ -1088,11 +1295,22 @@
             <div id="panelSiteSettings" class="panel"></div>
             <div id="panelSuperAdmin" class="panel"></div>
         </div>`;
-        document.getElementById('logoutBtn').onclick = () => { currentUser = null; isSuperAdmin = false; showLogin(); };
+        document.getElementById('logoutBtn').onclick = () => { 
+            currentUser = null; 
+            isSuperAdmin = false; 
+            clearSession();
+            showLogin(); 
+        };
         // 默认加载第一个面板
         setTimeout(() => renderAnnouncementsPanel(), 50);
     }
-    showLogin();
+    
+    // 启动时检查会话
+    if (checkSavedSession()) {
+        showAdminPanel();
+    } else {
+        showLogin();
+    }
 </script>
 </body>
 </html>
