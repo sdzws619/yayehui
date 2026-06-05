@@ -123,9 +123,13 @@
         <div style="color:#2c6e49;font-weight:600;">操作处理中，请稍候...</div>
     </div>
 </div>
-
+ 
 <div id="app"></div>
 
+<script>
+// 即使supabase-config.js加载失败，也要有默认的db对象
+window.db = window.db || {};
+</script>
 <script src="supabase-config.js"></script>
 <script>
 // 操作锁工具（防止并发操作）
