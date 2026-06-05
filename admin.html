@@ -123,14 +123,9 @@
         <div style="color:#2c6e49;font-weight:600;">操作处理中，请稍候...</div>
     </div>
 </div>
- 
+
 <div id="app"></div>
 
-<script>
-// 即使supabase-config.js加载失败，也要有默认的db对象
-window.db = window.db || {};
-</script>
-<script src="supabase-config.js"></script>
 <script>
 // 操作锁工具（防止并发操作）
     const opLock = {
@@ -180,67 +175,31 @@ window.db = window.db || {};
     function nextId(arr) { return arr.length ? Math.max(...arr.map(i => i.id)) + 1 : 1; }
     function formatDate(str) { if (!str) return ''; return new Date(str).toLocaleString(); }
     
-    // 文件读取辅助函数 - 支持 UTF-8/GBK/GB2312 自动识别，带BOM处理
+    // 文件读取辅助函数 - 支持 GBK/UTF-8 自动识别
     function readTextFileWithEncoding(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = function(e) {
-                try {
-                    const buffer = e.target.result;
-                    // 先尝试 UTF-8 解码
-                    let text = new TextDecoder('utf-8', { fatal: true }).decode(buffer);
-                    // 移除 BOM 字符
-                    if (text.charCodeAt(0) === 0xFEFF) {
-                        text = text.slice(1);
-                    }
-                    resolve(text);
-                } catch (err) {
-                    // UTF-8 失败，尝试 GBK（Windows中文Excel默认编码）
-                    try {
-                        const text = new TextDecoder('gbk').decode(e.target.result);
-                        resolve(text);
-                    } catch (err2) {
-                        // 再尝试 GB2312
-                        try {
-                            const text = new TextDecoder('gb2312').decode(e.target.result);
-                            resolve(text);
-                        } catch (err3) {
-                            // 最后尝试 Latin1 作为后备
-                            try {
-                                const text = new TextDecoder('latin1').decode(e.target.result);
-                                resolve(text);
-                            } catch (err4) {
-                                reject(new Error('无法识别文件编码，请将文件保存为UTF-8编码的CSV'));
-                            }
-                        }
-                    }
-                }
+                const buffer = e.target.result;
+                // 先尝试 UTF-8 解码
+                let text = new TextDecoder('utf-8', { fatal: true }).decode(buffer);
+                resolve(text);
             };
             reader.onerror = function() {
-                reject(new Error('文件读取失败'));
+                // UTF-8 失败，尝试 GBK
+                const reader2 = new FileReader();
+                reader2.onload = function(e2) {
+                    try {
+                        const text = new TextDecoder('gbk').decode(e2.target.result);
+                        resolve(text);
+                    } catch (err) {
+                        reject(err);
+                    }
+                };
+                reader2.readAsArrayBuffer(file);
             };
             reader.readAsArrayBuffer(file);
         });
-    }
-    
-    // CSV解析辅助函数 - 处理带引号的字段
-    function parseCSVLine(line) {
-        const result = [];
-        let current = '';
-        let inQuotes = false;
-        for (let i = 0; i < line.length; i++) {
-            const char = line[i];
-            if (char === '"') {
-                inQuotes = !inQuotes;
-            } else if (char === ',' && !inQuotes) {
-                result.push(current.trim().replace(/^"|"$/g, ''));
-                current = '';
-            } else {
-                current += char;
-            }
-        }
-        result.push(current.trim().replace(/^"|"$/g, ''));
-        return result;
     }
 
     // 批量选择辅助函数
@@ -295,7 +254,7 @@ window.db = window.db || {};
         let csv = columns.map(c => c.label).join(',') + '\n';
         data.forEach(row => {
             csv += columns.map(c => {
-                let val = row[c.key] !== undefined ? row[c.key] : '';
+                let val = row[c.field] !== undefined ? row[c.field] : '';
                 if (typeof val === 'string') val = '"' + val.replace(/"/g, '""') + '"';
                 return val;
             }).join(',') + '\n';
@@ -416,29 +375,22 @@ window.db = window.db || {};
                 opLock.hide();
             }
         };
-    window.exportAnnouncements = async () => { const items=await getAllAnnouncements(); exportData(items,'公告数据',[{key:'title',label:'标题'},{key:'date',label:'日期'},{key:'content',label:'内容'}]); };
-    window.downloadAnnouncementTemplate = () => downloadTemplate([{key:'title',label:'标题'},{key:'date',label:'日期'},{key:'content',label:'内容'}],'公告');
+    window.exportAnnouncements = async () => { const items=await getAllAnnouncements(); exportData(items,'公告数据',[{field:'title',label:'标题'},{field:'date',label:'日期'},{field:'content',label:'内容'}]); };
+    window.downloadAnnouncementTemplate = () => downloadTemplate([{field:'title',label:'标题'},{field:'date',label:'日期'},{field:'content',label:'内容'}],'公告');
     window.handleAnnFileSelect = function(input) {
         const file = input.files[0];
         if (!file) return;
-        document.getElementById('annFileName').textContent = '已选择: ' + file.name + ' (读取中...)';
+        document.getElementById('annFileName').textContent = '已选择: ' + file.name;
         readTextFileWithEncoding(file).then(text => {
             document.getElementById('annImportData').value = text;
-            document.getElementById('annFileName').textContent = '已选择: ' + file.name + ' ✓';
-            // 自动显示预览
-            const lines = text.split('\n').filter(l => l.trim());
-            if (lines.length > 1) {
-                alert('文件读取成功！共 ' + (lines.length - 1) + ' 条数据，请点击"导入数据"按钮完成导入。');
-            }
         }).catch(err => {
-            document.getElementById('annFileName').textContent = '读取失败: ' + err.message;
             alert('文件读取失败: ' + err.message);
         });
     };
     window.importAnnouncements = async () => {
             opLock.show();
             try {
-                const text=document.getElementById('annImportData').value.trim(); if(!text) return alert('请粘贴数据'); const lines=text.split('\n').filter(l=>l.trim()); if(lines.length<2) return alert('数据格式错误，至少需要标题行和数据行'); for(let i=1;i<lines.length;i++){const parts=parseCSVLine(lines[i]); if(parts.length>=2){const data={title:parts[0],date:parts[1]||new Date().toISOString().slice(0,10),content:parts[2]||''}; if(USE_SUPABASE) await db.announcements.create(data); else { let a=JSON.parse(localStorage.getItem('yayehui_announcements')||'[]'); data.id=nextId(a); a.push(data); localStorage.setItem('yayehui_announcements',JSON.stringify(a)); } } } alert('导入成功！'); document.getElementById('annImportData').value=''; renderAnnouncementList();
+                const text=document.getElementById('annImportData').value.trim(); if(!text) return alert('请粘贴数据'); const lines=text.split('\n').filter(l=>l.trim()); if(lines.length<2) return alert('数据格式错误，至少需要标题行和数据行'); for(let i=1;i<lines.length;i++){const parts=lines[i].split(',').map(p=>p.trim()); if(parts.length>=2){const data={title:parts[0],date:parts[1]||new Date().toISOString().slice(0,10),content:parts[2]||''}; if(USE_SUPABASE) await db.announcements.create(data); else { let a=JSON.parse(localStorage.getItem('yayehui_announcements')||'[]'); data.id=nextId(a); a.push(data); localStorage.setItem('yayehui_announcements',JSON.stringify(a)); } } } alert('导入成功！'); document.getElementById('annImportData').value=''; renderAnnouncementList();
             } finally {
                 opLock.hide();
             }
@@ -518,28 +470,22 @@ window.db = window.db || {};
                 opLock.hide();
             }
         };
-    window.exportDynamics = async () => { const items=await getAllDynamics(); exportData(items,'工作动态',[{key:'title',label:'标题'},{key:'date',label:'日期'},{key:'summary',label:'摘要'},{key:'content',label:'内容'}]); };
-    window.downloadDynamicsTemplate = () => downloadTemplate([{key:'title',label:'标题'},{key:'date',label:'日期'},{key:'summary',label:'摘要'},{key:'content',label:'内容'}],'工作动态');
+    window.exportDynamics = async () => { const items=await getAllDynamics(); exportData(items,'工作动态',[{field:'title',label:'标题'},{field:'date',label:'日期'},{field:'summary',label:'摘要'},{field:'content',label:'内容'}]); };
+    window.downloadDynamicsTemplate = () => downloadTemplate([{field:'title',label:'标题'},{field:'date',label:'日期'},{field:'summary',label:'摘要'},{field:'content',label:'内容'}],'工作动态');
     window.handleDynFileSelect = function(input) {
         const file = input.files[0];
         if (!file) return;
-        document.getElementById('dynFileName').textContent = '已选择: ' + file.name + ' (读取中...)';
+        document.getElementById('dynFileName').textContent = '已选择: ' + file.name;
         readTextFileWithEncoding(file).then(text => {
             document.getElementById('dynImportData').value = text;
-            document.getElementById('dynFileName').textContent = '已选择: ' + file.name + ' ✓';
-            const lines = text.split('\n').filter(l => l.trim());
-            if (lines.length > 1) {
-                alert('文件读取成功！共 ' + (lines.length - 1) + ' 条数据，请点击"导入数据"按钮完成导入。');
-            }
         }).catch(err => {
-            document.getElementById('dynFileName').textContent = '读取失败: ' + err.message;
             alert('文件读取失败: ' + err.message);
         });
     };
     window.importDynamics = async () => {
             opLock.show();
             try {
-                const text=document.getElementById('dynImportData').value.trim(); if(!text)return;const lines=text.split('\n').filter(l=>l.trim()); for(let i=1;i<lines.length;i++){const p=parseCSVLine(lines[i]); if(p.length>=2){const data={title:p[0],date:p[1]||new Date().toISOString().slice(0,10),summary:p[2]||'',content:p[3]||''}; if(USE_SUPABASE)await db.dynamics.create(data); else{let a=JSON.parse(localStorage.getItem('yayehui_dynamics')||'[]');data.id=nextId(a);a.push(data);localStorage.setItem('yayehui_dynamics',JSON.stringify(a));}} } alert('导入成功！');document.getElementById('dynImportData').value='';renderDynamicList();
+                const text=document.getElementById('dynImportData').value.trim(); if(!text)return;const lines=text.split('\n').filter(l=>l.trim()); for(let i=1;i<lines.length;i++){const p=lines[i].split(',').map(p=>p.trim()); if(p.length>=2){const data={title:p[0],date:p[1]||new Date().toISOString().slice(0,10),summary:p[2]||'',content:p[3]||''}; if(USE_SUPABASE)await db.dynamics.create(data); else{let a=JSON.parse(localStorage.getItem('yayehui_dynamics')||'[]');data.id=nextId(a);a.push(data);localStorage.setItem('yayehui_dynamics',JSON.stringify(a));}} } alert('导入成功！');document.getElementById('dynImportData').value='';renderDynamicList();
             } finally {
                 opLock.hide();
             }
@@ -618,30 +564,22 @@ window.db = window.db || {};
                 opLock.hide();
             }
         };
-    window.exportMembers = async () => { const items=await getAllMembers(); exportData(items,'业委会成员',[{key:'name',label:'姓名'},{key:'role',label:'职务'},{key:'description',label:'职责描述'}]); };
-    window.downloadMembersTemplate = () => downloadTemplate([{key:'name',label:'姓名'},{key:'role',label:'职务'},{key:'description',label:'职责描述'}],'业委会成员');
+    window.exportMembers = async () => { const items=await getAllMembers(); exportData(items,'业委会成员',[{field:'name',label:'姓名'},{field:'role',label:'职务'},{field:'description',label:'职责描述'}]); };
+    window.downloadMembersTemplate = () => downloadTemplate([{field:'name',label:'姓名'},{field:'role',label:'职务'},{field:'description',label:'职责描述'}],'业委会成员');
     window.handleMemFileSelect = function(input) {
         const file = input.files[0];
         if (!file) return;
-        document.getElementById('memFileName').textContent = '已选择: ' + file.name + ' (读取中...)';
+        document.getElementById('memFileName').textContent = '已选择: ' + file.name;
         readTextFileWithEncoding(file).then(text => {
             document.getElementById('memImportData').value = text;
-            document.getElementById('memFileName').textContent = '已选择: ' + file.name + ' ✓';
-            const lines = text.split('\n').filter(l => l.trim());
-            if (lines.length > 1) {
-                alert('文件读取成功！共 ' + (lines.length - 1) + ' 条数据，请点击"导入数据"按钮完成导入。');
-            }
         }).catch(err => {
-            document.getElementById('memFileName').textContent = '读取失败: ' + err.message;
             alert('文件读取失败: ' + err.message);
-        });
-    };
         });
     };
     window.importMembers = async () => {
             opLock.show();
             try {
-                const text=document.getElementById('memImportData').value.trim(); if(!text)return; const lines=text.split('\n').filter(l=>l.trim()); for(let i=1;i<lines.length;i++){const p=parseCSVLine(lines[i]); if(p.length>=1){const data={name:p[0],role:p[1]||'',description:p[2]||'',avatar_icon:'fas fa-user-circle'}; if(USE_SUPABASE)await db.members.create(data); else{let a=JSON.parse(localStorage.getItem('yayehui_members')||'[]');data.id=nextId(a);a.push(data);localStorage.setItem('yayehui_members',JSON.stringify(a));}} } alert('导入成功！');document.getElementById('memImportData').value='';renderMemberList();
+                const text=document.getElementById('memImportData').value.trim(); if(!text)return; const lines=text.split('\n').filter(l=>l.trim()); for(let i=1;i<lines.length;i++){const p=lines[i].split(',').map(p=>p.trim()); if(p.length>=1){const data={name:p[0],role:p[1]||'',description:p[2]||'',avatar_icon:'fas fa-user-circle'}; if(USE_SUPABASE)await db.members.create(data); else{let a=JSON.parse(localStorage.getItem('yayehui_members')||'[]');data.id=nextId(a);a.push(data);localStorage.setItem('yayehui_members',JSON.stringify(a));}} } alert('导入成功！');document.getElementById('memImportData').value='';renderMemberList();
             } finally {
                 opLock.hide();
             }
@@ -721,7 +659,7 @@ window.db = window.db || {};
                 opLock.hide();
             }
         };
-    window.exportPolls = async () => { const polls=await getAllPolls(); const options=await getAllPollOptions(); const votes=await getAllVotes(); const data=polls.map(p=>{const opts=options.filter(o=>o.poll_id===p.id).map(o=>o.option_text).join(';');return{...p,options:opts};}); exportData(data,'投票数据',[{key:'title',label:'标题'},{key:'description',label:'描述'},{key:'start_date',label:'开始日期'},{key:'end_date',label:'结束日期'},{key:'options',label:'选项'}]);
+    window.exportPolls = async () => { const polls=await getAllPolls(); const options=await getAllPollOptions(); const votes=await getAllVotes(); const data=polls.map(p=>{const opts=options.filter(o=>o.poll_id===p.id).map(o=>o.option_text).join(';');return{...p,options:opts};}); exportData(data,'投票数据',[{field:'title',label:'标题'},{field:'description',label:'描述'},{field:'start_date',label:'开始日期'},{field:'end_date',label:'结束日期'},{field:'options',label:'选项'}]);
         
         // 导出投票明细
         if(votes.length > 0) {
@@ -730,26 +668,16 @@ window.db = window.db || {};
                 const opt = options.find(o => o.id === v.option_id);
                 return { poll_title:poll?.title||'', option_text:opt?.option_text||'', voter_name:v.voter_name||'', property_address:v.property_address||'', vote_time:v.vote_time||'' };
             });
-            exportData(voteDetails,'投票明细',[{key:'poll_title',label:'投票标题'},{key:'option_text',label:'投票选项'},{key:'voter_name',label:'投票人'},{key:'property_address',label:'房产地址'},{key:'vote_time',label:'投票时间'}]);
+            exportData(voteDetails,'投票明细',[{field:'poll_title',label:'投票标题'},{field:'option_text',label:'投票选项'},{field:'voter_name',label:'投票人'},{field:'property_address',label:'房产地址'},{field:'vote_time',label:'投票时间'}]);
         }
     };
-    window.downloadPollsTemplate = () => downloadTemplate([{key:'title',label:'标题'},{key:'description',label:'描述'},{key:'start_date',label:'开始日期'},{key:'end_date',label:'结束日期'},{key:'options',label:'选项（逗号分隔）'}],'投票');
+    window.downloadPollsTemplate = () => downloadTemplate([{field:'title',label:'标题'},{field:'description',label:'描述'},{field:'start_date',label:'开始日期'},{field:'end_date',label:'结束日期'},{field:'options',label:'选项（逗号分隔）'}],'投票');
     window.handlePollFileSelect = function(input) {
         const file = input.files[0];
         if (!file) return;
-        document.getElementById('pollFileName').textContent = '已选择: ' + file.name + ' (读取中...)';
+        document.getElementById('pollFileName').textContent = '已选择: ' + file.name;
         readTextFileWithEncoding(file).then(text => {
             document.getElementById('pollImportData').value = text;
-            document.getElementById('pollFileName').textContent = '已选择: ' + file.name + ' ✓';
-            const lines = text.split('\n').filter(l => l.trim());
-            if (lines.length > 1) {
-                alert('文件读取成功！共 ' + (lines.length - 1) + ' 条数据，请点击"导入数据"按钮完成导入。');
-            }
-        }).catch(err => {
-            document.getElementById('pollFileName').textContent = '读取失败: ' + err.message;
-            alert('文件读取失败: ' + err.message);
-        });
-    };
         }).catch(err => {
             alert('文件读取失败: ' + err.message);
         });
@@ -757,7 +685,7 @@ window.db = window.db || {};
     window.importPolls = async () => {
             opLock.show();
             try {
-                const text=document.getElementById('pollImportData').value.trim(); if(!text)return; const lines=text.split('\n').filter(l=>l.trim()); for(let i=1;i<lines.length;i++){const p=parseCSVLine(lines[i]); if(p.length>=4){const pollData={title:p[0],description:p[1],start_date:p[2],end_date:p[3],is_active:true}; if(USE_SUPABASE){await db.polls.create(pollData);const polls=await getAllPolls();const np=polls.find(pl=>pl.title===p[0]);if(np){for(let j=4;j<p.length;j++)if(p[j])await db.pollOptions.create({poll_id:np.id,option_text:p[j]});}} else{let pl=JSON.parse(localStorage.getItem('yayehui_polls')||'[]');const nid=nextId(pl);pollData.id=nid;pl.push(pollData);localStorage.setItem('yayehui_polls',JSON.stringify(pl));let o=JSON.parse(localStorage.getItem('yayehui_poll_options')||'[]');for(let j=4;j<p.length;j++)if(p[j])o.push({id:nextId(o),poll_id:nid,option_text:p[j]});localStorage.setItem('yayehui_poll_options',JSON.stringify(o));}} } alert('导入成功！');document.getElementById('pollImportData').value='';renderPollList();
+                const text=document.getElementById('pollImportData').value.trim(); if(!text)return; const lines=text.split('\n').filter(l=>l.trim()); for(let i=1;i<lines.length;i++){const p=lines[i].split(',').map(x=>x.trim()); if(p.length>=4){const pollData={title:p[0],description:p[1],start_date:p[2],end_date:p[3],is_active:true}; if(USE_SUPABASE){await db.polls.create(pollData);const polls=await getAllPolls();const np=polls.find(pl=>pl.title===p[0]);if(np){for(let j=4;j<p.length;j++)if(p[j])await db.pollOptions.create({poll_id:np.id,option_text:p[j]});}} else{let pl=JSON.parse(localStorage.getItem('yayehui_polls')||'[]');const nid=nextId(pl);pollData.id=nid;pl.push(pollData);localStorage.setItem('yayehui_polls',JSON.stringify(pl));let o=JSON.parse(localStorage.getItem('yayehui_poll_options')||'[]');for(let j=4;j<p.length;j++)if(p[j])o.push({id:nextId(o),poll_id:nid,option_text:p[j]});localStorage.setItem('yayehui_poll_options',JSON.stringify(o));}} } alert('导入成功！');document.getElementById('pollImportData').value='';renderPollList();
             } finally {
                 opLock.hide();
             }
@@ -864,28 +792,22 @@ window.db = window.db || {};
                 opLock.hide();
             }
         };
-    window.exportExpenses = async () => { const items=await getAllExpenses(); exportData(items,'费用公示',[{key:'category',label:'类别'},{key:'item_name',label:'项目名称'},{key:'amount',label:'金额'},{key:'date',label:'日期'},{key:'remark',label:'备注'}]); };
-    window.downloadExpensesTemplate = () => downloadTemplate([{key:'category',label:'类别'},{key:'item_name',label:'项目名称'},{key:'amount',label:'金额'},{key:'date',label:'日期'},{key:'remark',label:'备注'}],'费用公示');
+    window.exportExpenses = async () => { const items=await getAllExpenses(); exportData(items,'费用公示',[{field:'category',label:'类别'},{field:'item_name',label:'项目名称'},{field:'amount',label:'金额'},{field:'date',label:'日期'},{field:'remark',label:'备注'}]); };
+    window.downloadExpensesTemplate = () => downloadTemplate([{field:'category',label:'类别'},{field:'item_name',label:'项目名称'},{field:'amount',label:'金额'},{field:'date',label:'日期'},{field:'remark',label:'备注'}],'费用公示');
     window.handleExpFileSelect = function(input) {
         const file = input.files[0];
         if (!file) return;
-        document.getElementById('expFileName').textContent = '已选择: ' + file.name + ' (读取中...)';
+        document.getElementById('expFileName').textContent = '已选择: ' + file.name;
         readTextFileWithEncoding(file).then(text => {
             document.getElementById('expImportData').value = text;
-            document.getElementById('expFileName').textContent = '已选择: ' + file.name + ' ✓';
-            const lines = text.split('\n').filter(l => l.trim());
-            if (lines.length > 1) {
-                alert('文件读取成功！共 ' + (lines.length - 1) + ' 条数据，请点击"导入数据"按钮完成导入。');
-            }
         }).catch(err => {
-            document.getElementById('expFileName').textContent = '读取失败: ' + err.message;
             alert('文件读取失败: ' + err.message);
         });
     };
     window.importExpenses = async () => {
             opLock.show();
             try {
-                const text=document.getElementById('expImportData').value.trim(); if(!text)return; const lines=text.split('\n').filter(l=>l.trim()); for(let i=1;i<lines.length;i++){const p=parseCSVLine(lines[i]); if(p.length>=2){const data={category:p[0]||'支出',item_name:p[1],amount:parseFloat(p[2])||0,date:p[3]||new Date().toISOString().slice(0,10),remark:p[4]||''}; if(USE_SUPABASE)await db.expenses.create(data); else{let a=JSON.parse(localStorage.getItem('yayehui_expenses')||'[]');data.id=nextId(a);a.push(data);localStorage.setItem('yayehui_expenses',JSON.stringify(a));}} } alert('导入成功！');document.getElementById('expImportData').value='';renderExpenseList();
+                const text=document.getElementById('expImportData').value.trim(); if(!text)return; const lines=text.split('\n').filter(l=>l.trim()); for(let i=1;i<lines.length;i++){const p=lines[i].split(',').map(x=>x.trim()); if(p.length>=2){const data={item_name:p[0],category:p[1]||'支出',amount:parseFloat(p[2])||0,date:p[3]||new Date().toISOString().slice(0,10),remark:p[4]||''}; if(USE_SUPABASE)await db.expenses.create(data); else{let a=JSON.parse(localStorage.getItem('yayehui_expenses')||'[]');data.id=nextId(a);a.push(data);localStorage.setItem('yayehui_expenses',JSON.stringify(a));}} } alert('导入成功！');document.getElementById('expImportData').value='';renderExpenseList();
             } finally {
                 opLock.hide();
             }
@@ -957,7 +879,7 @@ window.db = window.db || {};
                 opLock.hide();
             }
         };
-    window.exportTopics = async () => { const topics=await getAllTopics(); exportData(topics,'业主心声',[{key:'title',label:'标题'},{key:'content',label:'内容'},{key:'author',label:'作者'},{key:'view_count',label:'浏览量'},{key:'reply_count',label:'回复数'},{key:'created_at',label:'发布时间'}]); };
+    window.exportTopics = async () => { const topics=await getAllTopics(); exportData(topics,'业主心声',[{field:'title',label:'标题'},{field:'content',label:'内容'},{field:'author',label:'作者'},{field:'view_count',label:'浏览量'},{field:'reply_count',label:'回复数'},{field:'created_at',label:'发布时间'}]); };
 
     // 注册用户管理
     async function renderUsersPanel() {
@@ -988,7 +910,7 @@ window.db = window.db || {};
                 opLock.hide();
             }
         };
-    window.exportUsers = async () => { const users=await getAllRegisteredUsers(); exportData(users,'注册用户',[{key:'user_name',label:'用户名称'},{key:'phone',label:'手机号码'},{key:'property_address',label:'房产地址'},{key:'created_at',label:'注册时间'}]); };
+    window.exportUsers = async () => { const users=await getAllRegisteredUsers(); exportData(users,'注册用户',[{field:'user_name',label:'用户名称'},{field:'phone',label:'手机号码'},{field:'property_address',label:'房产地址'},{field:'created_at',label:'注册时间'}]); };
 
     // 房产地址导入
     async function renderPropertyPanel() {
@@ -1040,7 +962,7 @@ window.db = window.db || {};
                 opLock.hide();
             }
         };
-    window.exportPropertyAddresses = async () => { const addrs=await getAllPropertyAddresses(); exportData(addrs,'房产地址',[{key:'address',label:'房产地址'},{key:'building',label:'栋'},{key:'floor',label:'楼层'},{key:'unit',label:'房号'},{key:'is_registered',label:'是否已注册'}]); };
+    window.exportPropertyAddresses = async () => { const addrs=await getAllPropertyAddresses(); exportData(addrs,'房产地址',[{field:'address',label:'房产地址'},{field:'building',label:'栋'},{field:'floor',label:'楼层'},{field:'unit',label:'房号'},{field:'is_registered',label:'是否已注册'}]); };
 
     // 站点设置
     async function renderSiteSettingsPanel() {
@@ -1235,9 +1157,7 @@ window.db = window.db || {};
         if (btn) btn.classList.add('active');
         const panel = document.getElementById('panel' + panelId);
         if (panel) panel.classList.add('active');
-        // 保存当前面板
-        sessionStorage.setItem('yayehui_current_panel', panelId);
-        // 延迟渲染
+        // 延迟渲染以确保 DOM 显示
         setTimeout(() => {
             if (panelId === 'Announcements') renderAnnouncementsPanel();
             else if (panelId === 'Dynamics') renderDynamicsPanel();
@@ -1380,9 +1300,8 @@ window.db = window.db || {};
             clearSession();
             showLogin(); 
         };
-        // 加载上次保存的面板
-        const savedPanel = sessionStorage.getItem('yayehui_current_panel') || 'Announcements';
-        setTimeout(() => showPanel(savedPanel), 50);
+        // 默认加载第一个面板
+        setTimeout(() => renderAnnouncementsPanel(), 50);
     }
     
     // 启动时检查会话
