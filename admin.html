@@ -834,7 +834,7 @@
     window.importExpenses = async () => {
             opLock.show();
             try {
-                const text=document.getElementById('expImportData').value.trim(); if(!text)return; const lines=text.split(/[\n\r]+/).filter(l=>l.trim()); for(let i=1;i<lines.length;i++){const p=lines[i].split(',').map(x=>x.trim().replace(/^"|"$/g,'')); if(p.length>=2){const data={item_name:p[0],category:p[1]||'支出',amount:parseFloat(p[2])||0,date:p[3]||new Date().toISOString().slice(0,10),remark:p[4]||''}; if(USE_SUPABASE)await db.expenses.create(data); else{let a=JSON.parse(localStorage.getItem('yayehui_expenses')||'[]');data.id=nextId(a);a.push(data);localStorage.setItem('yayehui_expenses',JSON.stringify(a));}} } alert('导入成功！');document.getElementById('expImportData').value='';renderExpenseList();
+                const text=document.getElementById('expImportData').value.trim(); if(!text)return; const lines=text.split(/[\n\r]+/).filter(l=>l.trim()); for(let i=1;i<lines.length;i++){const p=lines[i].split(',').map(x=>x.trim().replace(/^"|"$/g,'')); if(p.length>=2){const data={category:p[0]?(p[0]==='收入'?'收入':'支出'):'支出',item_name:p[1]||'',amount:parseFloat(p[2])||0,date:p[3]||new Date().toISOString().slice(0,10),remark:p[4]||''}; if(USE_SUPABASE)await db.expenses.create(data); else{let a=JSON.parse(localStorage.getItem('yayehui_expenses')||'[]');data.id=nextId(a);a.push(data);localStorage.setItem('yayehui_expenses',JSON.stringify(a));}} } alert('导入成功！');document.getElementById('expImportData').value='';renderExpenseList();
             } finally {
                 opLock.hide();
             }
