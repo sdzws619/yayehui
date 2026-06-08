@@ -658,11 +658,16 @@ const DEFAULT_DATA = {
                 members = await db.members.getAll();
                 if (!members || members.length === 0) members = DEFAULT_DATA.members;
             } else {
-                members = JSON.parse(localStorage.getItem('yayehui_members') || '[]');
-                if (members.length === 0) {
+                const stored = localStorage.getItem('yayehui_members');
+                const initialized = localStorage.getItem('init_members') === '1';
+                if (stored && stored !== '[]') {
+                    members = JSON.parse(stored);
+                } else if (!initialized) {
                     members = DEFAULT_DATA.members;
-                    // 保存默认数据到 localStorage，以便管理后台能看到
                     localStorage.setItem('yayehui_members', JSON.stringify(members));
+                    localStorage.setItem('init_members', '1');
+                } else {
+                    members = [];
                 }
             }
             
