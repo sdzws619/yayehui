@@ -390,7 +390,12 @@
         footer_copyright: '© 2025 雅业会业主委员会平台 | 携手共创宜居家园'
     };
 
-    const DEFAULT_DATA = {
+    // ⚠️ 数据初始化说明：
+// 每个栏目使用 init_* 标记防止自动恢复：
+// - 首次访问时且 localStorage 为空，才从 DEFAULT_DATA 加载
+// - 删除数据后不会再自动恢复（由 init_* 标记控制）
+// - 若要重置数据并恢复默认数据，需手动 localStorage.removeItem('init_xxx')
+const DEFAULT_DATA = {
         announcements: [
             { id: 1, title: "关于召开2025年第一次业主大会的通知", date: "2025-03-10", content: "会议时间:3月30日, 议题: 物业续聘及绿化改造方案, 请全体业主积极参加。" },
             { id: 2, title: "小区电动自行车充电桩正式启用", date: "2025-03-05", content: "3号地下车库及南门车棚充电桩已投入使用，扫码充电，安全便捷。" },
@@ -561,6 +566,11 @@
                     items = DEFAULT_DATA.announcements;
                     localStorage.setItem('yayehui_announcements', JSON.stringify(items));
                     localStorage.setItem('init_ann', '1');
+                // ⚠️ 初始化逻辑说明：
+                // - 首次访问(init_ann !== '1') 且 localStorage 为空时，才从 DEFAULT_DATA 加载
+                // - 之后删除数据不会再自动恢复
+                // - 如需重置，在控制台执行：localStorage.removeItem('init_ann'); location.reload();
+
                 } else {
                     items = [];
                 }
@@ -607,6 +617,8 @@
                     items = DEFAULT_DATA.dynamics;
                     localStorage.setItem('yayehui_dynamics', JSON.stringify(items));
                     localStorage.setItem('init_dyn', '1');
+                // ⚠️ 初始化逻辑：仅首次访问时从 DEFAULT_DATA 加载，删除后不自动恢复
+
                 } else {
                     items = [];
                 }
@@ -706,6 +718,8 @@
                     localStorage.setItem('yayehui_poll_options', JSON.stringify(DEFAULT_DATA.pollOptions));
                     localStorage.setItem('yayehui_votes', JSON.stringify(DEFAULT_DATA.votes));
                     localStorage.setItem('init_polls', '1');
+                // ⚠️ 初始化逻辑：仅首次访问时从 DEFAULT_DATA 加载，删除后不自动恢复
+
                 } else {
                     polls = allPolls.filter(p => p.is_active);
                 }
@@ -923,6 +937,8 @@
                     expenses = DEFAULT_DATA.expenses;
                     localStorage.setItem('yayehui_expenses', JSON.stringify(expenses));
                     localStorage.setItem('init_expenses', '1');
+                // ⚠️ 初始化逻辑：仅首次访问时从 DEFAULT_DATA 加载，删除后不自动恢复
+
                 } else {
                     expenses = [];
                 }
@@ -989,6 +1005,8 @@
                     localStorage.setItem('yayehui_topics', JSON.stringify(topics));
                     localStorage.setItem('yayehui_replies', JSON.stringify(replies));
                     localStorage.setItem('init_topics', '1');
+                // ⚠️ 初始化逻辑：仅首次访问时从 DEFAULT_DATA 加载，删除后不自动恢复
+
                 } else {
                     topics = [];
                     replies = [];
