@@ -695,7 +695,7 @@
             return { poll_title:poll?.title||'', option_text:opt?.option_text||'', voter_name:v.voter_name||'', property_address:v.property_address||'', vote_time:v.vote_time||'' };
         });
         exportData(voteDetails,'投票明细',[{field:'poll_title',label:'投票标题'},{field:'option_text',label:'投票选项'},{field:'voter_name',label:'投票人'},{field:'property_address',label:'房产地址'},{field:'vote_time',label:'投票时间'}]);
-    };  };
+    };
     window.downloadPollsTemplate = () => downloadTemplate([{field:'title',label:'标题'},{field:'description',label:'描述'},{field:'start_date',label:'开始日期'},{field:'end_date',label:'结束日期'},{field:'options',label:'选项（逗号分隔）'}],'投票');
     window.handlePollFileSelect = function(input) {
         const file = input.files[0];
