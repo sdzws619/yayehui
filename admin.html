@@ -686,18 +686,14 @@
                 opLock.hide();
             }
         };
-    window.exportPolls = async () => { const polls=await getAllPolls(); const options=await getAllPollOptions(); const votes=await getAllVotes(); const data=polls.map(p=>{const opts=options.filter(o=>o.poll_id===p.id).map(o=>o.option_text).join(';');return{...p,options:opts};}); exportData(data,'投票数据',[{field:'title',label:'标题'},{field:'description',label:'描述'},{field:'start_date',label:'开始日期'},{field:'end_date',label:'结束日期'},{field:'options',label:'选项'}]);
-        
-        // 导出投票明细
-        if(votes.length > 0) {
-            const voteDetails = votes.map(v => {
-                const poll = polls.find(p => p.id === v.poll_id);
-                const opt = options.find(o => o.id === v.option_id);
-                return { poll_title:poll?.title||'', option_text:opt?.option_text||'', voter_name:v.voter_name||'', property_address:v.property_address||'', vote_time:v.vote_time||'' };
-            });
-            exportData(voteDetails,'投票明细',[{field:'poll_title',label:'投票标题'},{field:'option_text',label:'投票选项'},{field:'voter_name',label:'投票人'},{field:'property_address',label:'房产地址'},{field:'vote_time',label:'投票时间'}]);
-        }
-    };
+    window.exportPolls = async () => { const polls=await getAllPolls(); const options=await getAllPollOptions(); const votes=await getAllVotes();
+        const voteDetails = votes.map(v => {
+            const poll = polls.find(p => p.id === v.poll_id);
+            const opt = options.find(o => o.id === v.option_id);
+            return { poll_title:poll?.title||'', option_text:opt?.option_text||'', voter_name:v.voter_name||'', property_address:v.property_address||'', vote_time:v.vote_time||'' };
+        });
+        exportData(voteDetails,'投票明细',[{field:'poll_title',label:'投票标题'},{field:'option_text',label:'投票选项'},{field:'voter_name',label:'投票人'},{field:'property_address',label:'房产地址'},{field:'vote_time',label:'投票时间'}]);
+    };  };
     window.downloadPollsTemplate = () => downloadTemplate([{field:'title',label:'标题'},{field:'description',label:'描述'},{field:'start_date',label:'开始日期'},{field:'end_date',label:'结束日期'},{field:'options',label:'选项（逗号分隔）'}],'投票');
     window.handlePollFileSelect = function(input) {
         const file = input.files[0];
