@@ -417,7 +417,7 @@
     window.importAnnouncements = async () => {
             opLock.show();
             try {
-                const text=document.getElementById('annImportData').value.trim(); if(!text) return alert('请粘贴数据'); const lines=text.split(/[\n\r]+/).filter(l=>l.trim()); if(lines.length<2) return alert('数据格式错误，至少需要标题行和数据行'); for(let i=1;i<lines.length;i++){const parts=lines[i].split(',').map(p=>p.trim()); if(parts.length>=2){const data={title:parts[0],date:parts[1]||new Date().toISOString().slice(0,10),content:parts[2]||''}; if(USE_SUPABASE) await db.announcements.create(data); else { let a=JSON.parse(localStorage.getItem('yayehui_announcements')||'[]'); data.id=nextId(a); a.push(data); localStorage.setItem('yayehui_announcements',JSON.stringify(a)); } } } alert('导入成功！'); document.getElementById('annImportData').value=''; renderAnnouncementList();
+                const text=document.getElementById('annImportData').value.trim(); if(!text) return alert('请粘贴数据'); const lines=text.split(/[\n\r]+/).filter(l=>l.trim()); if(lines.length<2) return alert('数据格式错误，至少需要标题行和数据行'); for(let i=1;i<lines.length;i++){const parts=lines[i].split(',').map(p=>p.trim().replace(/^"|"$/g,'')); if(parts.length>=2){const data={title:parts[0],date:parts[1]||new Date().toISOString().slice(0,10),content:parts[2]||''}; if(USE_SUPABASE) await db.announcements.create(data); else { let a=JSON.parse(localStorage.getItem('yayehui_announcements')||'[]'); data.id=nextId(a); a.push(data); localStorage.setItem('yayehui_announcements',JSON.stringify(a)); } } } alert('导入成功！'); document.getElementById('annImportData').value=''; renderAnnouncementList();
             } finally {
                 opLock.hide();
             }
@@ -512,7 +512,7 @@
     window.importDynamics = async () => {
             opLock.show();
             try {
-                const text=document.getElementById('dynImportData').value.trim(); if(!text)return;const lines=text.split(/[\n\r]+/).filter(l=>l.trim()); for(let i=1;i<lines.length;i++){const p=lines[i].split(',').map(p=>p.trim()); if(p.length>=2){const data={title:p[0],date:p[1]||new Date().toISOString().slice(0,10),summary:p[2]||'',content:p[3]||''}; if(USE_SUPABASE)await db.dynamics.create(data); else{let a=JSON.parse(localStorage.getItem('yayehui_dynamics')||'[]');data.id=nextId(a);a.push(data);localStorage.setItem('yayehui_dynamics',JSON.stringify(a));}} } alert('导入成功！');document.getElementById('dynImportData').value='';renderDynamicList();
+                const text=document.getElementById('dynImportData').value.trim(); if(!text)return;const lines=text.split(/[\n\r]+/).filter(l=>l.trim()); for(let i=1;i<lines.length;i++){const p=lines[i].split(',').map(p=>p.trim().replace(/^"|"$/g,'')); if(p.length>=2){const data={title:p[0],date:p[1]||new Date().toISOString().slice(0,10),summary:p[2]||'',content:p[3]||''}; if(USE_SUPABASE)await db.dynamics.create(data); else{let a=JSON.parse(localStorage.getItem('yayehui_dynamics')||'[]');data.id=nextId(a);a.push(data);localStorage.setItem('yayehui_dynamics',JSON.stringify(a));}} } alert('导入成功！');document.getElementById('dynImportData').value='';renderDynamicList();
             } finally {
                 opLock.hide();
             }
@@ -606,7 +606,7 @@
     window.importMembers = async () => {
             opLock.show();
             try {
-                const text=document.getElementById('memImportData').value.trim(); if(!text)return; const lines=text.split(/[\n\r]+/).filter(l=>l.trim()); for(let i=1;i<lines.length;i++){const p=lines[i].split(',').map(p=>p.trim()); if(p.length>=1){const data={name:p[0],role:p[1]||'',description:p[2]||'',avatar_icon:'fas fa-user-circle'}; if(USE_SUPABASE)await db.members.create(data); else{let a=JSON.parse(localStorage.getItem('yayehui_members')||'[]');data.id=nextId(a);a.push(data);localStorage.setItem('yayehui_members',JSON.stringify(a));}} } alert('导入成功！');document.getElementById('memImportData').value='';renderMemberList();
+                const text=document.getElementById('memImportData').value.trim(); if(!text)return; const lines=text.split(/[\n\r]+/).filter(l=>l.trim()); for(let i=1;i<lines.length;i++){const p=lines[i].split(',').map(p=>p.trim().replace(/^"|"$/g,'')); if(p.length>=1){const data={name:p[0],role:p[1]||'',description:p[2]||'',avatar_icon:'fas fa-user-circle'}; if(USE_SUPABASE)await db.members.create(data); else{let a=JSON.parse(localStorage.getItem('yayehui_members')||'[]');data.id=nextId(a);a.push(data);localStorage.setItem('yayehui_members',JSON.stringify(a));}} } alert('导入成功！');document.getElementById('memImportData').value='';renderMemberList();
             } finally {
                 opLock.hide();
             }
@@ -712,7 +712,7 @@
     window.importPolls = async () => {
             opLock.show();
             try {
-                const text=document.getElementById('pollImportData').value.trim(); if(!text)return; const lines=text.split(/[\n\r]+/).filter(l=>l.trim()); for(let i=1;i<lines.length;i++){const p=lines[i].split(',').map(x=>x.trim()); if(p.length>=4){const pollData={title:p[0],description:p[1],start_date:p[2],end_date:p[3],is_active:true}; if(USE_SUPABASE){await db.polls.create(pollData);const polls=await getAllPolls();const np=polls.find(pl=>pl.title===p[0]);if(np){for(let j=4;j<p.length;j++)if(p[j])await db.pollOptions.create({poll_id:np.id,option_text:p[j]});}} else{let pl=JSON.parse(localStorage.getItem('yayehui_polls')||'[]');const nid=nextId(pl);pollData.id=nid;pl.push(pollData);localStorage.setItem('yayehui_polls',JSON.stringify(pl));let o=JSON.parse(localStorage.getItem('yayehui_poll_options')||'[]');for(let j=4;j<p.length;j++)if(p[j])o.push({id:nextId(o),poll_id:nid,option_text:p[j]});localStorage.setItem('yayehui_poll_options',JSON.stringify(o));}} } alert('导入成功！');document.getElementById('pollImportData').value='';renderPollList();
+                const text=document.getElementById('pollImportData').value.trim(); if(!text)return; const lines=text.split(/[\n\r]+/).filter(l=>l.trim()); for(let i=1;i<lines.length;i++){const p=lines[i].split(',').map(x=>x.trim().replace(/^"|"$/g,'')); if(p.length>=4){const pollData={title:p[0],description:p[1],start_date:p[2],end_date:p[3],is_active:true}; if(USE_SUPABASE){await db.polls.create(pollData);const polls=await getAllPolls();const np=polls.find(pl=>pl.title===p[0]);if(np){for(let j=4;j<p.length;j++)if(p[j])await db.pollOptions.create({poll_id:np.id,option_text:p[j]});}} else{let pl=JSON.parse(localStorage.getItem('yayehui_polls')||'[]');const nid=nextId(pl);pollData.id=nid;pl.push(pollData);localStorage.setItem('yayehui_polls',JSON.stringify(pl));let o=JSON.parse(localStorage.getItem('yayehui_poll_options')||'[]');for(let j=4;j<p.length;j++)if(p[j])o.push({id:nextId(o),poll_id:nid,option_text:p[j]});localStorage.setItem('yayehui_poll_options',JSON.stringify(o));}} } alert('导入成功！');document.getElementById('pollImportData').value='';renderPollList();
             } finally {
                 opLock.hide();
             }
@@ -834,7 +834,7 @@
     window.importExpenses = async () => {
             opLock.show();
             try {
-                const text=document.getElementById('expImportData').value.trim(); if(!text)return; const lines=text.split(/[\n\r]+/).filter(l=>l.trim()); for(let i=1;i<lines.length;i++){const p=lines[i].split(',').map(x=>x.trim()); if(p.length>=2){const data={item_name:p[0],category:p[1]||'支出',amount:parseFloat(p[2])||0,date:p[3]||new Date().toISOString().slice(0,10),remark:p[4]||''}; if(USE_SUPABASE)await db.expenses.create(data); else{let a=JSON.parse(localStorage.getItem('yayehui_expenses')||'[]');data.id=nextId(a);a.push(data);localStorage.setItem('yayehui_expenses',JSON.stringify(a));}} } alert('导入成功！');document.getElementById('expImportData').value='';renderExpenseList();
+                const text=document.getElementById('expImportData').value.trim(); if(!text)return; const lines=text.split(/[\n\r]+/).filter(l=>l.trim()); for(let i=1;i<lines.length;i++){const p=lines[i].split(',').map(x=>x.trim().replace(/^"|"$/g,'')); if(p.length>=2){const data={item_name:p[0],category:p[1]||'支出',amount:parseFloat(p[2])||0,date:p[3]||new Date().toISOString().slice(0,10),remark:p[4]||''}; if(USE_SUPABASE)await db.expenses.create(data); else{let a=JSON.parse(localStorage.getItem('yayehui_expenses')||'[]');data.id=nextId(a);a.push(data);localStorage.setItem('yayehui_expenses',JSON.stringify(a));}} } alert('导入成功！');document.getElementById('expImportData').value='';renderExpenseList();
             } finally {
                 opLock.hide();
             }
@@ -1178,6 +1178,8 @@
 
     // 标签切换
     window.showPanel = function(panelId) {
+        // Save current tab to localStorage
+        localStorage.setItem('yayehui_admin_tab', panelId);
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         const btn = document.querySelector(`.tab-btn[data-panel="${panelId}"]`);
@@ -1327,8 +1329,9 @@
             clearSession();
             showLogin(); 
         };
-        // 默认加载第一个面板
-        setTimeout(() => renderAnnouncementsPanel(), 50);
+        // 恢复上次打开的面板，默认为公告
+        const savedTab = localStorage.getItem('yayehui_admin_tab') || 'Announcements';
+        setTimeout(() => showPanel(savedTab), 50);
     }
     
     // 启动时检查会话
