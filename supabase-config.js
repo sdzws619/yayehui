@@ -1,4 +1,5 @@
-// 闆呬笟浼?Supabase 閰嶇疆 V2锛?026-05-25锛?// 妯箙/椤佃剼鍚庡彴鍙敼銆佺敤鎴锋敞鍐屻€佽秴绾х鐞嗗憳
+// 雅业会 Supabase 配置 V2 - 2026-05-25
+// 模块/页脚后台可改、用户注册、超级管理员
 
 const SUPABASE_CONFIG = {
     url: 'https://wrodvjsbdrxunaiwoaml.supabase.co',
@@ -51,27 +52,28 @@ async function supabaseFetch(table, options = {}) {
 }
 
 const db = {
-    // 鍏憡
+    // 公告
     announcements: {
         getAll: () => supabaseFetch('announcements', { params: { order: 'date.desc' } }),
         create: (item) => supabaseFetch('announcements', { method: 'POST', body: item }),
         update: (id, item) => supabaseFetch('announcements?id=eq.' + id, { method: 'PATCH', body: item }),
         delete: (id) => supabaseFetch('announcements?id=eq.' + id, { method: 'DELETE' })
     },
-    // 宸ヤ綔鍔ㄦ€?    dynamics: {
+    // 动态
+    dynamics: {
         getAll: () => supabaseFetch('dynamics', { params: { order: 'date.desc' } }),
         create: (item) => supabaseFetch('dynamics', { method: 'POST', body: item }),
         update: (id, item) => supabaseFetch('dynamics?id=eq.' + id, { method: 'PATCH', body: item }),
         delete: (id) => supabaseFetch('dynamics?id=eq.' + id, { method: 'DELETE' })
     },
-    // 鎴愬憳
+    // 成员
     members: {
         getAll: () => supabaseFetch('members'),
         create: (item) => supabaseFetch('members', { method: 'POST', body: item }),
         update: (id, item) => supabaseFetch('members?id=eq.' + id, { method: 'PATCH', body: item }),
         delete: (id) => supabaseFetch('members?id=eq.' + id, { method: 'DELETE' })
     },
-    // 鎶曠エ
+    // 投票
     polls: {
         getAll: () => supabaseFetch('polls', { params: { order: 'created_at.desc' } }),
         getActive: () => supabaseFetch('polls', { params: { is_active: 'eq.true', order: 'created_at.desc' } }),
@@ -79,26 +81,26 @@ const db = {
         update: (id, item) => supabaseFetch('polls?id=eq.' + id, { method: 'PATCH', body: item }),
         delete: (id) => supabaseFetch('polls?id=eq.' + id, { method: 'DELETE' })
     },
-    // 鎶曠エ閫夐」
+    // 投票选项
     pollOptions: {
         getByPollId: (pollId) => supabaseFetch('poll_options', { params: { poll_id: 'eq.' + pollId } }),
         create: (item) => supabaseFetch('poll_options', { method: 'POST', body: item }),
         delete: (pollId) => supabaseFetch('poll_options?poll_id=eq.' + pollId, { method: 'DELETE' })
     },
-    // 鎶曠エ璁板綍
+    // 投票记录
     votes: {
         getByPollId: (pollId) => supabaseFetch('votes', { params: { poll_id: 'eq.' + pollId } }),
         create: (item) => supabaseFetch('votes', { method: 'POST', body: item }),
         checkVoted: (pollId, voterName) => supabaseFetch('votes', { params: { poll_id: 'eq.' + pollId, voter_name: 'eq.' + voterName } })
     },
-    // 璐圭敤
+    // 费用
     expenses: {
         getAll: () => supabaseFetch('expenses', { params: { order: 'date.desc' } }),
         create: (item) => supabaseFetch('expenses', { method: 'POST', body: item }),
         update: (id, item) => supabaseFetch('expenses?id=eq.' + id, { method: 'PATCH', body: item }),
         delete: (id) => supabaseFetch('expenses?id=eq.' + id, { method: 'DELETE' })
     },
-    // 涓婚
+    // 话题
     topics: {
         getAll: () => supabaseFetch('topics', { params: { order: 'created_at.desc' } }),
         getById: (id) => supabaseFetch('topics?id=eq.' + id),
@@ -106,14 +108,15 @@ const db = {
         update: (id, item) => supabaseFetch('topics?id=eq.' + id, { method: 'PATCH', body: item }),
         delete: (id) => supabaseFetch('topics?id=eq.' + id, { method: 'DELETE' })
     },
-    // 璺熷笘
+    // 跟帖
     replies: {
         getByTopicId: (topicId) => supabaseFetch('replies', { params: { topic_id: 'eq.' + topicId, order: 'created_at.asc' } }),
         create: (item) => supabaseFetch('replies', { method: 'POST', body: item }),
         delete: (id) => supabaseFetch('replies?id=eq.' + id, { method: 'DELETE' })
     },
 
-    // 绔欑偣璁剧疆锛堟í骞?椤佃剼鍐呭锛?    siteSettings: {
+    // 站点设置（首页/页脚内容）
+    siteSettings: {
         getAll: () => supabaseFetch('site_settings', { params: { order: 'id.asc' } }),
         getByKey: (key) => supabaseFetch('site_settings', { params: { setting_key: 'eq.' + key } }),
         create: (item) => supabaseFetch('site_settings', { method: 'POST', body: item }),
@@ -128,7 +131,7 @@ const db = {
         }
     },
 
-    // 娉ㄥ唽涓氫富鐢ㄦ埛
+    // 注册业主用户
     registeredUsers: {
         getAll: () => supabaseFetch('registered_users', { params: { order: 'created_at.desc' } }),
         getById: (id) => supabaseFetch('registered_users?id=eq.' + id),
@@ -137,14 +140,15 @@ const db = {
         delete: (id) => supabaseFetch('registered_users?id=eq.' + id, { method: 'DELETE' })
     },
 
-    // 鎴夸骇鍦板潃棰勫鍏?    propertyAddresses: {
+    // 房产地址库
+    propertyAddresses: {
         getAll: () => supabaseFetch('property_addresses', { params: { order: 'id.asc' } }),
         create: (item) => supabaseFetch('property_addresses', { method: 'POST', body: item }),
         delete: (id) => supabaseFetch('property_addresses?id=eq.' + id, { method: 'DELETE' }),
         markRegistered: (address) => supabaseFetch('property_addresses', { params: { address: 'eq.' + address }, method: 'PATCH', body: { is_registered: true } })
     },
 
-    // 绠＄悊鍛樿处鍙疯〃
+    // 管理员账号表
     adminAccounts: {
         getAll: () => supabaseFetch('admin_accounts', { params: { order: 'id.asc' } }),
         create: (item) => supabaseFetch('admin_accounts', { method: 'POST', body: item }),
@@ -152,7 +156,8 @@ const db = {
         updatePwd: (username, newPwd) => supabaseFetch('admin_accounts?username=eq.' + username, { method: 'PATCH', body: { password: newPwd } })
     },
 
-    // 绠＄悊鍛樼櫥褰曟棩蹇?    adminLoginLogs: {
+    // 管理员登录日志
+    adminLoginLogs: {
         getAll: () => supabaseFetch('admin_login_logs', { params: { order: 'login_time.desc' } }),
         create: (item) => supabaseFetch('admin_login_logs', { method: 'POST', body: item }),
         delete: (id) => supabaseFetch('admin_login_logs?id=eq.' + id, { method: 'DELETE' })
@@ -166,7 +171,4 @@ async function checkDatabase() {
     } catch { return false; }
 }
 
-// 暴露 db 到全局作用域
 window.db = db;
-
-
