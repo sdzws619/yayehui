@@ -1398,30 +1398,49 @@ window.handleLogin = async function() {
     
     try {
         let user = null;
+        let isAdmin = false;
+        
+        // 先检查管理员账号
         if (USE_SUPABASE) {
-            let users = await db.registeredUsers.getAll() || [];
-            // 先找到用户（通过用户名或手机号）
-            const foundUser = users.find(u => (u.user_name === account || u.phone === account));
-            if (foundUser && foundUser.passwordHash && foundUser.passwordSalt) {
-                // 验证加密后的密码
-                const isValid = await verifyPassword(password, foundUser.passwordSalt, foundUser.passwordHash);
-                if (isValid) user = foundUser;
+            const admins = await db.adminAccounts.getAll() || [];
+            const foundAdmin = admins.find(a => a.username === account);
+            if (foundAdmin && foundAdmin.password === password) {
+                user = { id: foundAdmin.id, user_name: foundAdmin.username, role: foundAdmin.role, is_admin: true };
+                isAdmin = true;
             }
         } else {
-            let users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
-            // 先找到用户（通过用户名或手机号）
-            const foundUser = users.find(u => (u.user_name === account || u.phone === account));
-            if (foundUser && foundUser.passwordHash && foundUser.passwordSalt) {
-                // 验证加密后的密码
-                const isValid = await verifyPassword(password, foundUser.passwordSalt, foundUser.passwordHash);
-                if (isValid) user = foundUser;
+            const admins = JSON.parse(localStorage.getItem('yayehui_admin_accounts') || '[]');
+            const foundAdmin = admins.find(a => a.username === account);
+            if (foundAdmin && foundAdmin.password === password) {
+                user = { id: foundAdmin.id, user_name: foundAdmin.username, role: foundAdmin.role, is_admin: true };
+                isAdmin = true;
             }
         }
+        
+        // 如果不是管理员，再检查注册用户
+        if (!user) {
+            if (USE_SUPABASE) {
+                let users = await db.registeredUsers.getAll() || [];
+                const foundUser = users.find(u => (u.user_name === account || u.phone === account));
+                if (foundUser && foundUser.passwordHash && foundUser.passwordSalt) {
+                    const isValid = await verifyPassword(password, foundUser.passwordSalt, foundUser.passwordHash);
+                    if (isValid) user = foundUser;
+                }
+            } else {
+                let users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
+                const foundUser = users.find(u => (u.user_name === account || u.phone === account));
+                if (foundUser && foundUser.passwordHash && foundUser.passwordSalt) {
+                    const isValid = await verifyPassword(password, foundUser.passwordSalt, foundUser.passwordHash);
+                    if (isValid) user = foundUser;
+                }
+            }
+        }
+        
         if (user) {
             currentUser = user;
             localStorage.setItem('yayehui_current_user', JSON.stringify(currentUser));
             hideLoginModal();
-            alert('登录成功！');
+            alert('登录成功！' + (isAdmin ? ' (管理员)' : ''));
             location.reload();
         } else {
             alert('用户名或密码错误');
