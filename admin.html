@@ -1077,9 +1077,12 @@ window.exportPropertyAddresses = async () => { const addrs=await getAllPropertyA
         keys.forEach(key => {
             const existing = settings.find(s => s.setting_key === key);
             const val = existing?.setting_value || '';
+            const isTextarea = key === 'contact_content' || key === 'hero_desc';
             html += `<div class="settings-item">
                 <label>${keyMap[key]}</label>
-                <input type="text" id="setting_${key}" value="${escapeHtml(val)}" placeholder="请输入">
+                ${isTextarea
+                    ? `<textarea id="setting_${key}" placeholder="请输入" style="width:100%;min-height:80px;padding:8px;border-radius:8px;border:1px solid #cfdfd3;font-family:inherit;">${escapeHtml(val)}</textarea>`
+                    : `<input type="text" id="setting_${key}" value="${escapeHtml(val)}" placeholder="请输入">`}
                 <button class="btn-sm primary" onclick="saveSetting('${key}')"><i class="fas fa-save"></i> 保存</button>
             </div>`;
         });
