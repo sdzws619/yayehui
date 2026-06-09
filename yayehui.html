@@ -240,7 +240,7 @@ window.onerror=function(msg,url,line,col,error){var el=document.getElementById('
                 <p id="footerAddress"><i class="fas fa-map-marker-alt"></i> <span id="footerAddressText">雅居花园 · 业委会办公室</span></p>
             </div>
             <div class="footer-links">
-                <div><a href="#">关于我们</a><br><a href="#">业委会章程</a><br><a href="#">联系我们</a></div>
+                <div><a href="#">关于我们</a><br><a href="#">业委会章程</a><br><a href="javascript:void(0)" onclick="showContactModal()">联系我们</a></div>
                 <div><a href="#">服务协议</a><br><a href="#">隐私政策</a><br><a href="#">技术支持</a></div>
             </div>
         </div>
@@ -269,6 +269,15 @@ window.onerror=function(msg,url,line,col,error){var el=document.getElementById('
         <div class="form-group"><textarea id="replyContent" rows="3" placeholder="写下您的跟帖..."></textarea></div>
         <div class="form-group"><input type="text" id="replyAuthor" placeholder="您的昵称"></div>
         <button class="btn" id="submitReplyBtn">提交跟帖</button>
+    </div>
+</div>
+
+<!-- 联系我们弹窗 -->
+<div id="contactModal" class="modal">
+    <div class="modal-content contact-modal-content">
+        <span class="modal-close" onclick="document.getElementById('contactModal').style.display='none'">&times;</span>
+        <div class="modal-title"><i class="fas fa-phone-alt" style="color:#2c6e49;"></i> 联系我们</div>
+        <div id="contactContent" style="white-space:pre-wrap;line-height:1.8;padding:16px 0;font-size:1rem;color:#1e293b;"></div>
     </div>
 </div>
 
@@ -568,6 +577,9 @@ const DEFAULT_DATA = {
     };
 
     // 加载站点配置
+    // 全局联系我们内容
+    window.CONTACT_CONTENT = '联系电话：xxx\nEmail：xxx';
+
     async function loadSiteSettings() {
         try {
             let settings = [];
@@ -581,6 +593,8 @@ const DEFAULT_DATA = {
             if (settings && settings.length > 0) {
                 const map = {};
                 settings.forEach(s => map[s.setting_key] = s.setting_value);
+                // 保存联系我们内容到全局变量
+                if (map.contact_content) window.CONTACT_CONTENT = map.contact_content;
                 
                 // 更新首页横幅
                 if (map.hero_title || map.hero_subtitle) {
@@ -1364,6 +1378,12 @@ window.showResetPasswordModal = function() {
 // 隐藏重置密码模态框
 window.hideResetPasswordModal = function() {
     document.getElementById('resetPasswordModal').style.display = 'none';
+};
+
+// 显示联系我们弹窗
+window.showContactModal = function() {
+    document.getElementById('contactContent').textContent = window.CONTACT_CONTENT || '联系电话：xxx\nEmail：xxx';
+    document.getElementById('contactModal').style.display = 'flex';
 };
 
 // 处理登录
