@@ -914,7 +914,7 @@
         if (!container) return;
         container.innerHTML = `
             <div class="card-panel">
-                <h3><i class="fas fa-user-check"></i> 用户注册信息 <button class="export-btn" onclick="exportUsers()"><i class="fas fa-download"></i> 导出</button></h3>
+                <h3><i class="fas fa-user-check"></i> 用户注册信息 <button class="export-btn" onclick="exportUsers()"><i class="fas fa-download"></i> 导出</button><button class="btn-sm success" onclick="document.getElementById('userImportFile').click()"><i class="fas fa-upload"></i> 批量导入</button><input type="file" id="userImportFile" accept=".csv,.txt" style="display:none" onchange="importUsersFromFile(this.files[0])"></h3>
                 <div class="stats-row" id="userStatsRow">
                     <div class="stat-card"><div class="num" id="statTotalUsers">-</div><div class="label">注册用户总数</div></div>
                 </div>
@@ -938,6 +938,35 @@
             }
         };
     window.exportUsers = async () => { const users=await getAllRegisteredUsers(); exportData(users,'注册用户',[{field:'user_name',label:'用户名称'},{field:'phone',label:'手机号码'},{field:'property_address',label:'房产地址'},{field:'created_at',label:'注册时间'}]); };
+    window.importUsersFromFile = async (file) => {
+        if (!file) return;
+        try {
+            const text = await file.text();
+            const lines = text.split(/[\n\r]+/).filter(l => l.trim());
+            if (lines.length === 0) { alert('文件为空'); return; }
+            const header = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+            const userIdx = header.indexOf('用户名称');
+            const phoneIdx = header.indexOf('手机号码');
+            const addrIdx = header.indexOf('房产地址');
+            if (userIdx < 0 || phoneIdx < 0 || addrIdx < 0) { alert('CSV缺少必要列：用户名称、手机号码、房产地址'); return; }
+            let ok = 0, skip = 0;
+            for (let i = 1; i < lines.length; i++) {
+                const p = lines[i].split(',');
+                const userName = (p[userIdx] || '').trim().replace(/^"|"$/g, '');
+                const phone = (p[phoneIdx] || '').trim().replace(/^"|"$/g, '');
+                const address = (p[addrIdx] || '').trim().replace(/^"|"$/g, '');
+                if (!userName || !phone || !address) { skip++; continue; }
+                const exists = await db.registeredUsers.getByPhone(phone);
+                if (exists) { skip++; continue; }
+                await db.registeredUsers.create({ user_name: userName, phone: phone, property_address: address, passwordHash: '', passwordSalt: '', created_at: new Date().toISOString() });
+                const addr = await db.propertyAddresses.getByAddress(address);
+                if (addr && !addr.is_registered) await db.propertyAddresses.markRegistered(address);
+                ok++;
+            }
+            alert('导入完成：新增 ' + ok + ' 个用户，跳过 ' + skip + ' 个（重复或数据不全）');
+            renderUsersPanel();
+        } catch(e) { alert('导入失败: ' + e.message); }
+    };
 
     // 房产地址导入
     async function renderPropertyPanel() {
