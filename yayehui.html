@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-    <title>雅业会 | 智慧业委会平台</title>
+    <title>闆呬笟浼?| 鏅烘収涓氬浼氬钩鍙?/title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -51,7 +51,7 @@
         .poll-option { background: #eef2f0; border-radius: 40px; padding: 6px 18px; cursor: pointer; transition: 0.2s; display: inline-block; margin: 4px; }
         .poll-option.selected { background: #2c6e49; color: white; }
         .vote-btn { background: #2c6e49; color: white; border: none; padding: 8px 20px; border-radius: 40px; cursor: pointer; font-weight: 500; margin-top: 10px; }
-        /* 投票结果条形图 */
+        /* 鎶曠エ缁撴灉鏉″舰鍥?*/
         .vote-bar-container { margin-top: 12px; }
         .vote-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
         .vote-bar-label { min-width: 60px; font-size: 0.9rem; font-weight: 500; color: #1e293b; }
@@ -120,7 +120,7 @@
 <body>
 <div id="jsError" style="display:none;position:fixed;top:0;left:0;right:0;background:#e74c3c;color:white;padding:12px;z-index:99999;font-size:14px;cursor:pointer;" onclick="this.style.display='none'"></div>
 <script>
-        // 校验手机号唯一性
+        // 鏍￠獙鎵嬫満鍙峰敮涓€鎬?
         function checkPhoneUnique() {
             const phone = document.getElementById('modalRegPhone').value.trim();
             if (!phone) {
@@ -130,17 +130,17 @@
             try {
                 const users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
                 if (users.find(u => u.phone === phone)) {
-                    document.getElementById('modalRegPhoneMsg').textContent = '此手机号已被注册';
+                    document.getElementById('modalRegPhoneMsg').textContent = '姝ゆ墜鏈哄彿宸茶娉ㄥ唽';
                     document.getElementById('modalRegPhoneMsg').style.color = '#c2410c';
                 } else {
                     document.getElementById('modalRegPhoneMsg').textContent = '';
                 }
             } catch(e) {
-                console.error('校验手机号失败:', e);
+                console.error('鏍￠獙鎵嬫満鍙峰け璐?', e);
             }
         }
         
-        // 校验用户名唯一性（实时失焦校验）
+        // 鏍￠獙鐢ㄦ埛鍚嶅敮涓€鎬э紙瀹炴椂澶辩劍鏍￠獙锛?
         function checkUsernameUnique() {
             const username = document.getElementById('modalRegUsername').value.trim();
             if (!username) {
@@ -150,24 +150,24 @@
             try {
                 const users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
                 if (users.find(u => u.user_name === username)) {
-                    // 生成建议用户名
+                    // 鐢熸垚寤鸿鐢ㄦ埛鍚?
                     let suggested = username;
                     let counter = 2;
                     while (users.find(u => u.user_name === suggested)) {
                         suggested = username + counter;
                         counter++;
                     }
-                    document.getElementById('modalRegUsernameMsg').innerHTML = '此用户名已被注册，建议：<strong>' + suggested + '</strong> <button type="button" onclick="document.getElementById(\'modalRegUsername\').value=\'' + suggested + '\';document.getElementById(\'modalRegUsernameMsg\').innerHTML=\'\';" style="color:#2c6e49;cursor:pointer;text-decoration:underline;background:none;border:none;font-size:inherit;">一键采用</button>';
+                    document.getElementById('modalRegUsernameMsg').innerHTML = '姝ょ敤鎴峰悕宸茶娉ㄥ唽锛屽缓璁細<strong>' + suggested + '</strong> <button type="button" onclick="document.getElementById(\'modalRegUsername\').value=\'' + suggested + '\';document.getElementById(\'modalRegUsernameMsg\').innerHTML=\'\';" style="color:#2c6e49;cursor:pointer;text-decoration:underline;background:none;border:none;font-size:inherit;">涓€閿噰鐢?/button>';
                     document.getElementById('modalRegUsernameMsg').style.color = '#c2410c';
                 } else {
                     document.getElementById('modalRegUsernameMsg').textContent = '';
                 }
             } catch(e) {
-                console.error('校验用户名失败:', e);
+                console.error('鏍￠獙鐢ㄦ埛鍚嶅け璐?', e);
             }
         }
         
-        // 密码加密相关函数（使用 Web Crypto API）
+        // 瀵嗙爜鍔犲瘑鐩稿叧鍑芥暟锛堜娇鐢?Web Crypto API锛?
         async function generateSalt() {
             const salt = crypto.getRandomValues(new Uint8Array(16));
             return Array.from(salt, b => b.toString(16).padStart(2, '0')).join('');
@@ -185,79 +185,79 @@
             return hash === storedHash;
         }
         
-window.onerror=function(msg,url,line,col,error){var el=document.getElementById('jsError');if(el){el.style.display='block';el.innerHTML='⚠️ JS错误: '+msg+' 位置:'+(url||'').substring(0,100)+':'+line;};return false;}</script>
+window.onerror=function(msg,url,line,col,error){var el=document.getElementById('jsError');if(el){el.style.display='block';el.innerHTML='鈿狅笍 JS閿欒: '+msg+' 浣嶇疆:'+(url||'').substring(0,100)+':'+line;};return false;}</script>
 <header class="header">
     <div class="container">
         <div class="nav-bar">
-            <div class="logo-area"><i class="fas fa-building-user logo-icon"></i><div><span class="logo-text">雅业会</span><div class="logo-sub">雅居·共治·美好</div></div></div>
+            <div class="logo-area"><i class="fas fa-building-user logo-icon"></i><div><span class="logo-text">闆呬笟浼?/span><div class="logo-sub">闆呭眳路鍏辨不路缇庡ソ</div></div></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
             <ul class="nav-menu" id="navMenu">
-                <li><a href="#home">首页</a></li>
-                <li><a href="#announcements">公告</a></li>
-                <li><a href="#polls">投票</a></li>
-                <li><a href="#expenses">费用</a></li>
-                <li><a href="#topics">心声</a></li>
-                <li><a href="#committee">业委会</a></li>
-                <li><a href="javascript:void(0)" id="navLogin" onclick="handleNavLoginClick(event)">登录</a></li>
+                <li><a href="#home">棣栭〉</a></li>
+                <li><a href="#announcements">鍏憡</a></li>
+                <li><a href="#polls">鎶曠エ</a></li>
+                <li><a href="#expenses">璐圭敤</a></li>
+                <li><a href="#topics">蹇冨０</a></li>
+                <li><a href="#committee">涓氬浼?/a></li>
+                <li><a href="javascript:void(0)" id="navLogin" onclick="handleNavLoginClick(event)">鐧诲綍</a></li>
             </ul>
         </div>
     </div>
 </header>
 <main>
-    <!-- 横幅区域（内容从后台读取） -->
+    <!-- 妯箙鍖哄煙锛堝唴瀹逛粠鍚庡彴璇诲彇锛?-->
     <section id="home" class="hero">
         <div class="container hero-grid">
             <div class="hero-content">
-                <h1 id="heroTitle">共建·共治·共享<br>雅业会与您携手</h1>
-                <p id="heroDesc">业委会透明服务，智慧小区管理，让家园更温暖。业主沟通零距离，共创宜居环境。</p>
+                <h1 id="heroTitle">鍏卞缓路鍏辨不路鍏变韩<br>闆呬笟浼氫笌鎮ㄦ惡鎵?/h1>
+                <p id="heroDesc">涓氬浼氶€忔槑鏈嶅姟锛屾櫤鎱у皬鍖虹鐞嗭紝璁╁鍥洿娓╂殩銆備笟涓绘矡閫氶浂璺濈锛屽叡鍒涘疁灞呯幆澧冦€?/p>
                 <div class="hero-stats">
-                    <div class="stat-item"><div class="stat-number" id="heroStat1Num">12+</div><div id="heroStat1Label">年度议题</div></div>
-                    <div class="stat-item"><div class="stat-number" id="heroStat2Num">98%</div><div id="heroStat2Label">业主满意度</div></div>
-                    <div class="stat-item"><div class="stat-number" id="heroStat3Num">24h</div><div id="heroStat3Label">快速响应</div></div>
+                    <div class="stat-item"><div class="stat-number" id="heroStat1Num">12+</div><div id="heroStat1Label">骞村害璁</div></div>
+                    <div class="stat-item"><div class="stat-number" id="heroStat2Num">98%</div><div id="heroStat2Label">涓氫富婊℃剰搴?/div></div>
+                    <div class="stat-item"><div class="stat-number" id="heroStat3Num">24h</div><div id="heroStat3Label">蹇€熷搷搴?/div></div>
                 </div>
             </div>
             <div class="hero-img"><i class="fas fa-handshake"></i></div>
         </div>
     </section>
     <div class="container">
-        <section><div class="card-grid"><div class="card"><i class="fas fa-chart-line feature-icon"></i><h3>信息公开透明</h3><p>财务、决议、流程全公开，定期推送业委会工作简报。</p></div><div class="card"><i class="fas fa-users feature-icon"></i><h3>民主协商共治</h3><p>业主大会在线表决，意见直达业委会，共同决策小区事务。</p></div><div class="card"><i class="fas fa-mobile-alt feature-icon"></i><h3>智慧服务平台</h3><p>线上报修、投诉建议、公告查询，指尖享受社区服务。</p></div></div></section>
-        <section id="announcements"><h2 class="section-title"><i class="fas fa-bullhorn"></i> 最新公告</h2><div id="announcementList"><div class="loading">加载中...</div></div><div class="pager" id="announcementPager"></div></section>
-        <section><h2 class="section-title"><i class="fas fa-newspaper"></i> 工作动态</h2><div id="dynamicList"><div class="loading">加载中...</div></div><div class="pager" id="dynamicPager"></div></section>
-        <section id="polls"><h2 class="section-title"><i class="fas fa-vote-yea"></i> 业主决策投票</h2><div id="pollsList"><div class="loading">加载中...</div></div></section>
-        <section id="expenses"><h2 class="section-title"><i class="fas fa-chart-pie"></i> 费用公示</h2><div id="expensesList"><div class="loading">加载中...</div></div><div class="pager" id="expensesPager"></div></section>
-        <section id="topics"><h2 class="section-title"><i class="fas fa-comments"></i> 业主心声</h2><div id="topicsList"><div class="loading">加载中...</div></div><div class="pager" id="topicsPager"></div><div style="text-align:center;margin:16px 0;"><button class="btn" id="newTopicBtn" style="background:#2c6e49;color:white;padding:10px 24px;border-radius:20px;border:none;cursor:pointer;font-size:0.95rem;"><i class="fas fa-pen"></i> 发表心声</button></div></section>
-        <section id="committee"><h2 class="section-title"><i class="fas fa-user-tie"></i> 业委会成员</h2><div class="card-grid" id="memberGrid"><div class="loading">加载中...</div></div><div class="pager" id="memberPager"></div></section>
-        <section id="services"><h2 class="section-title"><i class="fas fa-concierge-bell"></i> 便民服务直通车</h2><div class="card-grid" id="serviceGrid"></div></section>
-        <section id="register"><h2 class="section-title"><i class="fas fa-user-plus"></i> 用户注册</h2><div id="registerSection"><div class="loading">加载中...</div></div></section>
+        <section><div class="card-grid"><div class="card"><i class="fas fa-chart-line feature-icon"></i><h3>淇℃伅鍏紑閫忔槑</h3><p>璐㈠姟銆佸喅璁€佹祦绋嬪叏鍏紑锛屽畾鏈熸帹閫佷笟濮斾細宸ヤ綔绠€鎶ャ€?/p></div><div class="card"><i class="fas fa-users feature-icon"></i><h3>姘戜富鍗忓晢鍏辨不</h3><p>涓氫富澶т細鍦ㄧ嚎琛ㄥ喅锛屾剰瑙佺洿杈句笟濮斾細锛屽叡鍚屽喅绛栧皬鍖轰簨鍔°€?/p></div><div class="card"><i class="fas fa-mobile-alt feature-icon"></i><h3>鏅烘収鏈嶅姟骞冲彴</h3><p>绾夸笂鎶ヤ慨銆佹姇璇夊缓璁€佸叕鍛婃煡璇紝鎸囧皷浜彈绀惧尯鏈嶅姟銆?/p></div></div></section>
+        <section id="announcements"><h2 class="section-title"><i class="fas fa-bullhorn"></i> 鏈€鏂板叕鍛?/h2><div id="announcementList"><div class="loading">鍔犺浇涓?..</div></div><div class="pager" id="announcementPager"></div></section>
+        <section><h2 class="section-title"><i class="fas fa-newspaper"></i> 宸ヤ綔鍔ㄦ€?/h2><div id="dynamicList"><div class="loading">鍔犺浇涓?..</div></div><div class="pager" id="dynamicPager"></div></section>
+        <section id="polls"><h2 class="section-title"><i class="fas fa-vote-yea"></i> 涓氫富鍐崇瓥鎶曠エ</h2><div id="pollsList"><div class="loading">鍔犺浇涓?..</div></div></section>
+        <section id="expenses"><h2 class="section-title"><i class="fas fa-chart-pie"></i> 璐圭敤鍏ず</h2><div id="expensesList"><div class="loading">鍔犺浇涓?..</div></div><div class="pager" id="expensesPager"></div></section>
+        <section id="topics"><h2 class="section-title"><i class="fas fa-comments"></i> 涓氫富蹇冨０</h2><div id="topicsList"><div class="loading">鍔犺浇涓?..</div></div><div class="pager" id="topicsPager"></div><div style="text-align:center;margin:16px 0;"><button class="btn" id="newTopicBtn" style="background:#2c6e49;color:white;padding:10px 24px;border-radius:20px;border:none;cursor:pointer;font-size:0.95rem;"><i class="fas fa-pen"></i> 鍙戣〃蹇冨０</button></div></section>
+        <section id="committee"><h2 class="section-title"><i class="fas fa-user-tie"></i> 涓氬浼氭垚鍛?/h2><div class="card-grid" id="memberGrid"><div class="loading">鍔犺浇涓?..</div></div><div class="pager" id="memberPager"></div></section>
+        <section id="services"><h2 class="section-title"><i class="fas fa-concierge-bell"></i> 渚挎皯鏈嶅姟鐩撮€氳溅</h2><div class="card-grid" id="serviceGrid"></div></section>
+        <section id="register"><h2 class="section-title"><i class="fas fa-user-plus"></i> 鐢ㄦ埛娉ㄥ唽</h2><div id="registerSection"><div class="loading">鍔犺浇涓?..</div></div></section>
     </div>
 </main>
 <footer class="footer">
     <div class="container">
         <div class="footer-content">
             <div class="footer-logo">
-                <h3>雅业会</h3>
-                <p id="footerBannerText">公开·信任·共建美好社区</p>
-                <p id="footerAddress"><i class="fas fa-map-marker-alt"></i> <span id="footerAddressText">雅居花园 · 业委会办公室</span></p>
+                <h3>闆呬笟浼?/h3>
+                <p id="footerBannerText">鍏紑路淇′换路鍏卞缓缇庡ソ绀惧尯</p>
+                <p id="footerAddress"><i class="fas fa-map-marker-alt"></i> <span id="footerAddressText">闆呭眳鑺卞洯 路 涓氬浼氬姙鍏</span></p>
             </div>
             <div class="footer-links">
-                <div><a href="#">关于我们</a><br><a href="#">业委会章程</a><br><a href="javascript:void(0)" onclick="showContactModal()">联系我们</a></div>
-                <div><a href="#">服务协议</a><br><a href="#">隐私政策</a><br><a href="#">技术支持</a></div>
+                <div><a href="#">鍏充簬鎴戜滑</a><br><a href="#">涓氬浼氱珷绋?/a><br><a href="javascript:void(0)" onclick="showContactModal()">鑱旂郴鎴戜滑</a></div>
+                <div><a href="#">鏈嶅姟鍗忚</a><br><a href="#">闅愮鏀跨瓥</a><br><a href="#">鎶€鏈敮鎸?/a></div>
             </div>
         </div>
-        <div class="copyright" id="footerCopyright">© 2025 雅业会业主委员会平台 | 携手共创宜居家园</div>
+        <div class="copyright" id="footerCopyright">漏 2025 闆呬笟浼氫笟涓诲鍛樹細骞冲彴 | 鎼烘墜鍏卞垱瀹滃眳瀹跺洯</div>
     </div>
 </footer>
 
-<!-- 回复模态框 -->
-<!-- 发帖模态框 -->
+<!-- 鍥炲妯℃€佹 -->
+<!-- 鍙戝笘妯℃€佹 -->
 <div id="newTopicModal" class="modal">
     <div class="modal-content">
         <span class="modal-close" id="closeNewTopicModal">&times;</span>
-        <div class="modal-title"><i class="fas fa-pen-to-square" style="color:#2c6e49;"></i> 发表业主心声</div>
-        <div class="form-group"><label>标题</label><input type="text" id="topicTitle" placeholder="请输入标题"></div>
-        <div class="form-group"><label>内容</label><textarea id="topicContent" rows="4" placeholder="请输入内容"></textarea></div>
-        <div class="form-group"><label>昵称</label><input type="text" id="topicAuthor" placeholder="您的昵称"></div>
-        <button class="btn" id="submitTopicBtn" style="width:100%;">发表</button>
+        <div class="modal-title"><i class="fas fa-pen-to-square" style="color:#2c6e49;"></i> 鍙戣〃涓氫富蹇冨０</div>
+        <div class="form-group"><label>鏍囬</label><input type="text" id="topicTitle" placeholder="璇疯緭鍏ユ爣棰?></div>
+        <div class="form-group"><label>鍐呭</label><textarea id="topicContent" rows="4" placeholder="璇疯緭鍏ュ唴瀹?></textarea></div>
+        <div class="form-group"><label>鏄电О</label><input type="text" id="topicAuthor" placeholder="鎮ㄧ殑鏄电О"></div>
+        <button class="btn" id="submitTopicBtn" style="width:100%;">鍙戣〃</button>
     </div>
 </div>
 
@@ -266,173 +266,173 @@ window.onerror=function(msg,url,line,col,error){var el=document.getElementById('
         <span class="modal-close" id="closeReplyModal">&times;</span>
         <div class="modal-title" id="replyTopicTitle"></div>
         <div id="repliesList" style="max-height: 300px; overflow-y: auto; margin: 20px 0;"></div>
-        <div class="form-group"><textarea id="replyContent" rows="3" placeholder="写下您的跟帖..."></textarea></div>
-        <div class="form-group"><input type="text" id="replyAuthor" placeholder="您的昵称"></div>
-        <button class="btn" id="submitReplyBtn">提交跟帖</button>
+        <div class="form-group"><textarea id="replyContent" rows="3" placeholder="鍐欎笅鎮ㄧ殑璺熷笘..."></textarea></div>
+        <div class="form-group"><input type="text" id="replyAuthor" placeholder="鎮ㄧ殑鏄电О"></div>
+        <button class="btn" id="submitReplyBtn">鎻愪氦璺熷笘</button>
     </div>
 </div>
 
-<!-- 联系我们弹窗 -->
+<!-- 鑱旂郴鎴戜滑寮圭獥 -->
 <div id="contactModal" class="modal">
     <div class="modal-content contact-modal-content">
         <span class="modal-close" onclick="document.getElementById('contactModal').style.display='none'">&times;</span>
-        <div class="modal-title"><i class="fas fa-phone-alt" style="color:#2c6e49;"></i> 联系我们</div>
+        <div class="modal-title"><i class="fas fa-phone-alt" style="color:#2c6e49;"></i> 鑱旂郴鎴戜滑</div>
         <div id="contactContent" style="white-space:pre-wrap;line-height:1.8;padding:16px 0;font-size:1rem;color:#1e293b;"></div>
     </div>
 </div>
 
-<!-- 注册提醒模态框（投票未注册时弹出） -->
+<!-- 娉ㄥ唽鎻愰啋妯℃€佹锛堟姇绁ㄦ湭娉ㄥ唽鏃跺脊鍑猴級 -->
 <div id="voteNeedRegModal" class="modal">
     <div class="modal-content" style="text-align:center;">
         <span class="modal-close" id="closeVoteNeedRegModal">&times;</span>
-        <div class="modal-title"><i class="fas fa-user-edit" style="color:#2c6e49;font-size:2rem;"></i><br>需要先注册</div>
-        <p style="color:#475569;margin:16px 0;">您需要先注册成为平台用户，才能参与投票。</p>
-        <p style="color:#6c7a91;font-size:0.85rem;">注册需填写手机号码、用户名称和房产地址信息。</p>
+        <div class="modal-title"><i class="fas fa-user-edit" style="color:#2c6e49;font-size:2rem;"></i><br>闇€瑕佸厛娉ㄥ唽</div>
+        <p style="color:#475569;margin:16px 0;">鎮ㄩ渶瑕佸厛娉ㄥ唽鎴愪负骞冲彴鐢ㄦ埛锛屾墠鑳藉弬涓庢姇绁ㄣ€?/p>
+        <p style="color:#6c7a91;font-size:0.85rem;">娉ㄥ唽闇€濉啓鎵嬫満鍙风爜銆佺敤鎴峰悕绉板拰鎴夸骇鍦板潃淇℃伅銆?/p>
         <div style="margin-top:24px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
-            <button class="btn" id="goRegisterBtn">立即注册</button>
-            <button class="btn btn-secondary" id="closeVoteRegBtn">暂不注册</button>
+            <button class="btn" id="goRegisterBtn">绔嬪嵆娉ㄥ唽</button>
+            <button class="btn btn-secondary" id="closeVoteRegBtn">鏆備笉娉ㄥ唽</button>
         </div>
     </div>
 </div>
 
-<!-- 登录模态框 -->
+<!-- 鐧诲綍妯℃€佹 -->
 <div id="loginModal" class="modal">
     <div class="modal-content">
         <span class="modal-close" id="closeLoginModal">&times;</span>
-        <div class="modal-title"><i class="fas fa-sign-in-alt" style="color:#2c6e49;"></i> 用户登录</div>
+        <div class="modal-title"><i class="fas fa-sign-in-alt" style="color:#2c6e49;"></i> 鐢ㄦ埛鐧诲綍</div>
         <div class="form-group">
-            <input type="text" id="loginAccount" placeholder="用户名或手机号码" style="width:100%; padding:12px 16px; border:1px solid #cfdfd3; border-radius:40px; font-size:1rem;">
+            <input type="text" id="loginAccount" placeholder="鐢ㄦ埛鍚嶆垨鎵嬫満鍙风爜" style="width:100%; padding:12px 16px; border:1px solid #cfdfd3; border-radius:40px; font-size:1rem;">
         </div>
         <div class="form-group">
-            <input type="password" id="loginPassword" placeholder="密码" style="width:100%; padding:12px 16px; border:1px solid #cfdfd3; border-radius:40px; font-size:1rem;">
+            <input type="password" id="loginPassword" placeholder="瀵嗙爜" style="width:100%; padding:12px 16px; border:1px solid #cfdfd3; border-radius:40px; font-size:1rem;">
         </div>
         <div style="display:flex; gap:10px; margin-top:20px;">
-            <button class="btn" id="loginSubmitBtn" style="flex:1;">登录</button>
+            <button class="btn" id="loginSubmitBtn" style="flex:1;">鐧诲綍</button>
         </div>
         <div style="margin-top:16px; display:flex; gap:20px; justify-content:center; font-size:0.9rem;">
-            <a href="#" id="goRegisterLink" style="color:#2c6e49; text-decoration:none;">没有账号？立即注册</a>
-            <a href="#" id="goResetPasswordLink" style="color:#6c7a91; text-decoration:none;">忘记密码？</a>
+            <a href="#" id="goRegisterLink" style="color:#2c6e49; text-decoration:none;">娌℃湁璐﹀彿锛熺珛鍗虫敞鍐?/a>
+            <a href="#" id="goResetPasswordLink" style="color:#6c7a91; text-decoration:none;">蹇樿瀵嗙爜锛?/a>
         </div>
     </div>
 </div>
 
-<!-- 用户资料模态框 -->
+<!-- 鐢ㄦ埛璧勬枡妯℃€佹 -->
 <div id="profileModal" class="modal">
     <div class="modal-content">
         <span class="modal-close" id="closeProfileModal">&times;</span>
-        <div class="modal-title"><i class="fas fa-user-circle" style="color:#2c6e49;"></i> 用户资料</div>
+        <div class="modal-title"><i class="fas fa-user-circle" style="color:#2c6e49;"></i> 鐢ㄦ埛璧勬枡</div>
         <div id="profileView" style="display:block;">
             <div style="background:#f9fbf8; border-radius:16px; padding:16px; margin-bottom:16px;">
-                <div style="margin-bottom:12px;"><span style="color:#6c7a91; min-width:80px; display:inline-block;">手机号码：</span><span id="profilePhone"></span></div>
-                <div style="margin-bottom:12px;"><span style="color:#6c7a91; min-width:80px; display:inline-block;">用户名称：</span><span id="profileUsername"></span></div>
-                <div style="margin-bottom:12px;"><span style="color:#6c7a91; min-width:80px; display:inline-block;">房产地址：</span><span id="profileAddress"></span></div>
+                <div style="margin-bottom:12px;"><span style="color:#6c7a91; min-width:80px; display:inline-block;">鎵嬫満鍙风爜锛?/span><span id="profilePhone"></span></div>
+                <div style="margin-bottom:12px;"><span style="color:#6c7a91; min-width:80px; display:inline-block;">鐢ㄦ埛鍚嶇О锛?/span><span id="profileUsername"></span></div>
+                <div style="margin-bottom:12px;"><span style="color:#6c7a91; min-width:80px; display:inline-block;">鎴夸骇鍦板潃锛?/span><span id="profileAddress"></span></div>
             </div>
             <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                <button class="btn" id="editProfileBtn" style="flex:1;">修改资料</button>
-                <button class="btn btn-secondary" id="changePasswordBtn" style="flex:1;">重置密码</button>
-                <button class="btn btn-secondary" id="logoutBtn" style="flex:1; background:#c2410c;">退出登录</button>
+                <button class="btn" id="editProfileBtn" style="flex:1;">淇敼璧勬枡</button>
+                <button class="btn btn-secondary" id="changePasswordBtn" style="flex:1;">閲嶇疆瀵嗙爜</button>
+                <button class="btn btn-secondary" id="logoutBtn" style="flex:1; background:#c2410c;">閫€鍑虹櫥褰?/button>
             </div>
         </div>
         <div id="profileEdit" style="display:none;">
             <div class="form-group">
-                <label style="font-weight:600; font-size:0.9rem; color:#1e293b; display:block; margin-bottom:6px;">手机号码</label>
-                <input type="tel" id="editPhone" placeholder="手机号码" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
+                <label style="font-weight:600; font-size:0.9rem; color:#1e293b; display:block; margin-bottom:6px;">鎵嬫満鍙风爜</label>
+                <input type="tel" id="editPhone" placeholder="鎵嬫満鍙风爜" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
             </div>
             <div class="form-group">
-                <label style="font-weight:600; font-size:0.9rem; color:#1e293b; display:block; margin-bottom:6px;">用户名称</label>
-                <input type="text" id="editUsername" placeholder="用户名称" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
+                <label style="font-weight:600; font-size:0.9rem; color:#1e293b; display:block; margin-bottom:6px;">鐢ㄦ埛鍚嶇О</label>
+                <input type="text" id="editUsername" placeholder="鐢ㄦ埛鍚嶇О" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
                 <div id="usernameCheckMsg" style="font-size:0.8rem; margin-top:4px;"></div>
             </div>
             <div class="form-group">
-                <label style="font-weight:600; font-size:0.9rem; color:#1e293b; display:block; margin-bottom:6px;">房产地址</label>
-                <input type="text" id="editAddress" placeholder="房产地址（必须从地址库选择）" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
+                <label style="font-weight:600; font-size:0.9rem; color:#1e293b; display:block; margin-bottom:6px;">鎴夸骇鍦板潃</label>
+                <input type="text" id="editAddress" placeholder="鎴夸骇鍦板潃锛堝繀椤讳粠鍦板潃搴撻€夋嫨锛? style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
                 <div id="addressCheckMsg" style="font-size:0.8rem; margin-top:4px;"></div>
             </div>
             <div style="display:flex; gap:10px; margin-top:20px;">
-                <button class="btn" id="saveProfileBtn" style="flex:1;">保存修改</button>
-                <button class="btn btn-secondary" id="cancelEditBtn" style="flex:1;">取消</button>
+                <button class="btn" id="saveProfileBtn" style="flex:1;">淇濆瓨淇敼</button>
+                <button class="btn btn-secondary" id="cancelEditBtn" style="flex:1;">鍙栨秷</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- 注册模态框 -->
+<!-- 娉ㄥ唽妯℃€佹 -->
 <div id="registerModal" class="modal">
     <div class="modal-content">
         <span class="modal-close" id="modalCloseRegister">&times;</span>
-        <div class="modal-title"><i class="fas fa-user-plus" style="color:#2c6e49;"></i> 用户注册</div>
+        <div class="modal-title"><i class="fas fa-user-plus" style="color:#2c6e49;"></i> 鐢ㄦ埛娉ㄥ唽</div>
         <div class="form-group">
-            <label style="font-weight:600; font-size:0.9rem; color:#1e293b; display:block; margin-bottom:6px;">用户名称 <span style="color:#c2410c;">*</span></label>
-            <input type="text" id="modalRegUsername" placeholder="登录名（唯一）" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;" onblur="checkUsernameUnique()">
+            <label style="font-weight:600; font-size:0.9rem; color:#1e293b; display:block; margin-bottom:6px;">鐢ㄦ埛鍚嶇О <span style="color:#c2410c;">*</span></label>
+            <input type="text" id="modalRegUsername" placeholder="鐧诲綍鍚嶏紙鍞竴锛? style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;" onblur="checkUsernameUnique()">
             <div id="modalRegUsernameMsg" style="font-size:0.8rem; margin-top:4px;"></div>
         </div>
         <div class="form-group">
-            <label style="font-weight:600; font-size:0.9rem; color:#1e293b; display:block; margin-bottom:6px;">手机号码 <span style="color:#c2410c;">*</span></label>
-            <input type="tel" id="modalRegPhone" placeholder="手机号码（唯一）" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;" onblur="checkPhoneUnique()">
+            <label style="font-weight:600; font-size:0.9rem; color:#1e293b; display:block; margin-bottom:6px;">鎵嬫満鍙风爜 <span style="color:#c2410c;">*</span></label>
+            <input type="tel" id="modalRegPhone" placeholder="鎵嬫満鍙风爜锛堝敮涓€锛? style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;" onblur="checkPhoneUnique()">
             <div id="modalRegPhoneMsg" style="font-size:0.8rem; margin-top:4px;"></div>
         </div>
         <div class="form-group">
-            <label style="font-weight:600; font-size:0.9rem; color:#1e293b; display:block; margin-bottom:6px;">登录密码 <span style="color:#c2410c;">*</span></label>
-            <input type="password" id="modalRegPassword" placeholder="密码" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
+            <label style="font-weight:600; font-size:0.9rem; color:#1e293b; display:block; margin-bottom:6px;">鐧诲綍瀵嗙爜 <span style="color:#c2410c;">*</span></label>
+            <input type="password" id="modalRegPassword" placeholder="瀵嗙爜" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
         </div>
         <div class="form-group">
-            <label style="font-weight:600; font-size:0.9rem; color:#1e293b; display:block; margin-bottom:6px;">确认密码 <span style="color:#c2410c;">*</span></label>
-            <input type="password" id="modalRegConfirmPassword" placeholder="确认密码" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
+            <label style="font-weight:600; font-size:0.9rem; color:#1e293b; display:block; margin-bottom:6px;">纭瀵嗙爜 <span style="color:#c2410c;">*</span></label>
+            <input type="password" id="modalRegConfirmPassword" placeholder="纭瀵嗙爜" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
         </div>
         <div class="form-group">
-            <label style="font-weight:600; font-size:0.9rem; color:#1e293b; display:block; margin-bottom:6px;">房产地址 <span style="color:#c2410c;">*</span></label>
-            <input type="text" id="modalRegAddress" placeholder="房产地址（必须从后台地址库选择）" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;" list="addressList" onfocus="populateAddressList()" onblur="validateRegAddress()">
+            <label style="font-weight:600; font-size:0.9rem; color:#1e293b; display:block; margin-bottom:6px;">鎴夸骇鍦板潃 <span style="color:#c2410c;">*</span></label>
+            <input type="text" id="modalRegAddress" placeholder="鎴夸骇鍦板潃锛堝繀椤讳粠鍚庡彴鍦板潃搴撻€夋嫨锛? style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;" list="addressList" onfocus="populateAddressList()" onblur="validateRegAddress()">
             <datalist id="addressList"></datalist>
             <div id="modalRegAddressMsg" style="font-size:0.8rem; margin-top:4px;"></div>
         </div>
         <div style="display:flex; gap:10px; margin-top:20px;">
-            <button class="btn" id="modalRegisterSubmitBtn" style="flex:1;">注册</button>
-            <button class="btn btn-secondary" id="modalCancelRegisterBtn" style="flex:1;">取消</button>
+            <button class="btn" id="modalRegisterSubmitBtn" style="flex:1;">娉ㄥ唽</button>
+            <button class="btn btn-secondary" id="modalCancelRegisterBtn" style="flex:1;">鍙栨秷</button>
         </div>
     </div>
 </div>
 
-<!-- 重置密码模态框 -->
+<!-- 閲嶇疆瀵嗙爜妯℃€佹 -->
 <div id="resetPasswordModal" class="modal">
     <div class="modal-content">
         <span class="modal-close" id="closeResetPasswordModal">&times;</span>
-        <div class="modal-title"><i class="fas fa-key" style="color:#2c6e49;"></i> 重置密码</div>
+        <div class="modal-title"><i class="fas fa-key" style="color:#2c6e49;"></i> 閲嶇疆瀵嗙爜</div>
         <div id="resetStep1">
-            <p style="color:#475569; margin-bottom:16px;">请输入您的房产地址以验证身份：</p>
+            <p style="color:#475569; margin-bottom:16px;">璇疯緭鍏ユ偍鐨勬埧浜у湴鍧€浠ラ獙璇佽韩浠斤細</p>
             <div class="form-group">
-                <input type="text" id="resetAddress" placeholder="房产地址" style="width:100%; padding:12px 16px; border:1px solid #cfdfd3; border-radius:40px; font-size:1rem;">
+                <input type="text" id="resetAddress" placeholder="鎴夸骇鍦板潃" style="width:100%; padding:12px 16px; border:1px solid #cfdfd3; border-radius:40px; font-size:1rem;">
                 <div id="resetAddressMsg" style="font-size:0.8rem; margin-top:4px;"></div>
             </div>
-            <button class="btn" id="verifyAddressBtn" style="width:100%; margin-top:12px;">验证地址</button>
+            <button class="btn" id="verifyAddressBtn" style="width:100%; margin-top:12px;">楠岃瘉鍦板潃</button>
         </div>
         <div id="resetStep2" style="display:none;">
-            <p style="color:#475569; margin-bottom:16px;">请选择要重置的内容：</p>
+            <p style="color:#475569; margin-bottom:16px;">璇烽€夋嫨瑕侀噸缃殑鍐呭锛?/p>
             <div style="background:#f9fbf8; border-radius:16px; padding:16px; margin-bottom:16px;">
                 <label style="display:flex; align-items:center; gap:8px; margin-bottom:12px; cursor:pointer;">
-                    <input type="checkbox" id="resetUsernameCheck"> 重置用户名
+                    <input type="checkbox" id="resetUsernameCheck"> 閲嶇疆鐢ㄦ埛鍚?
                 </label>
                 <label style="display:flex; align-items:center; gap:8px; margin-bottom:12px; cursor:pointer;">
-                    <input type="checkbox" id="resetPhoneCheck"> 重置手机号码
+                    <input type="checkbox" id="resetPhoneCheck"> 閲嶇疆鎵嬫満鍙风爜
                 </label>
                 <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                    <input type="checkbox" id="resetPasswordCheck"> 重置密码
+                    <input type="checkbox" id="resetPasswordCheck"> 閲嶇疆瀵嗙爜
                 </label>
             </div>
             <div id="resetFields" style="display:none;">
                 <div class="form-group" id="newUsernameField" style="display:none;">
-                    <input type="text" id="newUsername" placeholder="新用户名" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
+                    <input type="text" id="newUsername" placeholder="鏂扮敤鎴峰悕" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
                 </div>
                 <div class="form-group" id="newPhoneField" style="display:none;">
-                    <input type="tel" id="newPhone" placeholder="新手机号码" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
+                    <input type="tel" id="newPhone" placeholder="鏂版墜鏈哄彿鐮? style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
                 </div>
                 <div class="form-group" id="newPasswordField" style="display:none;">
-                    <input type="password" id="newPassword" placeholder="新密码" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
+                    <input type="password" id="newPassword" placeholder="鏂板瘑鐮? style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
                 </div>
                 <div class="form-group" id="confirmPasswordField" style="display:none;">
-                    <input type="password" id="confirmNewPassword" placeholder="确认新密码" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
+                    <input type="password" id="confirmNewPassword" placeholder="纭鏂板瘑鐮? style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
                 </div>
             </div>
-            <button class="btn" id="submitResetBtn" style="width:100%; margin-top:12px;">提交重置</button>
+            <button class="btn" id="submitResetBtn" style="width:100%; margin-top:12px;">鎻愪氦閲嶇疆</button>
         </div>
     </div>
 </div>
@@ -447,76 +447,76 @@ window.onerror=function(msg,url,line,col,error){var el=document.getElementById('
     };
     let votePollInterval = null;
 
-    // 当前登录用户（从 localStorage 读取）
+    // 褰撳墠鐧诲綍鐢ㄦ埛锛堜粠 localStorage 璇诲彇锛?
     let currentUser = JSON.parse(localStorage.getItem('yayehui_current_user') || 'null');
 
-    // 默认站点配置
+    // 榛樿绔欑偣閰嶇疆
     const DEFAULT_SETTINGS = {
-        hero_title: '共建·共治·共享',
-        hero_subtitle: '雅业会与您携手',
-        hero_desc: '业委会透明服务，智慧小区管理，让家园更温暖。业主沟通零距离，共创宜居环境。',
+        hero_title: '鍏卞缓路鍏辨不路鍏变韩',
+        hero_subtitle: '闆呬笟浼氫笌鎮ㄦ惡鎵?,
+        hero_desc: '涓氬浼氶€忔槑鏈嶅姟锛屾櫤鎱у皬鍖虹鐞嗭紝璁╁鍥洿娓╂殩銆備笟涓绘矡閫氶浂璺濈锛屽叡鍒涘疁灞呯幆澧冦€?,
         hero_stat_1: '12+',
-        hero_stat_1_label: '年度议题',
+        hero_stat_1_label: '骞村害璁',
         hero_stat_2: '98%',
-        hero_stat_2_label: '业主满意度',
+        hero_stat_2_label: '涓氫富婊℃剰搴?,
         hero_stat_3: '24h',
-        hero_stat_3_label: '快速响应',
-        footer_banner_text: '公开·信任·共建美好社区',
-        footer_address: '雅居花园 · 业委会办公室',
-        footer_copyright: '© 2025 雅业会业主委员会平台 | 携手共创宜居家园'
+        hero_stat_3_label: '蹇€熷搷搴?,
+        footer_banner_text: '鍏紑路淇′换路鍏卞缓缇庡ソ绀惧尯',
+        footer_address: '闆呭眳鑺卞洯 路 涓氬浼氬姙鍏',
+        footer_copyright: '漏 2025 闆呬笟浼氫笟涓诲鍛樹細骞冲彴 | 鎼烘墜鍏卞垱瀹滃眳瀹跺洯'
     };
 
-    // ⚠️ 数据初始化说明：
-// 每个栏目使用 init_* 标记防止自动恢复：
-// - 首次访问时且 localStorage 为空，才从 DEFAULT_DATA 加载
-// - 删除数据后不会再自动恢复（由 init_* 标记控制）
-// - 若要重置数据并恢复默认数据，需手动 localStorage.removeItem('init_xxx')
+    // 鈿狅笍 鏁版嵁鍒濆鍖栬鏄庯細
+// 姣忎釜鏍忕洰浣跨敤 init_* 鏍囪闃叉鑷姩鎭㈠锛?
+// - 棣栨璁块棶鏃朵笖 localStorage 涓虹┖锛屾墠浠?DEFAULT_DATA 鍔犺浇
+// - 鍒犻櫎鏁版嵁鍚庝笉浼氬啀鑷姩鎭㈠锛堢敱 init_* 鏍囪鎺у埗锛?
+// - 鑻ヨ閲嶇疆鏁版嵁骞舵仮澶嶉粯璁ゆ暟鎹紝闇€鎵嬪姩 localStorage.removeItem('init_xxx')
 const DEFAULT_DATA = {
         announcements: [
-            { id: 1, title: "关于召开2025年第一次业主大会的通知", date: "2025-03-10", content: "会议时间:3月30日, 议题: 物业续聘及绿化改造方案, 请全体业主积极参加。" },
-            { id: 2, title: "小区电动自行车充电桩正式启用", date: "2025-03-05", content: "3号地下车库及南门车棚充电桩已投入使用，扫码充电，安全便捷。" },
-            { id: 3, title: "业委会3月例会会议纪要公示", date: "2025-03-01", content: "通过小区电梯维修基金使用方案, 预计4月中旬开始施工。" }
+            { id: 1, title: "鍏充簬鍙紑2025骞寸涓€娆′笟涓诲ぇ浼氱殑閫氱煡", date: "2025-03-10", content: "浼氳鏃堕棿:3鏈?0鏃? 璁: 鐗╀笟缁仒鍙婄豢鍖栨敼閫犳柟妗? 璇峰叏浣撲笟涓荤Н鏋佸弬鍔犮€? },
+            { id: 2, title: "灏忓尯鐢靛姩鑷杞﹀厖鐢垫々姝ｅ紡鍚敤", date: "2025-03-05", content: "3鍙峰湴涓嬭溅搴撳強鍗楅棬杞︽鍏呯數妗╁凡鎶曞叆浣跨敤锛屾壂鐮佸厖鐢碉紝瀹夊叏渚挎嵎銆? },
+            { id: 3, title: "涓氬浼?鏈堜緥浼氫細璁邯瑕佸叕绀?, date: "2025-03-01", content: "閫氳繃灏忓尯鐢垫缁翠慨鍩洪噾浣跨敤鏂规, 棰勮4鏈堜腑鏃紑濮嬫柦宸ャ€? }
         ],
         dynamics: [
-            { id: 1, title: "业委会考察智慧门禁系统", date: "2025-03-08", summary: "业委会成员走访先进示范社区，计划升级小区门禁系统提升安防。", content: "详细考察了人脸识别及访客管理模块，预计下月启动招标流程。" },
-            { id: 2, title: "垃圾分类模范小区评选动员", date: "2025-02-25", summary: "积极参与市级垃圾分类示范小区评选，开展桶前值守志愿活动。", content: "目前已招募18名业主志愿者，同时增设智能回收箱。" },
-            { id: 3, title: "小区儿童游乐设施翻新完毕", date: "2025-02-18", summary: "中央花园儿童区塑胶地面及滑梯已更换，交付使用。", content: "更加安全环保，欢迎家长陪同孩子玩耍。" }
+            { id: 1, title: "涓氬浼氳€冨療鏅烘収闂ㄧ绯荤粺", date: "2025-03-08", summary: "涓氬浼氭垚鍛樿蛋璁垮厛杩涚ず鑼冪ぞ鍖猴紝璁″垝鍗囩骇灏忓尯闂ㄧ绯荤粺鎻愬崌瀹夐槻銆?, content: "璇︾粏鑰冨療浜嗕汉鑴歌瘑鍒強璁垮绠＄悊妯″潡锛岄璁′笅鏈堝惎鍔ㄦ嫑鏍囨祦绋嬨€? },
+            { id: 2, title: "鍨冨溇鍒嗙被妯¤寖灏忓尯璇勯€夊姩鍛?, date: "2025-02-25", summary: "绉瀬鍙備笌甯傜骇鍨冨溇鍒嗙被绀鸿寖灏忓尯璇勯€夛紝寮€灞曟《鍓嶅€煎畧蹇楁効娲诲姩銆?, content: "鐩墠宸叉嫑鍕?8鍚嶄笟涓诲織鎰胯€咃紝鍚屾椂澧炶鏅鸿兘鍥炴敹绠便€? },
+            { id: 3, title: "灏忓尯鍎跨娓镐箰璁炬柦缈绘柊瀹屾瘯", date: "2025-02-18", summary: "涓ぎ鑺卞洯鍎跨鍖哄鑳跺湴闈㈠強婊戞宸叉洿鎹紝浜や粯浣跨敤銆?, content: "鏇村姞瀹夊叏鐜繚锛屾杩庡闀块櫔鍚屽瀛愮帺鑰嶃€? }
         ],
         members: [
-            { id: 1, name: "张敏华", role: "业委会主任", avatar_icon: "fas fa-user-circle", description: "负责全面协调" },
-            { id: 2, name: "李志远", role: "副主任", avatar_icon: "fas fa-user-check", description: "工程与安全" },
-            { id: 3, name: "王瑞芳", role: "委员", avatar_icon: "fas fa-female", description: "财务与监督" },
-            { id: 4, name: "陈国良", role: "委员", avatar_icon: "fas fa-user-graduate", description: "环境与绿化" }
+            { id: 1, name: "寮犳晱鍗?, role: "涓氬浼氫富浠?, avatar_icon: "fas fa-user-circle", description: "璐熻矗鍏ㄩ潰鍗忚皟" },
+            { id: 2, name: "鏉庡織杩?, role: "鍓富浠?, avatar_icon: "fas fa-user-check", description: "宸ョ▼涓庡畨鍏? },
+            { id: 3, name: "鐜嬬憺鑺?, role: "濮斿憳", avatar_icon: "fas fa-female", description: "璐㈠姟涓庣洃鐫? },
+            { id: 4, name: "闄堝浗鑹?, role: "濮斿憳", avatar_icon: "fas fa-user-graduate", description: "鐜涓庣豢鍖? }
         ],
         polls: [
-            { id: 1, title: "小区公共区域增装监控探头", description: "为解决高空抛物及夜间安全问题，业委会提议增装20个高清探头，预算3.8万元。请大家投票表决。", start_date: "2025-05-01", end_date: "2025-05-31", is_active: true }
+            { id: 1, title: "灏忓尯鍏叡鍖哄煙澧炶鐩戞帶鎺㈠ご", description: "涓鸿В鍐抽珮绌烘姏鐗╁強澶滈棿瀹夊叏闂锛屼笟濮斾細鎻愯澧炶20涓珮娓呮帰澶达紝棰勭畻3.8涓囧厓銆傝澶у鎶曠エ琛ㄥ喅銆?, start_date: "2025-05-01", end_date: "2025-05-31", is_active: true }
         ],
         pollOptions: [
-            { id: 1, poll_id: 1, option_text: "同意" },
-            { id: 2, poll_id: 1, option_text: "不同意" },
-            { id: 3, poll_id: 1, option_text: "弃权" }
+            { id: 1, poll_id: 1, option_text: "鍚屾剰" },
+            { id: 2, poll_id: 1, option_text: "涓嶅悓鎰? },
+            { id: 3, poll_id: 1, option_text: "寮冩潈" }
         ],
         votes: [],
         expenses: [
-            { id: 1, category: "收入", item_name: "物业费总收入", amount: 125000, date: "2025-04-30", remark: "4月物业费收缴" },
-            { id: 2, category: "支出", item_name: "保洁外包费", amount: 28000, date: "2025-04-15", remark: "2025年4月保洁服务费" },
-            { id: 3, category: "支出", item_name: "绿化养护", amount: 12000, date: "2025-04-20", remark: "春季补种及修剪" },
-            { id: 4, category: "收入", item_name: "停车费", amount: 18500, date: "2025-04-30", remark: "地面车位月租收入" }
+            { id: 1, category: "鏀跺叆", item_name: "鐗╀笟璐规€绘敹鍏?, amount: 125000, date: "2025-04-30", remark: "4鏈堢墿涓氳垂鏀剁即" },
+            { id: 2, category: "鏀嚭", item_name: "淇濇磥澶栧寘璐?, amount: 28000, date: "2025-04-15", remark: "2025骞?鏈堜繚娲佹湇鍔¤垂" },
+            { id: 3, category: "鏀嚭", item_name: "缁垮寲鍏绘姢", amount: 12000, date: "2025-04-20", remark: "鏄ュ琛ョ鍙婁慨鍓? },
+            { id: 4, category: "鏀跺叆", item_name: "鍋滆溅璐?, amount: 18500, date: "2025-04-30", remark: "鍦伴潰杞︿綅鏈堢鏀跺叆" }
         ],
         topics: [
-            { id: 1, title: "建议增设非机动车棚", content: "目前电动车充电位严重不足，希望业委会考虑扩建非机动车棚。", author: "3栋业主小王", view_count: 45, reply_count: 2, created_at: "2025-04-20T10:00:00" },
-            { id: 2, title: "感谢物业及时修复路灯", content: "昨日报修，今天就修好了，效率点赞！", author: "热心业主李姐", view_count: 12, reply_count: 0, created_at: "2025-04-22T15:30:00" }
+            { id: 1, title: "寤鸿澧炶闈炴満鍔ㄨ溅妫?, content: "鐩墠鐢靛姩杞﹀厖鐢典綅涓ラ噸涓嶈冻锛屽笇鏈涗笟濮斾細鑰冭檻鎵╁缓闈炴満鍔ㄨ溅妫氥€?, author: "3鏍嬩笟涓诲皬鐜?, view_count: 45, reply_count: 2, created_at: "2025-04-20T10:00:00" },
+            { id: 2, title: "鎰熻阿鐗╀笟鍙婃椂淇璺伅", content: "鏄ㄦ棩鎶ヤ慨锛屼粖澶╁氨淇ソ浜嗭紝鏁堢巼鐐硅禐锛?, author: "鐑績涓氫富鏉庡", view_count: 12, reply_count: 0, created_at: "2025-04-22T15:30:00" }
         ],
         replies: [
-            { id: 1, topic_id: 1, content: "支持！确实不够用", author: "2栋老张", created_at: "2025-04-21T09:20:00" },
-            { id: 2, topic_id: 1, content: "最好增加充电桩数量", author: "5栋业主", created_at: "2025-04-22T14:15:00" }
+            { id: 1, topic_id: 1, content: "鏀寔锛佺‘瀹炰笉澶熺敤", author: "2鏍嬭€佸紶", created_at: "2025-04-21T09:20:00" },
+            { id: 2, topic_id: 1, content: "鏈€濂藉鍔犲厖鐢垫々鏁伴噺", author: "5鏍嬩笟涓?, created_at: "2025-04-22T14:15:00" }
         ]
     };
 
-    // 辅助函数
+    // 杈呭姪鍑芥暟
     function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'); }
     function formatDate(dateStr) { if (!dateStr) return ''; return new Date(dateStr).toLocaleString(); }
-    // 分页组件（支持用户选择每页行数）
+    // 鍒嗛〉缁勪欢锛堟敮鎸佺敤鎴烽€夋嫨姣忛〉琛屾暟锛?
     function paginationHTML(current, total, prefixId, totalCount) {
         if (total <= 1) return '';
         const maxVisible = 5;
@@ -526,7 +526,7 @@ const DEFAULT_DATA = {
             startPage = Math.max(1, endPage - maxVisible + 1);
         }
         
-        let html = `<div class="pager-info">共 ${totalCount} 条</div>`;
+        let html = `<div class="pager-info">鍏?${totalCount} 鏉?/div>`;
         html += `<button class="pager-btn" onclick="goPage('${prefixId}',${current-1})" ${current===1?'disabled':''}><i class="fas fa-chevron-left"></i></button>`;
         
         for (let i = startPage; i <= endPage; i++) {
@@ -534,14 +534,14 @@ const DEFAULT_DATA = {
         }
         
         html += `<button class="pager-btn" onclick="goPage('${prefixId}',${current+1})" ${current===total?'disabled':''}><i class="fas fa-chevron-right"></i></button>`;
-        html += `<div class="pager-info">到<input type="number" class="page-jump" id="jump-${prefixId}" min="1" max="${total}" placeholder="页">`;
-        html += `<button class="pager-btn" style="padding:4px 10px;" onclick="jumpToPage('${prefixId}',${total})">跳转</button></div>`;
+        html += `<div class="pager-info">鍒?input type="number" class="page-jump" id="jump-${prefixId}" min="1" max="${total}" placeholder="椤?>`;
+        html += `<button class="pager-btn" style="padding:4px 10px;" onclick="jumpToPage('${prefixId}',${total})">璺宠浆</button></div>`;
         
-        // 每页行数选择
-        html += `<div class="pager-info" style="margin-left:12px;">每页<select class="page-size-select" onchange="changePageSize('${prefixId}',this.value)">`;
+        // 姣忛〉琛屾暟閫夋嫨
+        html += `<div class="pager-info" style="margin-left:12px;">姣忛〉<select class="page-size-select" onchange="changePageSize('${prefixId}',this.value)">`;
         for (let i = 1; i <= 10; i++) html += `<option value="${i}" ${pageSizes[prefixId]===i?'selected':''}>${i}</option>`;
         for (let i = 15; i <= 100; i+=5) html += `<option value="${i}" ${pageSizes[prefixId]===i?'selected':''}>${i}</option>`;
-        html += `</select>条</div>`;
+        html += `</select>鏉?/div>`;
         
         return html;
     }
@@ -563,7 +563,7 @@ const DEFAULT_DATA = {
         if (page >= 1 && page <= total) {
             goPage(prefix, page);
         } else {
-            alert('请输入有效的页码');
+            alert('璇疯緭鍏ユ湁鏁堢殑椤电爜');
         }
     };
     
@@ -576,9 +576,9 @@ const DEFAULT_DATA = {
         else if (prefix === 'exp') renderExpenses();
     };
 
-    // 加载站点配置
-    // 全局联系我们内容
-    window.CONTACT_CONTENT = '联系电话：xxx\nEmail：xxx';
+    // 鍔犺浇绔欑偣閰嶇疆
+    // 鍏ㄥ眬鑱旂郴鎴戜滑鍐呭
+    window.CONTACT_CONTENT = '鑱旂郴鐢佃瘽锛歺xx\nEmail锛歺xx';
 
     async function loadSiteSettings() {
         try {
@@ -586,49 +586,49 @@ const DEFAULT_DATA = {
             if (USE_SUPABASE) {
                 settings = await db.siteSettings.getAll() || [];
             } else {
-                // 从 localStorage 读取站点设置
+                // 浠?localStorage 璇诲彇绔欑偣璁剧疆
                 settings = JSON.parse(localStorage.getItem('yayehui_site_settings') || '[]');
             }
             
             if (settings && settings.length > 0) {
                 const map = {};
                 settings.forEach(s => map[s.setting_key] = s.setting_value);
-                // 保存联系我们内容到全局变量
+                // 淇濆瓨鑱旂郴鎴戜滑鍐呭鍒板叏灞€鍙橀噺
                 if (map.contact_content) window.CONTACT_CONTENT = map.contact_content;
                 
-                // 更新首页横幅
+                // 鏇存柊棣栭〉妯箙
                 if (map.hero_title || map.hero_subtitle) {
                     document.getElementById('heroTitle').innerHTML = (map.hero_title || DEFAULT_SETTINGS.hero_title) + '<br>' + (map.hero_subtitle || DEFAULT_SETTINGS.hero_subtitle);
                 }
                 if (map.hero_desc) {
                     document.getElementById('heroDesc').textContent = map.hero_desc || DEFAULT_SETTINGS.hero_desc;
                 }
-                // 统计数字和标签
+                // 缁熻鏁板瓧鍜屾爣绛?
                 if (map.hero_stat_1) document.getElementById('heroStat1Num').textContent = map.hero_stat_1;
                 if (map.hero_stat_1_label) document.getElementById('heroStat1Label').textContent = map.hero_stat_1_label;
                 if (map.hero_stat_2) document.getElementById('heroStat2Num').textContent = map.hero_stat_2;
                 if (map.hero_stat_2_label) document.getElementById('heroStat2Label').textContent = map.hero_stat_2_label;
                 if (map.hero_stat_3) document.getElementById('heroStat3Num').textContent = map.hero_stat_3;
                 if (map.hero_stat_3_label) document.getElementById('heroStat3Label').textContent = map.hero_stat_3_label;
-                // 底部信息
+                // 搴曢儴淇℃伅
                 if (map.footer_banner_text) document.getElementById('footerBannerText').textContent = map.footer_banner_text;
                 if (map.footer_address) document.getElementById('footerAddressText').textContent = map.footer_address;
                 if (map.footer_copyright) document.getElementById('footerCopyright').textContent = map.footer_copyright;
-                // 导航菜单（更新 logo 区域）
+                // 瀵艰埅鑿滃崟锛堟洿鏂?logo 鍖哄煙锛?
                 if (map.nav_menu_left_text || map.nav_menu_left_subtext) {
                     const logoArea = document.querySelector('.logo-area');
                     if (logoArea) {
-                        logoArea.innerHTML = `<i class="fas fa-building-user logo-icon"></i><div><span class="logo-text">${map.nav_menu_left_text || '雅业会'}</span><div class="logo-sub">${map.nav_menu_left_subtext || '雅居·共治·美好'}</div></div>`;
+                        logoArea.innerHTML = `<i class="fas fa-building-user logo-icon"></i><div><span class="logo-text">${map.nav_menu_left_text || '闆呬笟浼?}</span><div class="logo-sub">${map.nav_menu_left_subtext || '闆呭眳路鍏辨不路缇庡ソ'}</div></div>`;
                     }
                 }
                 return;
             }
         } catch(e) { console.error('loadSiteSettings error:', e); }
-        // 使用默认
+        // 浣跨敤榛樿
         document.getElementById('heroTitle').innerHTML = DEFAULT_SETTINGS.hero_title + '<br>' + DEFAULT_SETTINGS.hero_subtitle;
     }
 
-    // 渲染公告（分页，每页最多3条）
+    // 娓叉煋鍏憡锛堝垎椤碉紝姣忛〉鏈€澶?鏉★級
     window.page_ann = 1;
     async function renderAnnouncements() {
         const container = document.getElementById('announcementList');
@@ -647,10 +647,10 @@ const DEFAULT_DATA = {
                     items = DEFAULT_DATA.announcements;
                     localStorage.setItem('yayehui_announcements', JSON.stringify(items));
                     localStorage.setItem('init_ann', '1');
-                // ⚠️ 初始化逻辑说明：
-                // - 首次访问(init_ann !== '1') 且 localStorage 为空时，才从 DEFAULT_DATA 加载
-                // - 之后删除数据不会再自动恢复
-                // - 如需重置，在控制台执行：localStorage.removeItem('init_ann'); location.reload();
+                // 鈿狅笍 鍒濆鍖栭€昏緫璇存槑锛?
+                // - 棣栨璁块棶(init_ann !== '1') 涓?localStorage 涓虹┖鏃讹紝鎵嶄粠 DEFAULT_DATA 鍔犺浇
+                // - 涔嬪悗鍒犻櫎鏁版嵁涓嶄細鍐嶈嚜鍔ㄦ仮澶?
+                // - 濡傞渶閲嶇疆锛屽湪鎺у埗鍙版墽琛岋細localStorage.removeItem('init_ann'); location.reload();
 
                 } else {
                     items = [];
@@ -662,25 +662,25 @@ const DEFAULT_DATA = {
             const pageItems = items.slice((page - 1) * pageSize, page * pageSize);
             
             if (items.length === 0) {
-                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>';
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>鐩墠鏆傛棤鏁版嵁</div>';
                 document.getElementById('announcementPager').style.display = 'none';
                 return;
             }
             
             container.innerHTML = '';
-            if (pageItems.length === 0) { container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>'; document.getElementById('announcementPager').style.display = 'none'; return; }
+            if (pageItems.length === 0) { container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>鐩墠鏆傛棤鏁版嵁</div>'; document.getElementById('announcementPager').style.display = 'none'; return; }
             pageItems.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'list-item';
-                div.innerHTML = `<div class="item-title"><span>📢 ${escapeHtml(item.title)}</span><span class="item-date">${item.date || ''}</span></div><div class="item-summary">${escapeHtml((item.content || '').substring(0, 60))}${(item.content || '').length > 60 ? '...' : ''}</div>`;
+                div.innerHTML = `<div class="item-title"><span>馃摙 ${escapeHtml(item.title)}</span><span class="item-date">${item.date || ''}</span></div><div class="item-summary">${escapeHtml((item.content || '').substring(0, 60))}${(item.content || '').length > 60 ? '...' : ''}</div>`;
                 div.onclick = () => alert(item.content);
                 container.appendChild(div);
             });
             document.getElementById('announcementPager').innerHTML = paginationHTML(page, total, 'ann', items.length);
-        } catch (e) { container.innerHTML = '<p style="text-align:center;color:#c2410c;">加载失败，请稍后重试</p>'; }
+        } catch (e) { container.innerHTML = '<p style="text-align:center;color:#c2410c;">鍔犺浇澶辫触锛岃绋嶅悗閲嶈瘯</p>'; }
     }
 
-    // 渲染工作动态（分页）
+    // 娓叉煋宸ヤ綔鍔ㄦ€侊紙鍒嗛〉锛?
     window.page_dyn = 1;
     async function renderDynamics() {
         const container = document.getElementById('dynamicList');
@@ -698,7 +698,7 @@ const DEFAULT_DATA = {
                     items = DEFAULT_DATA.dynamics;
                     localStorage.setItem('yayehui_dynamics', JSON.stringify(items));
                     localStorage.setItem('init_dyn', '1');
-                // ⚠️ 初始化逻辑：仅首次访问时从 DEFAULT_DATA 加载，删除后不自动恢复
+                // 鈿狅笍 鍒濆鍖栭€昏緫锛氫粎棣栨璁块棶鏃朵粠 DEFAULT_DATA 鍔犺浇锛屽垹闄ゅ悗涓嶈嚜鍔ㄦ仮澶?
 
                 } else {
                     items = [];
@@ -706,7 +706,7 @@ const DEFAULT_DATA = {
             }
             
             if (items.length === 0) {
-                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>';
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>鐩墠鏆傛棤鏁版嵁</div>';
                 document.getElementById('dynamicPager').style.display = 'none';
                 return;
             }
@@ -716,19 +716,19 @@ const DEFAULT_DATA = {
             const total = Math.ceil(items.length / pageSize);
             const pageItems = items.slice((page - 1) * pageSize, page * pageSize);
             container.innerHTML = '';
-            if (pageItems.length === 0) { container.innerHTML = '<p style="text-align:center;color:#6c7a91;">暂无动态</p>'; return; }
+            if (pageItems.length === 0) { container.innerHTML = '<p style="text-align:center;color:#6c7a91;">鏆傛棤鍔ㄦ€?/p>'; return; }
             pageItems.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'list-item';
-                div.innerHTML = `<div class="item-title"><span>📌 ${escapeHtml(item.title)}</span><span class="item-date">${item.date || ''}</span></div><div class="item-summary">${escapeHtml(item.summary || '')}</div>`;
+                div.innerHTML = `<div class="item-title"><span>馃搶 ${escapeHtml(item.title)}</span><span class="item-date">${item.date || ''}</span></div><div class="item-summary">${escapeHtml(item.summary || '')}</div>`;
                 div.onclick = () => alert(item.content);
                 container.appendChild(div);
             });
             document.getElementById('dynamicPager').innerHTML = paginationHTML(page, total, 'dyn', items.length);
-        } catch (e) { container.innerHTML = '<p style="text-align:center;color:#c2410c;">加载失败</p>'; }
+        } catch (e) { container.innerHTML = '<p style="text-align:center;color:#c2410c;">鍔犺浇澶辫触</p>'; }
     }
 
-    // 渲染业委会成员（分页）
+    // 娓叉煋涓氬浼氭垚鍛橈紙鍒嗛〉锛?
     window.page_members = 1;
     async function renderMembers() {
         const container = document.getElementById('memberGrid');
@@ -753,7 +753,7 @@ const DEFAULT_DATA = {
             }
             
             if (members.length === 0) {
-                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>';
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>鐩墠鏆傛棤鏁版嵁</div>';
                 document.getElementById('memberPager').innerHTML = '';
                 return;
             }
@@ -762,32 +762,32 @@ const DEFAULT_DATA = {
             const pageSize = pageSizes['members'] || 3;
             const total = Math.ceil(members.length / pageSize);
             const pageMembers = members.slice((page - 1) * pageSize, page * pageSize);
-            if (pageMembers.length === 0) { container.innerHTML = '<p style="text-align:center;color:#6c7a91;">暂无成员信息</p>'; return; }
+            if (pageMembers.length === 0) { container.innerHTML = '<p style="text-align:center;color:#6c7a91;">鏆傛棤鎴愬憳淇℃伅</p>'; return; }
             container.innerHTML = pageMembers.map(m => `<div class="member-card"><div class="member-avatar"><i class="${m.avatar_icon || 'fas fa-user-circle'} fa-3x"></i></div><div class="member-name">${escapeHtml(m.name)}</div><div class="member-role">${escapeHtml(m.role || '')}</div><div style="font-size:0.8rem;">${escapeHtml(m.description || '')}</div></div>`).join('');
             document.getElementById('memberPager').innerHTML = paginationHTML(page, total, 'members', members.length);
-        } catch (e) { container.innerHTML = '<p style="text-align:center;color:#c2410c;">加载失败</p>'; }
+        } catch (e) { container.innerHTML = '<p style="text-align:center;color:#c2410c;">鍔犺浇澶辫触</p>'; }
     }
 
-    // 渲染便民服务
+    // 娓叉煋渚挎皯鏈嶅姟
     function renderServices() {
         const container = document.getElementById('serviceGrid');
         if (!container) return;
         const services = [
-            { name: "物业报修", icon: "fas fa-tools", hint: "在线快速报修" },
-            { name: "费用缴纳", icon: "fas fa-credit-card", hint: "物业费/停车费" },
-            { name: "业主投票", icon: "fas fa-check-circle", hint: "重大事项表决" },
-            { name: "投诉建议", icon: "fas fa-comment-dots", hint: "意见直达业委会" }
+            { name: "鐗╀笟鎶ヤ慨", icon: "fas fa-tools", hint: "鍦ㄧ嚎蹇€熸姤淇? },
+            { name: "璐圭敤缂寸撼", icon: "fas fa-credit-card", hint: "鐗╀笟璐?鍋滆溅璐? },
+            { name: "涓氫富鎶曠エ", icon: "fas fa-check-circle", hint: "閲嶅ぇ浜嬮」琛ㄥ喅" },
+            { name: "鎶曡瘔寤鸿", icon: "fas fa-comment-dots", hint: "鎰忚鐩磋揪涓氬浼? }
         ];
         container.innerHTML = services.map(s => `<div class="service-card"><i class="${s.icon}"></i><h4>${s.name}</h4><p style="font-size:0.8rem;">${s.hint}</p></div>`).join('');
-        document.querySelectorAll('.service-card').forEach(c => c.onclick = () => alert('✨ 该功能正在完善中，请联系业委会。'));
+        document.querySelectorAll('.service-card').forEach(c => c.onclick = () => alert('鉁?璇ュ姛鑳芥鍦ㄥ畬鍠勪腑锛岃鑱旂郴涓氬浼氥€?));
     }
 
-    // ========== 投票系统（含条形图 + 注册提醒 + 实时更新） ==========
+    // ========== 鎶曠エ绯荤粺锛堝惈鏉″舰鍥?+ 娉ㄥ唽鎻愰啋 + 瀹炴椂鏇存柊锛?==========
     async function renderPolls() {
         const container = document.getElementById('pollsList');
         if (!container) return;
         
-        // 清除之前的轮询
+        // 娓呴櫎涔嬪墠鐨勮疆璇?
         if (votePollInterval) { clearInterval(votePollInterval); votePollInterval = null; }
         
         try {
@@ -804,20 +804,20 @@ const DEFAULT_DATA = {
                     localStorage.setItem('yayehui_poll_options', JSON.stringify(DEFAULT_DATA.pollOptions));
                     localStorage.setItem('yayehui_votes', JSON.stringify(DEFAULT_DATA.votes));
                     localStorage.setItem('init_polls', '1');
-                // ⚠️ 初始化逻辑：仅首次访问时从 DEFAULT_DATA 加载，删除后不自动恢复
+                // 鈿狅笍 鍒濆鍖栭€昏緫锛氫粎棣栨璁块棶鏃朵粠 DEFAULT_DATA 鍔犺浇锛屽垹闄ゅ悗涓嶈嚜鍔ㄦ仮澶?
 
                 } else {
                     polls = allPolls.filter(p => p.is_active);
                 }
             }
             container.innerHTML = '';
-            if (polls.length === 0) { container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>'; return; }
+            if (polls.length === 0) { container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>鐩墠鏆傛棤鏁版嵁</div>'; return; }
 
             for (const poll of polls) {
                 await renderSinglePoll(poll, container);
             }
             
-            // 启动实时更新轮询（每5秒刷新一次投票结果）
+            // 鍚姩瀹炴椂鏇存柊杞锛堟瘡5绉掑埛鏂颁竴娆℃姇绁ㄧ粨鏋滐級
             votePollInterval = setInterval(async () => {
                 const activePolls = JSON.parse(localStorage.getItem('yayehui_polls') || '[]').filter(p => p.is_active);
                 if (activePolls.length > 0) {
@@ -830,10 +830,10 @@ const DEFAULT_DATA = {
                 }
             }, 5000);
             
-        } catch (e) { container.innerHTML = '<p style="text-align:center;color:#c2410c;">加载失败</p>'; }
+        } catch (e) { container.innerHTML = '<p style="text-align:center;color:#c2410c;">鍔犺浇澶辫触</p>'; }
     }
     
-    // 渲染单个投票
+    // 娓叉煋鍗曚釜鎶曠エ
     async function renderSinglePoll(poll, container, isUpdate = false) {
         let options, votes;
         if (USE_SUPABASE) {
@@ -862,13 +862,13 @@ const DEFAULT_DATA = {
         pollDiv.innerHTML = `
             <h3>${escapeHtml(poll.title)}</h3>
             <p>${escapeHtml(poll.description || '')}</p>
-            <p><small>有效期：${poll.start_date || ''} 至 ${poll.end_date || ''}</small></p>
+            <p><small>鏈夋晥鏈燂細${poll.start_date || ''} 鑷?${poll.end_date || ''}</small></p>
             <div class="vote-result-container" id="voteResultPoll${poll.id}"></div>
             <div id="voteOptionsPoll${poll.id}" style="margin-top:16px;"></div>
             <div id="voteBtnPoll${poll.id}" style="margin-top:12px;"></div>
         `;
 
-        // 渲染投票结果（水平条形图）
+        // 娓叉煋鎶曠エ缁撴灉锛堟按骞虫潯褰㈠浘锛?
         const resultContainer = document.getElementById('voteResultPoll' + poll.id);
         let resultHtml = '';
         options.forEach(opt => {
@@ -879,22 +879,22 @@ const DEFAULT_DATA = {
                 <div class="vote-result-bar">
                     <div class="vote-result-label">${escapeHtml(opt.option_text)}</div>
                     <div class="vote-result-track"><div class="vote-result-fill" style="width:${barWidth}%"></div></div>
-                    <div class="vote-result-stats">${count}票 (${pct}%)</div>
+                    <div class="vote-result-stats">${count}绁?(${pct}%)</div>
                 </div>`;
         });
-        resultHtml += `<div class="vote-total">共 ${totalVotes} 人参与投票</div>`;
+        resultHtml += `<div class="vote-total">鍏?${totalVotes} 浜哄弬涓庢姇绁?/div>`;
         resultContainer.innerHTML = resultHtml;
 
-        // 检查是否已投票
+        // 妫€鏌ユ槸鍚﹀凡鎶曠エ
         const hasVoted = currentUser && votes.some(v => v.property_address === currentUser.property_address);
         const optionsDiv = document.getElementById('voteOptionsPoll' + poll.id);
         const btnDiv = document.getElementById('voteBtnPoll' + poll.id);
 
         if (hasVoted) {
-            optionsDiv.innerHTML = `<p style="color:#2c6e49;font-weight:600;"><i class="fas fa-check-circle"></i> 您已参与投票</p>`;
+            optionsDiv.innerHTML = `<p style="color:#2c6e49;font-weight:600;"><i class="fas fa-check-circle"></i> 鎮ㄥ凡鍙備笌鎶曠エ</p>`;
             btnDiv.innerHTML = '';
         } else if (!currentUser) {
-            // 未登录：显示投票选项，点击时弹出登录提示
+            // 鏈櫥褰曪細鏄剧ず鎶曠エ閫夐」锛岀偣鍑绘椂寮瑰嚭鐧诲綍鎻愮ず
             let selectedOptionId = null;
             let optsHtml = '';
             options.forEach(opt => {
@@ -904,22 +904,22 @@ const DEFAULT_DATA = {
             optionsDiv.querySelectorAll('.poll-option').forEach(span => {
                 span.onclick = () => {
                     if (!currentUser) {
-                        // 未登录，弹出登录提示
+                        // 鏈櫥褰曪紝寮瑰嚭鐧诲綍鎻愮ず
                         showVoteNeedRegModal();
                     } else {
-                        // 已登录但未投票，选择选项
+                        // 宸茬櫥褰曚絾鏈姇绁紝閫夋嫨閫夐」
                         optionsDiv.querySelectorAll('.poll-option').forEach(s => s.classList.remove('selected'));
                         span.classList.add('selected');
                         const selectedOptionId = parseInt(span.dataset.optId);
-                        // 如果没有投票按钮，添加一个
+                        // 濡傛灉娌℃湁鎶曠エ鎸夐挳锛屾坊鍔犱竴涓?
                         if (!document.getElementById('voteBtn' + poll.id)) {
-                            btnDiv.innerHTML = `<button class="vote-btn" id="voteBtn${poll.id}">确认投票</button>`;
+                            btnDiv.innerHTML = `<button class="vote-btn" id="voteBtn${poll.id}">纭鎶曠エ</button>`;
                             document.getElementById('voteBtn' + poll.id).onclick = async () => {
                                 if (!currentUser) { showVoteNeedRegModal(); return; }
-                                // 检查是否已投票（防重复）
+                                // 妫€鏌ユ槸鍚﹀凡鎶曠エ锛堥槻閲嶅锛?
                                 const existingVotes = JSON.parse(localStorage.getItem('yayehui_votes') || '[]');
                                 if (existingVotes.some(v => v.poll_id === poll.id && v.property_address === currentUser.property_address)) {
-                                    alert('一个地址只能投一票');
+                                    alert('涓€涓湴鍧€鍙兘鎶曚竴绁?);
                                     renderPolls();
                                     return;
                                 }
@@ -938,7 +938,7 @@ const DEFAULT_DATA = {
                                     localStorage.setItem('yayehui_votes', JSON.stringify(votes));
                                 }
                                 renderPolls();
-                                alert('投票成功！');
+                                alert('鎶曠エ鎴愬姛锛?);
                             };
                         }
                     }
@@ -946,7 +946,7 @@ const DEFAULT_DATA = {
             });
             btnDiv.innerHTML = '';
         } else {
-            // 已登录但未投票
+            // 宸茬櫥褰曚絾鏈姇绁?
             let selectedOptionId = null;
             let optsHtml = '';
             options.forEach(opt => {
@@ -960,15 +960,15 @@ const DEFAULT_DATA = {
                     selectedOptionId = parseInt(span.dataset.optId);
                 };
             });
-            btnDiv.innerHTML = `<button class="vote-btn" id="voteBtn${poll.id}">确认投票</button>`;
+            btnDiv.innerHTML = `<button class="vote-btn" id="voteBtn${poll.id}">纭鎶曠エ</button>`;
             document.getElementById('voteBtn' + poll.id).onclick = async () => {
                 if (!currentUser) { showVoteNeedRegModal(); return; }
-                if (!selectedOptionId) { alert('请先选择一个选项'); return; }
+                if (!selectedOptionId) { alert('璇峰厛閫夋嫨涓€涓€夐」'); return; }
                 
-                // 检查是否已投票（防重复）
+                // 妫€鏌ユ槸鍚﹀凡鎶曠エ锛堥槻閲嶅锛?
                 const existingVotes = JSON.parse(localStorage.getItem('yayehui_votes') || '[]');
                 if (existingVotes.some(v => v.poll_id === poll.id && v.property_address === currentUser.property_address)) {
-                    alert('一个地址只能投一票');
+                    alert('涓€涓湴鍧€鍙兘鎶曚竴绁?);
                     renderPolls();
                     return;
                 }
@@ -987,7 +987,7 @@ const DEFAULT_DATA = {
                     localStorage.setItem('yayehui_votes', JSON.stringify(votes));
                 }
                 renderPolls();
-                alert('投票成功！');
+                alert('鎶曠エ鎴愬姛锛?);
             };
         }
     }
@@ -1006,7 +1006,7 @@ const DEFAULT_DATA = {
         document.getElementById('register').scrollIntoView({ behavior: 'smooth' });
     });
 
-    // 费用公示（分页 + 实时统计）
+    // 璐圭敤鍏ず锛堝垎椤?+ 瀹炴椂缁熻锛?
     async function renderExpenses() {
         const container = document.getElementById('expensesList');
         if (!container) return;
@@ -1023,20 +1023,20 @@ const DEFAULT_DATA = {
                     expenses = DEFAULT_DATA.expenses;
                     localStorage.setItem('yayehui_expenses', JSON.stringify(expenses));
                     localStorage.setItem('init_expenses', '1');
-                // ⚠️ 初始化逻辑：仅首次访问时从 DEFAULT_DATA 加载，删除后不自动恢复
+                // 鈿狅笍 鍒濆鍖栭€昏緫锛氫粎棣栨璁块棶鏃朵粠 DEFAULT_DATA 鍔犺浇锛屽垹闄ゅ悗涓嶈嚜鍔ㄦ仮澶?
 
                 } else {
                     expenses = [];
                 }
             }
             
-            // 计算统计数据
+            // 璁＄畻缁熻鏁版嵁
             let totalIncome = 0, totalExpense = 0;
-            expenses.forEach(e => { if (e.category === '收入') totalIncome += parseFloat(e.amount || 0); else totalExpense += parseFloat(e.amount || 0); });
+            expenses.forEach(e => { if (e.category === '鏀跺叆') totalIncome += parseFloat(e.amount || 0); else totalExpense += parseFloat(e.amount || 0); });
             const balance = totalIncome - totalExpense;
             
             if (expenses.length === 0) { 
-                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>'; 
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>鐩墠鏆傛棤鏁版嵁</div>'; 
                 document.getElementById('expensesPager').style.display = 'none';
                 return; 
             }
@@ -1048,19 +1048,19 @@ const DEFAULT_DATA = {
             
             container.innerHTML = `
                 <div style="background:white;border-radius:20px;padding:20px;margin-bottom:20px;display:flex;gap:24px;flex-wrap:wrap;justify-content:center;">
-                    <div>总收入：<strong style="color:#2c6e49;font-size:1.2rem;">¥${totalIncome.toFixed(2)}</strong></div>
-                    <div>总支出：<strong style="color:#c2410c;font-size:1.2rem;">¥${totalExpense.toFixed(2)}</strong></div>
-                    <div>结余：<strong style="font-size:1.2rem;">¥${balance.toFixed(2)}</strong></div>
+                    <div>鎬绘敹鍏ワ細<strong style="color:#2c6e49;font-size:1.2rem;">楼${totalIncome.toFixed(2)}</strong></div>
+                    <div>鎬绘敮鍑猴細<strong style="color:#c2410c;font-size:1.2rem;">楼${totalExpense.toFixed(2)}</strong></div>
+                    <div>缁撲綑锛?strong style="font-size:1.2rem;">楼${balance.toFixed(2)}</strong></div>
                 </div>
-                <table class="expense-table"><thead><tr><th>日期</th><th>类别</th><th>项目</th><th>金额</th><th>备注</th></tr></thead><tbody>
-                ${pageExpenses.map(e => `<tr><td>${e.date || ''}</td><td>${e.category || ''}</td><td>${escapeHtml(e.item_name || '')}</td><td style="color:${e.category==='收入'?'#2c6e49':'#c2410c'};font-weight:600;">¥${parseFloat(e.amount || 0).toFixed(2)}</td><td>${escapeHtml(e.remark || '')}</td></tr>`).join('')}
+                <table class="expense-table"><thead><tr><th>鏃ユ湡</th><th>绫诲埆</th><th>椤圭洰</th><th>閲戦</th><th>澶囨敞</th></tr></thead><tbody>
+                ${pageExpenses.map(e => `<tr><td>${e.date || ''}</td><td>${e.category || ''}</td><td>${escapeHtml(e.item_name || '')}</td><td style="color:${e.category==='鏀跺叆'?'#2c6e49':'#c2410c'};font-weight:600;">楼${parseFloat(e.amount || 0).toFixed(2)}</td><td>${escapeHtml(e.remark || '')}</td></tr>`).join('')}
                 </tbody></table>`;
             const pagerEl = document.getElementById('expensesPager');
             if (pagerEl) pagerEl.innerHTML = paginationHTML(page, total, 'exp', expenses.length);
-        } catch (e) { container.innerHTML = '<p style="text-align:center;color:#c2410c;">加载失败</p>'; }
+        } catch (e) { container.innerHTML = '<p style="text-align:center;color:#c2410c;">鍔犺浇澶辫触</p>'; }
     }
 
-    // 心声帖子（分页）
+    // 蹇冨０甯栧瓙锛堝垎椤碉級
     window.page_topics = 1;
     let currentTopicId = null;
     async function renderTopics() {
@@ -1091,7 +1091,7 @@ const DEFAULT_DATA = {
                     localStorage.setItem('yayehui_topics', JSON.stringify(topics));
                     localStorage.setItem('yayehui_replies', JSON.stringify(replies));
                     localStorage.setItem('init_topics', '1');
-                // ⚠️ 初始化逻辑：仅首次访问时从 DEFAULT_DATA 加载，删除后不自动恢复
+                // 鈿狅笍 鍒濆鍖栭€昏緫锛氫粎棣栨璁块棶鏃朵粠 DEFAULT_DATA 鍔犺浇锛屽垹闄ゅ悗涓嶈嚜鍔ㄦ仮澶?
 
                 } else {
                     topics = [];
@@ -1100,7 +1100,7 @@ const DEFAULT_DATA = {
             }
             
             if (topics.length === 0) {
-                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>';
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>鐩墠鏆傛棤鏁版嵁</div>';
                 document.getElementById('topicsPager').style.display = 'none';
                 return;
             }
@@ -1110,13 +1110,13 @@ const DEFAULT_DATA = {
             const total = Math.ceil(topics.length / pageSize);
             const pageTopics = topics.slice((page - 1) * pageSize, page * pageSize);
             container.innerHTML = '';
-            if (pageTopics.length === 0) { container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>'; document.getElementById('topicsPager').style.display = 'none'; return; }
+            if (pageTopics.length === 0) { container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>鐩墠鏆傛棤鏁版嵁</div>'; document.getElementById('topicsPager').style.display = 'none'; return; }
             pageTopics.forEach(topic => {
                 const replyCount = replies.filter(r => r.topic_id === topic.id).length;
                 const div = document.createElement('div');
                 div.className = 'topic-card';
                 div.dataset.id = topic.id;
-                div.innerHTML = `<h3>${escapeHtml(topic.title)}</h3><p>${escapeHtml((topic.content || '').substring(0, 100))}${(topic.content || '').length > 100 ? '...' : ''}</p><div class="topic-meta"><span>作者：${escapeHtml(topic.author || '')}</span><span>浏览 ${topic.view_count || 0}</span><span>回复 ${replyCount}</span><span>${new Date(topic.created_at).toLocaleDateString()}</span></div>`;
+                div.innerHTML = `<h3>${escapeHtml(topic.title)}</h3><p>${escapeHtml((topic.content || '').substring(0, 100))}${(topic.content || '').length > 100 ? '...' : ''}</p><div class="topic-meta"><span>浣滆€咃細${escapeHtml(topic.author || '')}</span><span>娴忚 ${topic.view_count || 0}</span><span>鍥炲 ${replyCount}</span><span>${new Date(topic.created_at).toLocaleDateString()}</span></div>`;
                 container.appendChild(div);
             });
             document.getElementById('topicsPager').innerHTML = paginationHTML(page, total, 'topics', topics.length);
@@ -1146,7 +1146,7 @@ const DEFAULT_DATA = {
                     renderTopics();
                 };
             });
-        } catch (e) { container.innerHTML = '<p style="text-align:center;color:#c2410c;">加载失败</p>'; }
+        } catch (e) { container.innerHTML = '<p style="text-align:center;color:#c2410c;">鍔犺浇澶辫触</p>'; }
     }
 
     async function addTopic(title, content, author) {
@@ -1181,7 +1181,7 @@ const DEFAULT_DATA = {
         return true;
     }
 
-    // 用户注册页面
+    // 鐢ㄦ埛娉ㄥ唽椤甸潰
     async function renderRegister() {
         const container = document.getElementById('registerSection');
         if (!container) return;
@@ -1190,12 +1190,12 @@ const DEFAULT_DATA = {
             container.innerHTML = `
                 <div style="background:white;border-radius:28px;padding:40px;text-align:center;max-width:600px;margin:0 auto;">
                     <i class="fas fa-user-check" style="font-size:4rem;color:#2c6e49;margin-bottom:16px;"></i>
-                    <h2 style="color:#1f4f2d;margin-bottom:12px;">您已注册</h2>
+                    <h2 style="color:#1f4f2d;margin-bottom:12px;">鎮ㄥ凡娉ㄥ唽</h2>
                     <div style="text-align:left;background:#f0f7f1;border-radius:16px;padding:20px;margin-top:20px;">
-                        <p><strong>用户名称：</strong>${escapeHtml(currentUser.user_name)}</p>
-                        <p><strong>手机号码：</strong>${escapeHtml(currentUser.phone)}</p>
-                        <p><strong>房产地址：</strong>${escapeHtml(currentUser.property_address)}</p>
-                        <p style="margin-top:12px;"><button class="btn btn-secondary" onclick="logout()">退出登录</button></p>
+                        <p><strong>鐢ㄦ埛鍚嶇О锛?/strong>${escapeHtml(currentUser.user_name)}</p>
+                        <p><strong>鎵嬫満鍙风爜锛?/strong>${escapeHtml(currentUser.phone)}</p>
+                        <p><strong>鎴夸骇鍦板潃锛?/strong>${escapeHtml(currentUser.property_address)}</p>
+                        <p style="margin-top:12px;"><button class="btn btn-secondary" onclick="logout()">閫€鍑虹櫥褰?/button></p>
                     </div>
                 </div>`;
             return;
@@ -1203,26 +1203,26 @@ const DEFAULT_DATA = {
 
         container.innerHTML = `
             <div style="background:white;border-radius:28px;padding:40px;max-width:600px;margin:0 auto;box-shadow:0 8px 20px rgba(0,0,0,0.03);">
-                <h3 style="color:#1f4f2d;margin-bottom:24px;text-align:center;"><i class="fas fa-user-plus"></i> 业主注册</h3>
-                <p style="color:#6c7a91;font-size:0.85rem;margin-bottom:20px;text-align:center;">请填写以下信息完成注册，一个房产地址只能注册一个账号。</p>
+                <h3 style="color:#1f4f2d;margin-bottom:24px;text-align:center;"><i class="fas fa-user-plus"></i> 涓氫富娉ㄥ唽</h3>
+                <p style="color:#6c7a91;font-size:0.85rem;margin-bottom:20px;text-align:center;">璇峰～鍐欎互涓嬩俊鎭畬鎴愭敞鍐岋紝涓€涓埧浜у湴鍧€鍙兘娉ㄥ唽涓€涓处鍙枫€?/p>
                 <div id="registerError" style="color:#c2410c;text-align:center;margin-bottom:12px;font-weight:500;display:none;"></div>
                 <div class="form-group">
-                    <label style="font-weight:600;color:#1e293b;display:block;margin-bottom:6px;">手机号码 *</label>
-                    <input type="tel" id="regPhone" placeholder="请输入手机号码" maxlength="11">
+                    <label style="font-weight:600;color:#1e293b;display:block;margin-bottom:6px;">鎵嬫満鍙风爜 *</label>
+                    <input type="tel" id="regPhone" placeholder="璇疯緭鍏ユ墜鏈哄彿鐮? maxlength="11">
                 </div>
                 <div class="form-group">
-                    <label style="font-weight:600;color:#1e293b;display:block;margin-bottom:6px;">用户名称（昵称） *</label>
-                    <input type="text" id="regName" placeholder="请输入用户名称（用于投票显示）">
+                    <label style="font-weight:600;color:#1e293b;display:block;margin-bottom:6px;">鐢ㄦ埛鍚嶇О锛堟樀绉帮級 *</label>
+                    <input type="text" id="regName" placeholder="璇疯緭鍏ョ敤鎴峰悕绉帮紙鐢ㄤ簬鎶曠エ鏄剧ず锛?>
                 </div>
-                <div class="form-group"><label>设置密码</label><input type="password" id="regPassword" placeholder="请设置登录密码（6位以上）"></div>
-                <div class="form-group"><label>确认密码</label><input type="password" id="regConfirmPassword" placeholder="请再次输入密码"></div>
+                <div class="form-group"><label>璁剧疆瀵嗙爜</label><input type="password" id="regPassword" placeholder="璇疯缃櫥褰曞瘑鐮侊紙6浣嶄互涓婏級"></div>
+                <div class="form-group"><label>纭瀵嗙爜</label><input type="password" id="regConfirmPassword" placeholder="璇峰啀娆¤緭鍏ュ瘑鐮?></div>
                 <div class="form-group">
-                    <label style="font-weight:600;color:#1e293b;display:block;margin-bottom:6px;">房产地址 *</label>
-                    <input type="text" id="regAddress" placeholder="例：7座7楼701">
-                    <small style="color:#6c7a91;display:block;margin-top:4px;">格式：X座X楼X号，如 7座7楼701</small>
+                    <label style="font-weight:600;color:#1e293b;display:block;margin-bottom:6px;">鎴夸骇鍦板潃 *</label>
+                    <input type="text" id="regAddress" placeholder="渚嬶細7搴?妤?01">
+                    <small style="color:#6c7a91;display:block;margin-top:4px;">鏍煎紡锛歑搴妤糥鍙凤紝濡?7搴?妤?01</small>
                 </div>
                 <div class="form-group" style="margin-top:24px;">
-                    <button class="btn" id="doRegisterBtn" style="width:100%;">完成注册</button>
+                    <button class="btn" id="doRegisterBtn" style="width:100%;">瀹屾垚娉ㄥ唽</button>
                 </div>
             </div>`;
 
@@ -1235,59 +1235,59 @@ const DEFAULT_DATA = {
             const errorDiv = document.getElementById('registerError');
 
             if (!phone || !user_name || !regPwd || !regConfirmPwd || !property_address) {
-                errorDiv.textContent = '请完整填写所有必填项';
+                errorDiv.textContent = '璇峰畬鏁村～鍐欐墍鏈夊繀濉」';
                 errorDiv.style.display = 'block';
                 return;
             }
             if (!/^1\d{10}$/.test(phone)) {
-                errorDiv.textContent = '请输入正确的11位手机号码';
+                errorDiv.textContent = '璇疯緭鍏ユ纭殑11浣嶆墜鏈哄彿鐮?;
                 errorDiv.style.display = 'block';
                 return;
             }
             if (regPwd.length < 6) {
-                errorDiv.textContent = '密码长度不能少于6位';
+                errorDiv.textContent = '瀵嗙爜闀垮害涓嶈兘灏戜簬6浣?;
                 errorDiv.style.display = 'block';
                 return;
             }
             if (regPwd !== regConfirmPwd) {
-                errorDiv.textContent = '两次输入的密码不一致';
+                errorDiv.textContent = '涓ゆ杈撳叆鐨勫瘑鐮佷笉涓€鑷?;
                 errorDiv.style.display = 'block';
                 return;
             }
 
-            // 验证房产地址是否在预导入列表中且未被注册
+            // 楠岃瘉鎴夸骇鍦板潃鏄惁鍦ㄩ瀵煎叆鍒楄〃涓笖鏈娉ㄥ唽
             try {
                 let addrValid = false;
                 let addrExists = false;
                 if (USE_SUPABASE) {
                     const addrs = await db.propertyAddresses.getAll() || [];
                     const matched = addrs.find(a => a.address === property_address);
-                    if (!matched) { errorDiv.textContent = '该房产地址不在系统允许范围内，请联系业委会。'; errorDiv.style.display = 'block'; return; }
-                    if (matched.is_registered) { errorDiv.textContent = '该房产地址已被注册，一个房产地址只能注册一个用户。'; errorDiv.style.display = 'block'; return; }
+                    if (!matched) { errorDiv.textContent = '璇ユ埧浜у湴鍧€涓嶅湪绯荤粺鍏佽鑼冨洿鍐咃紝璇疯仈绯讳笟濮斾細銆?; errorDiv.style.display = 'block'; return; }
+                    if (matched.is_registered) { errorDiv.textContent = '璇ユ埧浜у湴鍧€宸茶娉ㄥ唽锛屼竴涓埧浜у湴鍧€鍙兘娉ㄥ唽涓€涓敤鎴枫€?; errorDiv.style.display = 'block'; return; }
                 }
 
-                // 插入用户
+                // 鎻掑叆鐢ㄦ埛
                 const userData = { phone, user_name, password: regPwd, property_address, created_at: new Date().toISOString() };
                 if (USE_SUPABASE) {
                     const result = await db.registeredUsers.create(userData);
-                    // 更新房产地址注册状态
+                    // 鏇存柊鎴夸骇鍦板潃娉ㄥ唽鐘舵€?
                     await db.propertyAddresses.markRegistered(property_address);
                 } else {
                     let users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
                     if (users.find(u => u.property_address === property_address)) {
-                        errorDiv.textContent = '该房产地址已被注册，一个房产地址只能注册一个用户。';
+                        errorDiv.textContent = '璇ユ埧浜у湴鍧€宸茶娉ㄥ唽锛屼竴涓埧浜у湴鍧€鍙兘娉ㄥ唽涓€涓敤鎴枫€?;
                         errorDiv.style.display = 'block';
                         return;
                     }
-                    // ✅ 检查地址是否在地址库中
+                    // 鉁?妫€鏌ュ湴鍧€鏄惁鍦ㄥ湴鍧€搴撲腑
                     const allAddrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
                     const addrInList = allAddrs.find(a => a.address === property_address);
                     if (!addrInList) {
-                        errorDiv.textContent = '该房产地址不在系统允许范围内，请联系业委会。';
+                        errorDiv.textContent = '璇ユ埧浜у湴鍧€涓嶅湪绯荤粺鍏佽鑼冨洿鍐咃紝璇疯仈绯讳笟濮斾細銆?;
                         errorDiv.style.display = 'block';
                         return;
                     }
-                    // ✅ 标记地址为已注册
+                    // 鉁?鏍囪鍦板潃涓哄凡娉ㄥ唽
                     const updatedAddrs = allAddrs.map(a => a.address === property_address ? {...a, is_registered: true} : a);
                     localStorage.setItem('yayehui_property_addresses', JSON.stringify(updatedAddrs));
                     
@@ -1298,11 +1298,11 @@ const DEFAULT_DATA = {
 
                 currentUser = { phone, user_name, password: regPwd, property_address, id: Date.now() };
                 localStorage.setItem('yayehui_current_user', JSON.stringify(currentUser));
-                alert('注册成功！');
+                alert('娉ㄥ唽鎴愬姛锛?);
                 renderRegister();
             } catch(e) {
                 console.error(e);
-                errorDiv.textContent = '注册失败，该房产地址可能已被注册。一个房产地址只能注册一个用户。';
+                errorDiv.textContent = '娉ㄥ唽澶辫触锛岃鎴夸骇鍦板潃鍙兘宸茶娉ㄥ唽銆備竴涓埧浜у湴鍧€鍙兘娉ㄥ唽涓€涓敤鎴枫€?;
                 errorDiv.style.display = 'block';
             }
         };
@@ -1314,27 +1314,27 @@ const DEFAULT_DATA = {
         renderRegister();
     };
 
-// ========== 登录/用户资料/注册/重置密码 功能 ==========
+// ========== 鐧诲綍/鐢ㄦ埛璧勬枡/娉ㄥ唽/閲嶇疆瀵嗙爜 鍔熻兘 ==========
 
-// 显示登录模态框
+// 鏄剧ず鐧诲綍妯℃€佹
 window.showLoginModal = function() {
     document.getElementById('loginModal').style.display = 'flex';
     document.getElementById('loginAccount').value = '';
     document.getElementById('loginPassword').value = '';
 };
 
-// 隐藏登录模态框
+// 闅愯棌鐧诲綍妯℃€佹
 window.hideLoginModal = function() {
     document.getElementById('loginModal').style.display = 'none';
 };
 
-// 显示用户资料模态框
+// 鏄剧ず鐢ㄦ埛璧勬枡妯℃€佹
 window.showProfileModal = function() {
     if (!currentUser) {
         showLoginModal();
         return;
     }
-    // 显示用户资料
+    // 鏄剧ず鐢ㄦ埛璧勬枡
     document.getElementById('profilePhone').textContent = currentUser.phone || '';
     document.getElementById('profileUsername').textContent = currentUser.user_name || '';
     document.getElementById('profileAddress').textContent = currentUser.property_address || '';
@@ -1344,15 +1344,15 @@ window.showProfileModal = function() {
     document.getElementById('profileModal').style.display = 'flex';
 };
 
-// 隐藏用户资料模态框
+// 闅愯棌鐢ㄦ埛璧勬枡妯℃€佹
 window.hideProfileModal = function() {
     document.getElementById('profileModal').style.display = 'none';
 };
 
-// 显示注册模态框
+// 鏄剧ず娉ㄥ唽妯℃€佹
 window.showRegisterModal = function() {
     document.getElementById('registerModal').style.display = 'flex';
-    // 清空表单
+    // 娓呯┖琛ㄥ崟
     ['modalRegUsername','modalRegPhone','modalRegPassword','modalRegConfirmPassword','modalRegAddress'].forEach(id => {
         document.getElementById(id).value = '';
     });
@@ -1361,12 +1361,12 @@ window.showRegisterModal = function() {
     });
 };
 
-// 隐藏注册模态框
+// 闅愯棌娉ㄥ唽妯℃€佹
 window.hideRegisterModal = function() {
     document.getElementById('registerModal').style.display = 'none';
 };
 
-// 显示重置密码模态框
+// 鏄剧ず閲嶇疆瀵嗙爜妯℃€佹
 window.showResetPasswordModal = function() {
     document.getElementById('resetPasswordModal').style.display = 'flex';
     document.getElementById('resetStep1').style.display = 'block';
@@ -1375,24 +1375,24 @@ window.showResetPasswordModal = function() {
     document.getElementById('resetAddressMsg').textContent = '';
 };
 
-// 隐藏重置密码模态框
+// 闅愯棌閲嶇疆瀵嗙爜妯℃€佹
 window.hideResetPasswordModal = function() {
     document.getElementById('resetPasswordModal').style.display = 'none';
 };
 
-// 显示联系我们弹窗
+// 鏄剧ず鑱旂郴鎴戜滑寮圭獥
 window.showContactModal = function() {
-    document.getElementById('contactContent').textContent = window.CONTACT_CONTENT || '联系电话：xxx\nEmail：xxx';
+    document.getElementById('contactContent').textContent = window.CONTACT_CONTENT || '鑱旂郴鐢佃瘽锛歺xx\nEmail锛歺xx';
     document.getElementById('contactModal').style.display = 'flex';
 };
 
-// 处理登录
+// 澶勭悊鐧诲綍
 window.handleLogin = async function() {
     const account = document.getElementById('loginAccount').value.trim();
     const password = document.getElementById('loginPassword').value.trim();
     
     if (!account || !password) {
-        alert('请输入账号和密码');
+        alert('璇疯緭鍏ヨ处鍙峰拰瀵嗙爜');
         return;
     }
     
@@ -1400,19 +1400,19 @@ window.handleLogin = async function() {
         let user = null;
         if (USE_SUPABASE) {
             let users = await db.registeredUsers.getAll() || [];
-            // 先找到用户（通过用户名或手机号）
+            // 鍏堟壘鍒扮敤鎴凤紙閫氳繃鐢ㄦ埛鍚嶆垨鎵嬫満鍙凤級
             const foundUser = users.find(u => (u.user_name === account || u.phone === account));
             if (foundUser && foundUser.passwordHash && foundUser.passwordSalt) {
-                // 验证加密后的密码
+                // 楠岃瘉鍔犲瘑鍚庣殑瀵嗙爜
                 const isValid = await verifyPassword(password, foundUser.passwordSalt, foundUser.passwordHash);
                 if (isValid) user = foundUser;
             }
         } else {
             let users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
-            // 先找到用户（通过用户名或手机号）
+            // 鍏堟壘鍒扮敤鎴凤紙閫氳繃鐢ㄦ埛鍚嶆垨鎵嬫満鍙凤級
             const foundUser = users.find(u => (u.user_name === account || u.phone === account));
             if (foundUser && foundUser.passwordHash && foundUser.passwordSalt) {
-                // 验证加密后的密码
+                // 楠岃瘉鍔犲瘑鍚庣殑瀵嗙爜
                 const isValid = await verifyPassword(password, foundUser.passwordSalt, foundUser.passwordHash);
                 if (isValid) user = foundUser;
             }
@@ -1421,86 +1421,86 @@ window.handleLogin = async function() {
             currentUser = user;
             localStorage.setItem('yayehui_current_user', JSON.stringify(currentUser));
             hideLoginModal();
-            alert('登录成功！');
+            alert('鐧诲綍鎴愬姛锛?);
             location.reload();
         } else {
-            alert('用户名或密码错误');
+            alert('鐢ㄦ埛鍚嶆垨瀵嗙爜閿欒');
         }
     } catch (e) {
         console.error('Login error:', e);
-        alert('登录失败，请稍后重试');
+        alert('鐧诲綍澶辫触锛岃绋嶅悗閲嶈瘯');
     }
 };
 
-// 处理用户资料更新
+// 澶勭悊鐢ㄦ埛璧勬枡鏇存柊
 window.handleProfileUpdate = async function() {
     const phone = document.getElementById('editPhone').value.trim();
     const username = document.getElementById('editUsername').value.trim();
     const address = document.getElementById('editAddress').value.trim();
     
-    // 调试：显示每个字段的值
-    console.log('资料更新调试：', { phone, username, address });
+    // 璋冭瘯锛氭樉绀烘瘡涓瓧娈电殑鍊?
+    console.log('璧勬枡鏇存柊璋冭瘯锛?, { phone, username, address });
     
     if (!phone || !username || !address) {
-        alert(`请完整填写所有字段。\n用户名: ${username ? '✓' : '✗'}\n手机号: ${phone ? '✓' : '✗'}\n房产地址: ${address ? '✓' : '✗'}`);
+        alert(`璇峰畬鏁村～鍐欐墍鏈夊瓧娈点€俓n鐢ㄦ埛鍚? ${username ? '鉁? : '鉁?}\n鎵嬫満鍙? ${phone ? '鉁? : '鉁?}\n鎴夸骇鍦板潃: ${address ? '鉁? : '鉁?}`);
         return;
     }
     
-    // 验证用户名唯一性
+    // 楠岃瘉鐢ㄦ埛鍚嶅敮涓€鎬?
     try {
         if (USE_SUPABASE) {
             let users = await db.registeredUsers.getAll() || [];
             const duplicateUser = users.find(u => u.user_name === username && u.id !== currentUser.id);
             if (duplicateUser) {
-                // 生成建议用户名
+                // 鐢熸垚寤鸿鐢ㄦ埛鍚?
                 let suggested = username;
                 let counter = 2;
                 while (users.find(u => u.user_name === suggested)) {
                     suggested = username + counter;
                     counter++;
                 }
-                document.getElementById('usernameCheckMsg').innerHTML = '此用户名已被注册，建议：<strong>' + suggested + '</strong> <button type="button" onclick="document.getElementById(\'editUsername\').value=\'' + suggested + '\';document.getElementById(\'usernameCheckMsg\').innerHTML=\'' + '\';" style="color:#2c6e49;cursor:pointer;text-decoration:underline;background:none;border:none;font-size:inherit;">一键采用</button>';
+                document.getElementById('usernameCheckMsg').innerHTML = '姝ょ敤鎴峰悕宸茶娉ㄥ唽锛屽缓璁細<strong>' + suggested + '</strong> <button type="button" onclick="document.getElementById(\'editUsername\').value=\'' + suggested + '\';document.getElementById(\'usernameCheckMsg\').innerHTML=\'' + '\';" style="color:#2c6e49;cursor:pointer;text-decoration:underline;background:none;border:none;font-size:inherit;">涓€閿噰鐢?/button>';
                 document.getElementById('usernameCheckMsg').style.color = '#c2410c';
                 return;
             }
-            // 验证房产地址唯一性
+            // 楠岃瘉鎴夸骇鍦板潃鍞竴鎬?
             const duplicateAddress = users.find(u => u.property_address === address && u.id !== currentUser.id);
             if (duplicateAddress) {
-                document.getElementById('addressCheckMsg').textContent = `该房产地址与【${duplicateAddress.user_name}】注册的重复，一个房产地址只能注册一个用户。`;
+                document.getElementById('addressCheckMsg').textContent = `璇ユ埧浜у湴鍧€涓庛€?{duplicateAddress.user_name}銆戞敞鍐岀殑閲嶅锛屼竴涓埧浜у湴鍧€鍙兘娉ㄥ唽涓€涓敤鎴枫€俙;
                 document.getElementById('addressCheckMsg').style.color = '#c2410c';
                 return;
             }
-            // 更新用户信息
+            // 鏇存柊鐢ㄦ埛淇℃伅
             await db.registeredUsers.update(currentUser.id, { phone, user_name: username, property_address: address });
             currentUser.phone = phone;
             currentUser.user_name = username;
             currentUser.property_address = address;
             localStorage.setItem('yayehui_current_user', JSON.stringify(currentUser));
-            alert('资料修改成功！');
-            showProfileModal(); // 刷新显示
+            alert('璧勬枡淇敼鎴愬姛锛?);
+            showProfileModal(); // 鍒锋柊鏄剧ず
         } else {
-            // 本地存储模式
+            // 鏈湴瀛樺偍妯″紡
             let users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
             const duplicateUser = users.find(u => u.user_name === username && u.id !== currentUser.id);
             if (duplicateUser) {
-                // 生成建议用户名
+                // 鐢熸垚寤鸿鐢ㄦ埛鍚?
                 let suggested = username;
                 let counter = 2;
                 while (users.find(u => u.user_name === suggested)) {
                     suggested = username + counter;
                     counter++;
                 }
-                document.getElementById('usernameCheckMsg').innerHTML = '此用户名已被注册，建议：<strong>' + suggested + '</strong> <button type="button" onclick="document.getElementById(\'editUsername\').value=\'' + suggested + '\';document.getElementById(\'usernameCheckMsg\').innerHTML=\'' + '\';" style="color:#2c6e49;cursor:pointer;text-decoration:underline;background:none;border:none;font-size:inherit;">一键采用</button>';
+                document.getElementById('usernameCheckMsg').innerHTML = '姝ょ敤鎴峰悕宸茶娉ㄥ唽锛屽缓璁細<strong>' + suggested + '</strong> <button type="button" onclick="document.getElementById(\'editUsername\').value=\'' + suggested + '\';document.getElementById(\'usernameCheckMsg\').innerHTML=\'' + '\';" style="color:#2c6e49;cursor:pointer;text-decoration:underline;background:none;border:none;font-size:inherit;">涓€閿噰鐢?/button>';
                 document.getElementById('usernameCheckMsg').style.color = '#c2410c';
                 return;
             }
             const duplicateAddress = users.find(u => u.property_address === address && u.id !== currentUser.id);
             if (duplicateAddress) {
-                document.getElementById('addressCheckMsg').textContent = `该房产地址与【${duplicateAddress.user_name}】注册的重复，一个房产地址只能注册一个用户。`;
+                document.getElementById('addressCheckMsg').textContent = `璇ユ埧浜у湴鍧€涓庛€?{duplicateAddress.user_name}銆戞敞鍐岀殑閲嶅锛屼竴涓埧浜у湴鍧€鍙兘娉ㄥ唽涓€涓敤鎴枫€俙;
                 document.getElementById('addressCheckMsg').style.color = '#c2410c';
                 return;
             }
-            // 更新用户信息
+            // 鏇存柊鐢ㄦ埛淇℃伅
             const userIndex = users.findIndex(u => u.id === currentUser.id);
             if (userIndex !== -1) {
                 users[userIndex].phone = phone;
@@ -1509,17 +1509,17 @@ window.handleProfileUpdate = async function() {
                 localStorage.setItem('yayehui_registered_users', JSON.stringify(users));
                 currentUser = users[userIndex];
                 localStorage.setItem('yayehui_current_user', JSON.stringify(currentUser));
-                alert('资料修改成功！');
-                showProfileModal(); // 刷新显示
+                alert('璧勬枡淇敼鎴愬姛锛?);
+                showProfileModal(); // 鍒锋柊鏄剧ず
             }
         }
     } catch (e) {
         console.error('Profile update error:', e);
-        alert('资料修改失败，请稍后重试');
+        alert('璧勬枡淇敼澶辫触锛岃绋嶅悗閲嶈瘯');
     }
 };
 
-// 处理注册
+// 澶勭悊娉ㄥ唽
 window.handleRegister = async function() {
     const usernameEl = document.getElementById('modalRegUsername');
     const phoneEl = document.getElementById('modalRegPhone');
@@ -1533,62 +1533,62 @@ window.handleRegister = async function() {
     const confirmPassword = confirmPasswordEl ? confirmPasswordEl.value.trim() : '';
     const address = addressEl ? addressEl.value.trim() : '';
     
-    // 调试：显示每个字段的值
-    console.log('注册调试：', { username, phone, password, confirmPassword, address });
+    // 璋冭瘯锛氭樉绀烘瘡涓瓧娈电殑鍊?
+    console.log('娉ㄥ唽璋冭瘯锛?, { username, phone, password, confirmPassword, address });
     
     if (!username || !phone || !password || !confirmPassword || !address) {
-        alert(`请完整填写所有必填项。\n用户名: ${username ? '✓' : '✗'}\n手机号: ${phone ? '✓' : '✗'}\n密码: ${password ? '✓' : '✗'}\n确认密码: ${confirmPassword ? '✓' : '✗'}\n房产地址: ${address ? '✓' : '✗'}`);
+        alert(`璇峰畬鏁村～鍐欐墍鏈夊繀濉」銆俓n鐢ㄦ埛鍚? ${username ? '鉁? : '鉁?}\n鎵嬫満鍙? ${phone ? '鉁? : '鉁?}\n瀵嗙爜: ${password ? '鉁? : '鉁?}\n纭瀵嗙爜: ${confirmPassword ? '鉁? : '鉁?}\n鎴夸骇鍦板潃: ${address ? '鉁? : '鉁?}`);
         return;
     }
     
     if (password !== confirmPassword) {
-        alert('两次输入的密码不一致');
+        alert('涓ゆ杈撳叆鐨勫瘑鐮佷笉涓€鑷?);
         return;
     }
     
     if (!/^1\d{10}$/.test(phone)) {
-        alert('请输入正确的11位手机号码（以1开头的11位数字）');
+        alert('璇疯緭鍏ユ纭殑11浣嶆墜鏈哄彿鐮侊紙浠?寮€澶寸殑11浣嶆暟瀛楋級');
         return;
     }
     
     try {
         if (USE_SUPABASE) {
-            // 验证用户名唯一性
+            // 楠岃瘉鐢ㄦ埛鍚嶅敮涓€鎬?
             let users = await db.registeredUsers.getAll() || [];
             if (users.find(u => u.user_name === username)) {
-                // 生成建议用户名
+                // 鐢熸垚寤鸿鐢ㄦ埛鍚?
                 let suggested = username;
                 let counter = 2;
                 while (users.find(u => u.user_name === suggested)) {
                     suggested = username + counter;
                     counter++;
                 }
-                document.getElementById('modalRegUsernameMsg').innerHTML = '此用户名已被注册，建议：<strong>' + suggested + '</strong> <button type="button" onclick="document.getElementById(\'modalRegUsername\').value=\'' + suggested + '\';document.getElementById(\'modalRegUsernameMsg\').innerHTML=\'' + '\';" style="color:#2c6e49;cursor:pointer;text-decoration:underline;background:none;border:none;font-size:inherit;">一键采用</button>';
+                document.getElementById('modalRegUsernameMsg').innerHTML = '姝ょ敤鎴峰悕宸茶娉ㄥ唽锛屽缓璁細<strong>' + suggested + '</strong> <button type="button" onclick="document.getElementById(\'modalRegUsername\').value=\'' + suggested + '\';document.getElementById(\'modalRegUsernameMsg\').innerHTML=\'' + '\';" style="color:#2c6e49;cursor:pointer;text-decoration:underline;background:none;border:none;font-size:inherit;">涓€閿噰鐢?/button>';
                 document.getElementById('modalRegUsernameMsg').style.color = '#c2410c';
                 return;
             }
-            // 验证手机号唯一性
+            // 楠岃瘉鎵嬫満鍙峰敮涓€鎬?
             if (users.find(u => u.phone === phone)) {
-                document.getElementById('modalRegPhoneMsg').textContent = '此手机号已被注册';
+                document.getElementById('modalRegPhoneMsg').textContent = '姝ゆ墜鏈哄彿宸茶娉ㄥ唽';
                 document.getElementById('modalRegPhoneMsg').style.color = '#c2410c';
                 return;
             }
-            // 验证房产地址
+            // 楠岃瘉鎴夸骇鍦板潃
             let addrs = await db.propertyAddresses.getAll() || [];
             const matched = addrs.find(a => a.address === address);
             if (!matched) {
-                document.getElementById('modalRegAddressMsg').textContent = '该房产地址非本楼盘地址，请核实。';
+                document.getElementById('modalRegAddressMsg').textContent = '璇ユ埧浜у湴鍧€闈炴湰妤肩洏鍦板潃锛岃鏍稿疄銆?;
                 document.getElementById('modalRegAddressMsg').style.color = '#c2410c';
                 return;
             }
             if (matched.is_registered) {
                 const conflictUser = users.find(u => u.property_address === address);
-                const conflictName = conflictUser ? conflictUser.user_name : '未知用户';
-                document.getElementById('modalRegAddressMsg').textContent = `该房产地址与【${conflictName}】注册的重复，一个房产地址只能注册一个用户。`;
+                const conflictName = conflictUser ? conflictUser.user_name : '鏈煡鐢ㄦ埛';
+                document.getElementById('modalRegAddressMsg').textContent = `璇ユ埧浜у湴鍧€涓庛€?{conflictName}銆戞敞鍐岀殑閲嶅锛屼竴涓埧浜у湴鍧€鍙兘娉ㄥ唽涓€涓敤鎴枫€俙;
                 document.getElementById('modalRegAddressMsg').style.color = '#c2410c';
                 return;
             }
-            // 创建用户（加密密码）
+            // 鍒涘缓鐢ㄦ埛锛堝姞瀵嗗瘑鐮侊級
             const salt = await generateSalt();
             const hashedPassword = await hashPassword(password, salt);
             const userData = {
@@ -1600,50 +1600,50 @@ window.handleRegister = async function() {
                 created_at: new Date().toISOString()
             };
             const result = await db.registeredUsers.create(userData);
-            // 更新房产地址注册状态
+            // 鏇存柊鎴夸骇鍦板潃娉ㄥ唽鐘舵€?
             await db.propertyAddresses.markRegistered(address);
             
             currentUser = { ...userData, id: result.id };
             localStorage.setItem('yayehui_current_user', JSON.stringify(currentUser));
             hideRegisterModal();
-            alert('注册成功！');
+            alert('娉ㄥ唽鎴愬姛锛?);
             location.reload();
         } else {
-            // 本地存储模式
+            // 鏈湴瀛樺偍妯″紡
             let users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
             if (users.find(u => u.user_name === username)) {
-                // 生成建议用户名
+                // 鐢熸垚寤鸿鐢ㄦ埛鍚?
                 let suggested = username;
                 let counter = 2;
                 while (users.find(u => u.user_name === suggested)) {
                     suggested = username + counter;
                     counter++;
                 }
-                document.getElementById('modalRegUsernameMsg').innerHTML = '此用户名已被注册，建议：<strong>' + suggested + '</strong> <button type="button" onclick="document.getElementById(\'modalRegUsername\').value=\'' + suggested + '\';document.getElementById(\'modalRegUsernameMsg\').innerHTML=\'' + '\';" style="color:#2c6e49;cursor:pointer;text-decoration:underline;background:none;border:none;font-size:inherit;">一键采用</button>';
+                document.getElementById('modalRegUsernameMsg').innerHTML = '姝ょ敤鎴峰悕宸茶娉ㄥ唽锛屽缓璁細<strong>' + suggested + '</strong> <button type="button" onclick="document.getElementById(\'modalRegUsername\').value=\'' + suggested + '\';document.getElementById(\'modalRegUsernameMsg\').innerHTML=\'' + '\';" style="color:#2c6e49;cursor:pointer;text-decoration:underline;background:none;border:none;font-size:inherit;">涓€閿噰鐢?/button>';
                 document.getElementById('modalRegUsernameMsg').style.color = '#c2410c';
                 return;
             }
             if (users.find(u => u.phone === phone)) {
-                document.getElementById('modalRegPhoneMsg').textContent = '此手机号已被注册';
+                document.getElementById('modalRegPhoneMsg').textContent = '姝ゆ墜鏈哄彿宸茶娉ㄥ唽';
                 document.getElementById('modalRegPhoneMsg').style.color = '#c2410c';
                 return;
             }
-            // 验证房产地址（本地模式）
+            // 楠岃瘉鎴夸骇鍦板潃锛堟湰鍦版ā寮忥級
             let addrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
             const matched = addrs.find(a => a.address === address);
             if (!matched) {
-                document.getElementById('modalRegAddressMsg').textContent = '该房产地址非本楼盘地址，请核实。';
+                document.getElementById('modalRegAddressMsg').textContent = '璇ユ埧浜у湴鍧€闈炴湰妤肩洏鍦板潃锛岃鏍稿疄銆?;
                 document.getElementById('modalRegAddressMsg').style.color = '#c2410c';
                 return;
             }
             if (matched.is_registered) {
                 const conflictUser = users.find(u => u.property_address === address);
-                const conflictName = conflictUser ? conflictUser.user_name : '未知用户';
-                document.getElementById('modalRegAddressMsg').textContent = `该房产地址与【${conflictName}】注册的重复，一个房产地址只能注册一个用户。`;
+                const conflictName = conflictUser ? conflictUser.user_name : '鏈煡鐢ㄦ埛';
+                document.getElementById('modalRegAddressMsg').textContent = `璇ユ埧浜у湴鍧€涓庛€?{conflictName}銆戞敞鍐岀殑閲嶅锛屼竴涓埧浜у湴鍧€鍙兘娉ㄥ唽涓€涓敤鎴枫€俙;
                 document.getElementById('modalRegAddressMsg').style.color = '#c2410c';
                 return;
             }
-            // 创建用户（加密密码）
+            // 鍒涘缓鐢ㄦ埛锛堝姞瀵嗗瘑鐮侊級
             const salt = await generateSalt();
             const hashedPassword = await hashPassword(password, salt);
             const userData = {
@@ -1657,7 +1657,7 @@ window.handleRegister = async function() {
             };
             users.push(userData);
             localStorage.setItem('yayehui_registered_users', JSON.stringify(users));
-            // 更新房产地址注册状态
+            // 鏇存柊鎴夸骇鍦板潃娉ㄥ唽鐘舵€?
             const addrIndex = addrs.findIndex(a => a.address === address);
             if (addrIndex !== -1) {
                 addrs[addrIndex].is_registered = true;
@@ -1667,24 +1667,24 @@ window.handleRegister = async function() {
             currentUser = userData;
             localStorage.setItem('yayehui_current_user', JSON.stringify(currentUser));
             hideRegisterModal();
-            alert('注册成功！');
+            alert('娉ㄥ唽鎴愬姛锛?);
             location.reload();
         }
     } catch (e) {
         console.error('Register error:', e);
-        alert('注册失败，请稍后重试');
+        alert('娉ㄥ唽澶辫触锛岃绋嶅悗閲嶈瘯');
     }
 };
 
-// 处理退出登录
+// 澶勭悊閫€鍑虹櫥褰?
 window.handleLogout = function() {
     currentUser = null;
     localStorage.removeItem('yayehui_current_user');
-    alert('已退出登录');
+    alert('宸查€€鍑虹櫥褰?);
     location.reload();
 };
 
-// 检查会话状态
+// 妫€鏌ヤ細璇濈姸鎬?
 window.checkSession = function() {
     const savedUser = localStorage.getItem('yayehui_current_user');
     if (savedUser) {
@@ -1698,7 +1698,7 @@ window.checkSession = function() {
     return false;
 };
 
-    // 初始化
+    // 鍒濆鍖?
     async function init() {
         await loadSiteSettings();
         renderAnnouncements();
@@ -1727,24 +1727,24 @@ window.checkSession = function() {
             const content = document.getElementById('topicContent').value.trim();
             const author = document.getElementById('topicAuthor').value.trim();
             if (await addTopic(title, content, author)) {
-                alert('发布成功');
+                alert('鍙戝竷鎴愬姛');
                 ['topicTitle','topicContent','topicAuthor'].forEach(id => document.getElementById(id).value = '');
                 renderTopics();
-            } else alert('请完整填写标题、内容和昵称');
+            } else alert('璇峰畬鏁村～鍐欐爣棰樸€佸唴瀹瑰拰鏄电О');
         });
 
         document.getElementById('submitReplyBtn')?.addEventListener('click', async () => {
             const content = document.getElementById('replyContent').value.trim();
             const author = document.getElementById('replyAuthor').value.trim();
             if (await addReply(currentTopicId, content, author)) {
-                alert('跟帖成功');
+                alert('璺熷笘鎴愬姛');
                 ['replyContent','replyAuthor'].forEach(id => document.getElementById(id).value = '');
                 let repliesData;
                 if (USE_SUPABASE) { repliesData = await db.replies.getByTopicId(currentTopicId) || []; }
                 else { repliesData = JSON.parse(localStorage.getItem('yayehui_replies') || '[]').filter(r => r.topic_id === currentTopicId); }
                 document.getElementById('repliesList').innerHTML = repliesData.map(r => `<div class="reply-item"><span class="reply-author">${escapeHtml(r.author || '')}</span><span class="reply-time">${formatDate(r.created_at)}</span><div>${escapeHtml(r.content || '')}</div></div>`).join('');
                 renderTopics();
-            } else alert('请填写跟帖内容和昵称');
+            } else alert('璇峰～鍐欒窡甯栧唴瀹瑰拰鏄电О');
         });
 
         document.getElementById('closeReplyModal')?.addEventListener('click', () => document.getElementById('replyModal').style.display = 'none');
@@ -1763,25 +1763,25 @@ window.checkSession = function() {
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function(e) { const href = this.getAttribute('href'); if (href && href.length > 1) { const target = document.querySelector(href); if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); } } });
         });
-        // ========== 登录/用户资料/注册/重置密码 事件监听 ==========
+        // ========== 鐧诲綍/鐢ㄦ埛璧勬枡/娉ㄥ唽/閲嶇疆瀵嗙爜 浜嬩欢鐩戝惉 ==========
         
-    // 导航栏"登录"按钮 - 检查会话状态
+    // 瀵艰埅鏍?鐧诲綍"鎸夐挳 - 妫€鏌ヤ細璇濈姸鎬?
         const navLoginBtn = document.getElementById('navLogin');
         if (navLoginBtn) {
             navLoginBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 handleNavLoginClick(e);
             });
-            // 更新导航栏显示
+            // 鏇存柊瀵艰埅鏍忔樉绀?
             if (currentUser) {
-                navLoginBtn.textContent = '已登录';
+                navLoginBtn.textContent = '宸茬櫥褰?;
             }
         }
         
-        // 处理导航登录按钮点击
+        // 澶勭悊瀵艰埅鐧诲綍鎸夐挳鐐瑰嚮
         window.handleNavLoginClick = function(e) {
             if (e) e.preventDefault();
-            // 重新从 localStorage 读取最新登录状态
+            // 閲嶆柊浠?localStorage 璇诲彇鏈€鏂扮櫥褰曠姸鎬?
             const savedUser = localStorage.getItem('yayehui_current_user');
             if (savedUser) {
                 try {
@@ -1792,15 +1792,15 @@ window.checkSession = function() {
             }
             
             if (currentUser) {
-                // 已登录，显示用户资料
+                // 宸茬櫥褰曪紝鏄剧ず鐢ㄦ埛璧勬枡
                 showProfileModal();
             } else {
-                // 未登录，显示登录框
+                // 鏈櫥褰曪紝鏄剧ず鐧诲綍妗?
                 showLoginModal();
             }
         };
         
-        // 登录模态框事件
+        // 鐧诲綍妯℃€佹浜嬩欢
         document.getElementById('closeLoginModal')?.addEventListener('click', hideLoginModal);
         document.getElementById('loginSubmitBtn')?.addEventListener('click', handleLogin);
         document.getElementById('goRegisterLink')?.addEventListener('click', (e) => {
@@ -1814,7 +1814,7 @@ window.checkSession = function() {
             showResetPasswordModal();
         });
         
-        // 用户资料模态框事件
+        // 鐢ㄦ埛璧勬枡妯℃€佹浜嬩欢
         document.getElementById('closeProfileModal')?.addEventListener('click', hideProfileModal);
         document.getElementById('editProfileBtn')?.addEventListener('click', () => {
             document.getElementById('profileView').style.display = 'none';
@@ -1834,66 +1834,66 @@ window.checkSession = function() {
             document.getElementById('profileView').style.display = 'block';
         });
         
-        // 注册模态框事件
+        // 娉ㄥ唽妯℃€佹浜嬩欢
         document.getElementById('modalCloseRegister')?.addEventListener('click', hideRegisterModal);
         document.getElementById('modalRegisterSubmitBtn')?.addEventListener('click', handleRegister);
         document.getElementById('modalCancelRegisterBtn')?.addEventListener('click', hideRegisterModal);
         
-        // 重置密码模态框事件
+        // 閲嶇疆瀵嗙爜妯℃€佹浜嬩欢
         document.getElementById('closeResetPasswordModal')?.addEventListener('click', hideResetPasswordModal);
         document.getElementById('verifyAddressBtn')?.addEventListener('click', async () => {
             const address = document.getElementById('resetAddress').value.trim();
             if (!address) {
-                document.getElementById('resetAddressMsg').textContent = '请输入房产地址';
+                document.getElementById('resetAddressMsg').textContent = '璇疯緭鍏ユ埧浜у湴鍧€';
                 return;
             }
             try {
                 let user = null;
                 if (USE_SUPABASE) {
-                    // 验证地址是否在预录入库中
+                    // 楠岃瘉鍦板潃鏄惁鍦ㄩ褰曞叆搴撲腑
                     let addrs = await db.propertyAddresses.getAll() || [];
                     const matched = addrs.find(a => a.address === address);
                     if (!matched) {
-                        document.getElementById('resetAddressMsg').textContent = '该房产地址不在系统允许范围内，请联系业委会。';
+                        document.getElementById('resetAddressMsg').textContent = '璇ユ埧浜у湴鍧€涓嶅湪绯荤粺鍏佽鑼冨洿鍐咃紝璇疯仈绯讳笟濮斾細銆?;
                         document.getElementById('resetAddressMsg').style.color = '#c2410c';
                         return;
                     }
                     if (!matched.is_registered) {
-                        document.getElementById('resetAddressMsg').textContent = '该地址尚未注册用户';
+                        document.getElementById('resetAddressMsg').textContent = '璇ュ湴鍧€灏氭湭娉ㄥ唽鐢ㄦ埛';
                         document.getElementById('resetAddressMsg').style.color = '#c2410c';
                         return;
                     }
-                    // 地址验证通过，查找用户
+                    // 鍦板潃楠岃瘉閫氳繃锛屾煡鎵剧敤鎴?
                     let users = await db.registeredUsers.getAll() || [];
                     user = users.find(u => u.property_address === address);
                 } else {
-                    // 本地模式：验证地址是否在预录入库中
+                    // 鏈湴妯″紡锛氶獙璇佸湴鍧€鏄惁鍦ㄩ褰曞叆搴撲腑
                     let addrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
                     const matched = addrs.find(a => a.address === address);
                     if (!matched) {
-                        document.getElementById('resetAddressMsg').textContent = '该房产地址不在系统允许范围内，请联系业委会。';
+                        document.getElementById('resetAddressMsg').textContent = '璇ユ埧浜у湴鍧€涓嶅湪绯荤粺鍏佽鑼冨洿鍐咃紝璇疯仈绯讳笟濮斾細銆?;
                         document.getElementById('resetAddressMsg').style.color = '#c2410c';
                         return;
                     }
                     if (!matched.is_registered) {
-                        document.getElementById('resetAddressMsg').textContent = '该地址尚未注册用户';
+                        document.getElementById('resetAddressMsg').textContent = '璇ュ湴鍧€灏氭湭娉ㄥ唽鐢ㄦ埛';
                         document.getElementById('resetAddressMsg').style.color = '#c2410c';
                         return;
                     }
-                    // 地址验证通过，查找用户
+                    // 鍦板潃楠岃瘉閫氳繃锛屾煡鎵剧敤鎴?
                     let users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
                     user = users.find(u => u.property_address === address);
                 }
                 if (!user) {
-                    document.getElementById('resetAddressMsg').textContent = '该地址尚未注册用户';
+                    document.getElementById('resetAddressMsg').textContent = '璇ュ湴鍧€灏氭湭娉ㄥ唽鐢ㄦ埛';
                     return;
                 }
-                // 找到用户，进入第二步
+                // 鎵惧埌鐢ㄦ埛锛岃繘鍏ョ浜屾
                 window.resetPasswordUser = user;
                 document.getElementById('resetStep1').style.display = 'none';
                 document.getElementById('resetStep2').style.display = 'block';
             } catch (e) {
-                document.getElementById('resetAddressMsg').textContent = '验证失败，请稍后重试';
+                document.getElementById('resetAddressMsg').textContent = '楠岃瘉澶辫触锛岃绋嶅悗閲嶈瘯';
             }
         });
         document.getElementById('submitResetBtn')?.addEventListener('click', async () => {
@@ -1902,40 +1902,40 @@ window.checkSession = function() {
             const passwordCheck = document.getElementById('resetPasswordCheck').checked;
             
             if (!usernameCheck && !phoneCheck && !passwordCheck) {
-                alert('请至少选择一项需要重置的内容');
+                alert('璇疯嚦灏戦€夋嫨涓€椤归渶瑕侀噸缃殑鍐呭');
                 return;
             }
             
-            // 功能5：重置时新用户名唯一性校验
+            // 鍔熻兘5锛氶噸缃椂鏂扮敤鎴峰悕鍞竴鎬ф牎楠?
             if (usernameCheck) {
                 const newUsername = document.getElementById('newUsername').value.trim();
                 if (newUsername) {
                     try {
                         const users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
                         if (users.find(u => u.user_name === newUsername)) {
-                            document.getElementById('resetMsg').textContent = '新用户名已被注册，请选择其他用户名';
+                            document.getElementById('resetMsg').textContent = '鏂扮敤鎴峰悕宸茶娉ㄥ唽锛岃閫夋嫨鍏朵粬鐢ㄦ埛鍚?;
                             document.getElementById('resetMsg').style.color = '#c2410c';
                             return;
                         }
                     } catch(e) {
-                        console.error('校验用户名失败:', e);
+                        console.error('鏍￠獙鐢ㄦ埛鍚嶅け璐?', e);
                     }
                 }
             }
             
-            // 功能6：重置时新手机号唯一性校验
+            // 鍔熻兘6锛氶噸缃椂鏂版墜鏈哄彿鍞竴鎬ф牎楠?
             if (phoneCheck) {
                 const newPhone = document.getElementById('newPhone').value.trim();
                 if (newPhone) {
                     try {
                         const users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
                         if (users.find(u => u.phone === newPhone)) {
-                            document.getElementById('resetMsg').textContent = '新手机号已被注册，请选择其他手机号';
+                            document.getElementById('resetMsg').textContent = '鏂版墜鏈哄彿宸茶娉ㄥ唽锛岃閫夋嫨鍏朵粬鎵嬫満鍙?;
                             document.getElementById('resetMsg').style.color = '#c2410c';
                             return;
                         }
                     } catch(e) {
-                        console.error('校验手机号失败:', e);
+                        console.error('鏍￠獙鎵嬫満鍙峰け璐?', e);
                     }
                 }
             }
@@ -1947,7 +1947,7 @@ window.checkSession = function() {
             const confirmPassword = document.getElementById('confirmNewPassword')?.value.trim();
             
             if (passwordCheck && newPassword !== confirmPassword) {
-                alert('两次输入的密码不一致');
+                alert('涓ゆ杈撳叆鐨勫瘑鐮佷笉涓€鑷?);
                 return;
             }
             
@@ -1957,7 +1957,7 @@ window.checkSession = function() {
                     if (usernameCheck && newUsername) updates.user_name = newUsername;
                     if (phoneCheck && newPhone) updates.phone = newPhone;
                     if (passwordCheck && newPassword) {
-                        // 加密新密码
+                        // 鍔犲瘑鏂板瘑鐮?
                         const salt = await generateSalt();
                         const hashedPassword = await hashPassword(newPassword, salt);
                         updates.passwordHash = hashedPassword;
@@ -1971,7 +1971,7 @@ window.checkSession = function() {
                         if (usernameCheck && newUsername) users[userIndex].user_name = newUsername;
                         if (phoneCheck && newPhone) users[userIndex].phone = newPhone;
                         if (passwordCheck && newPassword) {
-                            // 加密新密码
+                            // 鍔犲瘑鏂板瘑鐮?
                             const salt = await generateSalt();
                             const hashedPassword = await hashPassword(newPassword, salt);
                             users[userIndex].passwordHash = hashedPassword;
@@ -1980,14 +1980,14 @@ window.checkSession = function() {
                         localStorage.setItem('yayehui_registered_users', JSON.stringify(users));
                     }
                 }
-                alert('重置成功！');
+                alert('閲嶇疆鎴愬姛锛?);
                 hideResetPasswordModal();
             } catch (e) {
-                alert('重置失败，请稍后重试');
+                alert('閲嶇疆澶辫触锛岃绋嶅悗閲嶈瘯');
             }
         });
         
-        // 重置密码选项显示/隐藏输入框
+        // 閲嶇疆瀵嗙爜閫夐」鏄剧ず/闅愯棌杈撳叆妗?
         document.getElementById('resetUsernameCheck')?.addEventListener('change', (e) => {
             document.getElementById('newUsernameField').style.display = e.target.checked ? 'block' : 'none';
             document.getElementById('resetFields').style.display = 'block';
@@ -2002,14 +2002,14 @@ window.checkSession = function() {
             document.getElementById('resetFields').style.display = 'block';
         });
         
-        // 检查登录状态并更新UI
+        // 妫€鏌ョ櫥褰曠姸鎬佸苟鏇存柊UI
         checkSession();
 
     }
     init();
 
         
-        // 填充房产地址 datalist
+        // 濉厖鎴夸骇鍦板潃 datalist
         function populateAddressList() {
             const addrList = document.getElementById('addressList');
             if (!addrList) return;
@@ -2024,11 +2024,11 @@ window.checkSession = function() {
                     }
                 });
             } catch(e) {
-                console.error('填充地址列表失败:', e);
+                console.error('濉厖鍦板潃鍒楄〃澶辫触:', e);
             }
         }
 
-        // 注册表单：房产地址失焦校验
+        // 娉ㄥ唽琛ㄥ崟锛氭埧浜у湴鍧€澶辩劍鏍￠獙
         function validateRegAddress() {
             const address = (document.getElementById('modalRegAddress')?.value || '').trim();
             const msgEl = document.getElementById('modalRegAddressMsg');
@@ -2037,17 +2037,17 @@ window.checkSession = function() {
                 const addrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
                 const matched = addrs.find(a => a.address === address);
                 if (!matched) {
-                    if (msgEl) { msgEl.textContent = '该房产地址非本楼盘地址，请核实。'; msgEl.style.color = '#c2410c'; }
+                    if (msgEl) { msgEl.textContent = '璇ユ埧浜у湴鍧€闈炴湰妤肩洏鍦板潃锛岃鏍稿疄銆?; msgEl.style.color = '#c2410c'; }
                 } else if (matched.is_registered) {
                     const users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
                     const conflictUser = users.find(u => u.property_address === address);
-                    const conflictName = conflictUser ? conflictUser.user_name : '未知用户';
-                    if (msgEl) { msgEl.textContent = `该房产地址与【${conflictName}】注册的重复，一个房产地址只能注册一个用户。`; msgEl.style.color = '#c2410c'; }
+                    const conflictName = conflictUser ? conflictUser.user_name : '鏈煡鐢ㄦ埛';
+                    if (msgEl) { msgEl.textContent = `璇ユ埧浜у湴鍧€涓庛€?{conflictName}銆戞敞鍐岀殑閲嶅锛屼竴涓埧浜у湴鍧€鍙兘娉ㄥ唽涓€涓敤鎴枫€俙; msgEl.style.color = '#c2410c'; }
                 } else {
-                    if (msgEl) { msgEl.textContent = '✓ 地址有效'; msgEl.style.color = '#2c6e49'; }
+                    if (msgEl) { msgEl.textContent = '鉁?鍦板潃鏈夋晥'; msgEl.style.color = '#2c6e49'; }
                 }
             } catch(e) {
-                console.error('地址校验失败:', e);
+                console.error('鍦板潃鏍￠獙澶辫触:', e);
             }
         }
 
@@ -2055,3 +2055,5 @@ window.checkSession = function() {
 </body>
 </html>
 
+
+<!-- Cache bust: 20260609171914 -->
