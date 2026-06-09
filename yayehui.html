@@ -372,7 +372,8 @@ window.onerror=function(msg,url,line,col,error){var el=document.getElementById('
         </div>
         <div class="form-group">
             <label style="font-weight:600; font-size:0.9rem; color:#1e293b; display:block; margin-bottom:6px;">房产地址 <span style="color:#c2410c;">*</span></label>
-            <input type="text" id="modalRegAddress" placeholder="房产地址（必须从后台地址库选择）" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;" onfocus="populateAddressList()">
+            <input type="text" id="modalRegAddress" placeholder="房产地址（必须从后台地址库选择）" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;" list="addressList" onfocus="populateAddressList()" onblur="validateRegAddress()">
+            <datalist id="addressList"></datalist>
             <div id="modalRegAddressMsg" style="font-size:0.8rem; margin-top:4px;"></div>
         </div>
         <div style="display:flex; gap:10px; margin-top:20px;">
@@ -1556,12 +1557,14 @@ window.handleRegister = async function() {
             let addrs = await db.propertyAddresses.getAll() || [];
             const matched = addrs.find(a => a.address === address);
             if (!matched) {
-                document.getElementById('modalRegAddressMsg').textContent = '该房产地址不在系统允许范围内，请联系业委会。';
+                document.getElementById('modalRegAddressMsg').textContent = '该房产地址非本楼盘地址，请核实。';
                 document.getElementById('modalRegAddressMsg').style.color = '#c2410c';
                 return;
             }
             if (matched.is_registered) {
-                document.getElementById('modalRegAddressMsg').textContent = '该房产地址已被注册，一个房产地址只能注册一个用户。';
+                const conflictUser = users.find(u => u.property_address === address);
+                const conflictName = conflictUser ? conflictUser.user_name : '未知用户';
+                document.getElementById('modalRegAddressMsg').textContent = `该房产地址与【${conflictName}】注册的重复，一个房产地址只能注册一个用户。`;
                 document.getElementById('modalRegAddressMsg').style.color = '#c2410c';
                 return;
             }
@@ -1605,19 +1608,21 @@ window.handleRegister = async function() {
                 document.getElementById('modalRegPhoneMsg').style.color = '#c2410c';
                 return;
             }
-            // 验证房产地址（本地模式暂时跳过地址验证）
-            // let addrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
-            // const matched = addrs.find(a => a.address === address);
-            // if (!matched) {
-            //     document.getElementById('modalRegAddressMsg').textContent = '该房产地址不在系统允许范围内，请联系业委会。';
-            //     document.getElementById('modalRegAddressMsg').style.color = '#c2410c';
-            //     return;
-            // }
-            // if (matched.is_registered) {
-            //     document.getElementById('modalRegAddressMsg').textContent = '该房产地址已被注册，一个房产地址只能注册一个用户。';
-            //     document.getElementById('modalRegAddressMsg').style.color = '#c2410c';
-            //     return;
-            // }
+            // 验证房产地址（本地模式）
+            let addrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
+            const matched = addrs.find(a => a.address === address);
+            if (!matched) {
+                document.getElementById('modalRegAddressMsg').textContent = '该房产地址非本楼盘地址，请核实。';
+                document.getElementById('modalRegAddressMsg').style.color = '#c2410c';
+                return;
+            }
+            if (matched.is_registered) {
+                const conflictUser = users.find(u => u.property_address === address);
+                const conflictName = conflictUser ? conflictUser.user_name : '未知用户';
+                document.getElementById('modalRegAddressMsg').textContent = `该房产地址与【${conflictName}】注册的重复，一个房产地址只能注册一个用户。`;
+                document.getElementById('modalRegAddressMsg').style.color = '#c2410c';
+                return;
+            }
             // 创建用户（加密密码）
             const salt = await generateSalt();
             const hashedPassword = await hashPassword(password, salt);
@@ -1632,12 +1637,12 @@ window.handleRegister = async function() {
             };
             users.push(userData);
             localStorage.setItem('yayehui_registered_users', JSON.stringify(users));
-            // 更新房产地址注册状态（暂时注释）
-            // const addrIndex = addrs.findIndex(a => a.address === address);
-            // if (addrIndex !== -1) {
-            //     addrs[addrIndex].is_registered = true;
-            //     localStorage.setItem('yayehui_property_addresses', JSON.stringify(addrs));
-            // }
+            // 更新房产地址注册状态
+            const addrIndex = addrs.findIndex(a => a.address === address);
+            if (addrIndex !== -1) {
+                addrs[addrIndex].is_registered = true;
+                localStorage.setItem('yayehui_property_addresses', JSON.stringify(addrs));
+            }
             
             currentUser = userData;
             localStorage.setItem('yayehui_current_user', JSON.stringify(currentUser));
@@ -2000,6 +2005,29 @@ window.checkSession = function() {
                 });
             } catch(e) {
                 console.error('填充地址列表失败:', e);
+            }
+        }
+
+        // 注册表单：房产地址失焦校验
+        function validateRegAddress() {
+            const address = (document.getElementById('modalRegAddress')?.value || '').trim();
+            const msgEl = document.getElementById('modalRegAddressMsg');
+            if (!address) { if (msgEl) msgEl.textContent = ''; return; }
+            try {
+                const addrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
+                const matched = addrs.find(a => a.address === address);
+                if (!matched) {
+                    if (msgEl) { msgEl.textContent = '该房产地址非本楼盘地址，请核实。'; msgEl.style.color = '#c2410c'; }
+                } else if (matched.is_registered) {
+                    const users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
+                    const conflictUser = users.find(u => u.property_address === address);
+                    const conflictName = conflictUser ? conflictUser.user_name : '未知用户';
+                    if (msgEl) { msgEl.textContent = `该房产地址与【${conflictName}】注册的重复，一个房产地址只能注册一个用户。`; msgEl.style.color = '#c2410c'; }
+                } else {
+                    if (msgEl) { msgEl.textContent = '✓ 地址有效'; msgEl.style.color = '#2c6e49'; }
+                }
+            } catch(e) {
+                console.error('地址校验失败:', e);
             }
         }
 
