@@ -119,27 +119,7 @@
 </head>
 <body>
 <div id="jsError" style="display:none;position:fixed;top:0;left:0;right:0;background:#e74c3c;color:white;padding:12px;z-index:99999;font-size:14px;cursor:pointer;" onclick="this.style.display='none'"></div>
-<script>
-        // 校验手机号唯一性
-        function checkPhoneUnique() {
-            const phone = document.getElementById('modalRegPhone').value.trim();
-            if (!phone) {
-                document.getElementById('modalRegPhoneMsg').textContent = '';
-                return;
-            }
-            try {
-                const users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
-                if (users.find(u => u.phone === phone)) {
-                    document.getElementById('modalRegPhoneMsg').textContent = '此手机号已被注册';
-                    document.getElementById('modalRegPhoneMsg').style.color = '#c2410c';
-                } else {
-                    document.getElementById('modalRegPhoneMsg').textContent = '';
-                }
-            } catch(e) {
-                console.error('校验手机号失败:', e);
-            }
-        }
-window.onerror=function(msg,url,line,col,error){var el=document.getElementById('jsError');if(el){el.style.display='block';el.innerHTML='⚠️ JS错误: '+msg+' 位置:'+(url||'').substring(0,100)+':'+line;};return false;}</script>
+<script>window.onerror=function(msg,url,line,col,error){var el=document.getElementById('jsError');if(el){el.style.display='block';el.innerHTML='⚠️ JS错误: '+msg+' 位置:'+(url||'').substring(0,100)+':'+line;};return false;}</script>
 <header class="header">
     <div class="container">
         <div class="nav-bar">
@@ -189,12 +169,12 @@ window.onerror=function(msg,url,line,col,error){var el=document.getElementById('
     <div class="container">
         <div class="footer-content">
             <div class="footer-logo">
-                <h3>雅业会</h3>
+                <h3 id="footerBannerLeftText">雅业会</h3>
                 <p id="footerBannerText">公开·信任·共建美好社区</p>
                 <p id="footerAddress"><i class="fas fa-map-marker-alt"></i> <span id="footerAddressText">雅居花园 · 业委会办公室</span></p>
             </div>
             <div class="footer-links">
-                <div><a href="#">关于我们</a><br><a href="#">业委会章程</a><br><a href="#">联系我们</a></div>
+                <div><a href="#">关于我们</a><br><a href="#">业委会章程</a><br><a href="#" onclick="showContactModal(); return false;">联系我们</a></div>
                 <div><a href="#">服务协议</a><br><a href="#">隐私政策</a><br><a href="#">技术支持</a></div>
             </div>
         </div>
@@ -313,7 +293,7 @@ window.onerror=function(msg,url,line,col,error){var el=document.getElementById('
         </div>
         <div class="form-group">
             <label style="font-weight:600; font-size:0.9rem; color:#1e293b; display:block; margin-bottom:6px;">手机号码 <span style="color:#c2410c;">*</span></label>
-            <input type="tel" id="modalRegPhone" placeholder="手机号码（唯一）" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;" onblur="checkPhoneUnique()">
+            <input type="tel" id="modalRegPhone" placeholder="手机号码（唯一）" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
             <div id="modalRegPhoneMsg" style="font-size:0.8rem; margin-top:4px;"></div>
         </div>
         <div class="form-group">
@@ -326,7 +306,7 @@ window.onerror=function(msg,url,line,col,error){var el=document.getElementById('
         </div>
         <div class="form-group">
             <label style="font-weight:600; font-size:0.9rem; color:#1e293b; display:block; margin-bottom:6px;">房产地址 <span style="color:#c2410c;">*</span></label>
-            <input type="text" id="modalRegAddress" placeholder="房产地址（必须从后台地址库选择）" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;" onfocus="populateAddressList()">
+            <input type="text" id="modalRegAddress" placeholder="房产地址（必须从后台地址库选择）" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
             <div id="modalRegAddressMsg" style="font-size:0.8rem; margin-top:4px;"></div>
         </div>
         <div style="display:flex; gap:10px; margin-top:20px;">
@@ -381,6 +361,18 @@ window.onerror=function(msg,url,line,col,error){var el=document.getElementById('
     </div>
 </div>
 
+<!-- 联系我们模态框 -->
+<div id="contactModal" class="modal">
+    <div class="modal-content">
+        <span class="modal-close" id="closeContactModal">&times;</span>
+        <div class="modal-title"><i class="fas fa-address-book" style="color:#2c6e49;"></i> 联系我们</div>
+        <div id="contactContent" style="color:#475569; line-height:1.8; white-space:pre-wrap;"></div>
+        <div style="margin-top:20px; text-align:center;">
+            <button class="btn btn-secondary" onclick="document.getElementById('contactModal').style.display='none'">关闭</button>
+        </div>
+    </div>
+</div>
+
 <div class="back2top" id="back2top"><i class="fas fa-arrow-up"></i></div>
 
 <script src="supabase-config.js"></script>
@@ -410,12 +402,7 @@ window.onerror=function(msg,url,line,col,error){var el=document.getElementById('
         footer_copyright: '© 2025 雅业会业主委员会平台 | 携手共创宜居家园'
     };
 
-    // ⚠️ 数据初始化说明：
-// 每个栏目使用 init_* 标记防止自动恢复：
-// - 首次访问时且 localStorage 为空，才从 DEFAULT_DATA 加载
-// - 删除数据后不会再自动恢复（由 init_* 标记控制）
-// - 若要重置数据并恢复默认数据，需手动 localStorage.removeItem('init_xxx')
-const DEFAULT_DATA = {
+    const DEFAULT_DATA = {
         announcements: [
             { id: 1, title: "关于召开2025年第一次业主大会的通知", date: "2025-03-10", content: "会议时间:3月30日, 议题: 物业续聘及绿化改造方案, 请全体业主积极参加。" },
             { id: 2, title: "小区电动自行车充电桩正式启用", date: "2025-03-05", content: "3号地下车库及南门车棚充电桩已投入使用，扫码充电，安全便捷。" },
@@ -550,9 +537,12 @@ const DEFAULT_DATA = {
                 if (map.hero_stat_3) document.getElementById('heroStat3Num').textContent = map.hero_stat_3;
                 if (map.hero_stat_3_label) document.getElementById('heroStat3Label').textContent = map.hero_stat_3_label;
                 // 底部信息
+                if (map.footer_banner_left_text) document.getElementById('footerBannerLeftText').textContent = map.footer_banner_left_text;
                 if (map.footer_banner_text) document.getElementById('footerBannerText').textContent = map.footer_banner_text;
                 if (map.footer_address) document.getElementById('footerAddressText').textContent = map.footer_address;
                 if (map.footer_copyright) document.getElementById('footerCopyright').textContent = map.footer_copyright;
+                // 联系我们内容
+                if (map.contact_content) window.contact_content = map.contact_content;
                 // 导航菜单（更新 logo 区域）
                 if (map.nav_menu_left_text || map.nav_menu_left_subtext) {
                     const logoArea = document.querySelector('.logo-area');
@@ -575,25 +565,9 @@ const DEFAULT_DATA = {
         try {
             let items;
             if (USE_SUPABASE) {
-                items = await db.announcements.getAll();
-                if (!items || items.length === 0) items = DEFAULT_DATA.announcements;
+                items = await db.announcements.getAll() || [];
             } else {
-                const stored = localStorage.getItem('yayehui_announcements');
-                const initialized = localStorage.getItem('init_ann') === '1';
-                if (stored && stored !== '[]') {
-                    items = JSON.parse(stored);
-                } else if (!initialized) {
-                    items = DEFAULT_DATA.announcements;
-                    localStorage.setItem('yayehui_announcements', JSON.stringify(items));
-                    localStorage.setItem('init_ann', '1');
-                // ⚠️ 初始化逻辑说明：
-                // - 首次访问(init_ann !== '1') 且 localStorage 为空时，才从 DEFAULT_DATA 加载
-                // - 之后删除数据不会再自动恢复
-                // - 如需重置，在控制台执行：localStorage.removeItem('init_ann'); location.reload();
-
-                } else {
-                    items = [];
-                }
+                items = JSON.parse(localStorage.getItem('yayehui_announcements') || '[]');
             }
             const page = window.page_ann || 1;
             const pageSize = pageSizes['ann'] || 3;
@@ -602,12 +576,12 @@ const DEFAULT_DATA = {
             
             if (items.length === 0) {
                 container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>';
-                document.getElementById('announcementPager').style.display = 'none';
+                document.getElementById('announcementPager').innerHTML = '';
                 return;
             }
             
             container.innerHTML = '';
-            if (pageItems.length === 0) { container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>'; document.getElementById('announcementPager').style.display = 'none'; return; }
+            if (pageItems.length === 0) { container.innerHTML = '<p style="text-align:center;color:#6c7a91;">暂无公告</p>'; return; }
             pageItems.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'list-item';
@@ -627,26 +601,14 @@ const DEFAULT_DATA = {
         try {
             let items;
             if (USE_SUPABASE) {
-                items = await db.dynamics.getAll();
+                items = await db.dynamics.getAll() || [];
             } else {
-                const stored = localStorage.getItem('yayehui_dynamics');
-                const initialized = localStorage.getItem('init_dyn') === '1';
-                if (stored && stored !== '[]') {
-                    items = JSON.parse(stored);
-                } else if (!initialized) {
-                    items = DEFAULT_DATA.dynamics;
-                    localStorage.setItem('yayehui_dynamics', JSON.stringify(items));
-                    localStorage.setItem('init_dyn', '1');
-                // ⚠️ 初始化逻辑：仅首次访问时从 DEFAULT_DATA 加载，删除后不自动恢复
-
-                } else {
-                    items = [];
-                }
+                items = JSON.parse(localStorage.getItem('yayehui_dynamics') || '[]');
             }
             
             if (items.length === 0) {
                 container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>';
-                document.getElementById('dynamicPager').style.display = 'none';
+                document.getElementById('dynamicPager').innerHTML = '';
                 return;
             }
             
@@ -675,22 +637,11 @@ const DEFAULT_DATA = {
         try {
             let members;
             if (USE_SUPABASE) {
-                members = await db.members.getAll();
-                if (!members || members.length === 0) members = DEFAULT_DATA.members;
+                members = await db.members.getAll() || [];
             } else {
-                const stored = localStorage.getItem('yayehui_members');
-                const initialized = localStorage.getItem('init_members') === '1';
-                if (stored && stored !== '[]') {
-                    members = JSON.parse(stored);
-                } else if (!initialized) {
-                    members = DEFAULT_DATA.members;
-                    localStorage.setItem('yayehui_members', JSON.stringify(members));
-                    localStorage.setItem('init_members', '1');
-                } else {
-                    members = [];
-                }
+                members = JSON.parse(localStorage.getItem('yayehui_members') || '[]');
             }
-            
+             
             if (members.length === 0) {
                 container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>';
                 document.getElementById('memberPager').innerHTML = '';
@@ -732,22 +683,10 @@ const DEFAULT_DATA = {
         try {
             let polls;
             if (USE_SUPABASE) {
-                polls = await db.polls.getActive();
-                if (!polls || polls.length === 0) polls = DEFAULT_DATA.polls;
+                polls = await db.polls.getActive() || [];
             } else {
                 const allPolls = JSON.parse(localStorage.getItem('yayehui_polls') || '[]');
-                const initialized = localStorage.getItem('init_polls') === '1';
-                if (allPolls.length === 0 && !initialized) {
-                    polls = DEFAULT_DATA.polls;
-                    localStorage.setItem('yayehui_polls', JSON.stringify(polls));
-                    localStorage.setItem('yayehui_poll_options', JSON.stringify(DEFAULT_DATA.pollOptions));
-                    localStorage.setItem('yayehui_votes', JSON.stringify(DEFAULT_DATA.votes));
-                    localStorage.setItem('init_polls', '1');
-                // ⚠️ 初始化逻辑：仅首次访问时从 DEFAULT_DATA 加载，删除后不自动恢复
-
-                } else {
-                    polls = allPolls.filter(p => p.is_active);
-                }
+                polls = allPolls.filter(p => p.is_active);
             }
             container.innerHTML = '';
             if (polls.length === 0) { container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>'; return; }
@@ -780,11 +719,9 @@ const DEFAULT_DATA = {
             options = options || [];
             votes = await db.votes.getByPollId(poll.id);
             votes = votes || [];
-            if (options.length === 0) options = DEFAULT_DATA.pollOptions.filter(o => o.poll_id === poll.id);
         } else {
             options = JSON.parse(localStorage.getItem('yayehui_poll_options') || '[]').filter(o => o.poll_id === poll.id);
             votes = JSON.parse(localStorage.getItem('yayehui_votes') || '[]');
-            if (options.length === 0) options = DEFAULT_DATA.pollOptions.filter(o => o.poll_id === poll.id);
         }
 
         const totalVotes = votes.length;
@@ -932,7 +869,7 @@ const DEFAULT_DATA = {
     }
 
     function showVoteNeedRegModal() {
-        document.getElementById('loginModal').style.display = 'flex';
+        document.getElementById('voteNeedRegModal').style.display = 'flex';
     }
     document.getElementById('closeVoteNeedRegModal')?.addEventListener('click', () => {
         document.getElementById('voteNeedRegModal').style.display = 'none';
@@ -952,21 +889,9 @@ const DEFAULT_DATA = {
         try {
             let expenses;
             if (USE_SUPABASE) {
-                expenses = await db.expenses.getAll();
+                expenses = await db.expenses.getAll() || [];
             } else {
-                const stored = localStorage.getItem('yayehui_expenses');
-                const initialized = localStorage.getItem('init_expenses') === '1';
-                if (stored && stored !== '[]') {
-                    expenses = JSON.parse(stored);
-                } else if (!initialized) {
-                    expenses = DEFAULT_DATA.expenses;
-                    localStorage.setItem('yayehui_expenses', JSON.stringify(expenses));
-                    localStorage.setItem('init_expenses', '1');
-                // ⚠️ 初始化逻辑：仅首次访问时从 DEFAULT_DATA 加载，删除后不自动恢复
-
-                } else {
-                    expenses = [];
-                }
+                expenses = JSON.parse(localStorage.getItem('yayehui_expenses') || '[]');
             }
             
             // 计算统计数据
@@ -976,7 +901,7 @@ const DEFAULT_DATA = {
             
             if (expenses.length === 0) { 
                 container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>'; 
-                document.getElementById('expensesPager').style.display = 'none';
+                document.getElementById('expensesPager').innerHTML = '';
                 return; 
             }
             
@@ -1008,39 +933,20 @@ const DEFAULT_DATA = {
         try {
             let topics, replies;
             if (USE_SUPABASE) {
-                topics = await db.topics.getAll();
-                if (!topics || topics.length === 0) { topics = DEFAULT_DATA.topics; replies = DEFAULT_DATA.replies; }
-                else {
-                    replies = [];
-                    for (const t of topics) {
-                        const r = await db.replies.getByTopicId(t.id);
-                        if (r) replies.push(...r);
-                    }
+                topics = await db.topics.getAll() || [];
+                replies = [];
+                for (const t of topics) {
+                    const r = await db.replies.getByTopicId(t.id);
+                    if (r) replies.push(...r);
                 }
             } else {
-                const topicsStored = localStorage.getItem('yayehui_topics');
-                const repliesStored = localStorage.getItem('yayehui_replies');
-                const initialized = localStorage.getItem('init_topics') === '1';
-                if (topicsStored && topicsStored !== '[]') {
-                    topics = JSON.parse(topicsStored);
-                    replies = repliesStored ? JSON.parse(repliesStored) : [];
-                } else if (!initialized) {
-                    topics = DEFAULT_DATA.topics;
-                    replies = DEFAULT_DATA.replies;
-                    localStorage.setItem('yayehui_topics', JSON.stringify(topics));
-                    localStorage.setItem('yayehui_replies', JSON.stringify(replies));
-                    localStorage.setItem('init_topics', '1');
-                // ⚠️ 初始化逻辑：仅首次访问时从 DEFAULT_DATA 加载，删除后不自动恢复
-
-                } else {
-                    topics = [];
-                    replies = [];
-                }
+                topics = JSON.parse(localStorage.getItem('yayehui_topics') || '[]');
+                replies = JSON.parse(localStorage.getItem('yayehui_replies') || '[]');
             }
-            
+             
             if (topics.length === 0) {
                 container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>';
-                document.getElementById('topicsPager').style.display = 'none';
+                document.getElementById('topicsPager').innerHTML = '';
                 return;
             }
             
@@ -1049,7 +955,7 @@ const DEFAULT_DATA = {
             const total = Math.ceil(topics.length / pageSize);
             const pageTopics = topics.slice((page - 1) * pageSize, page * pageSize);
             container.innerHTML = '';
-            if (pageTopics.length === 0) { container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>目前暂无数据</div>'; document.getElementById('topicsPager').style.display = 'none'; return; }
+            if (pageTopics.length === 0) { container.innerHTML = '<p style="text-align:center;color:#6c7a91;">暂无帖子</p>'; return; }
             pageTopics.forEach(topic => {
                 const replyCount = replies.filter(r => r.topic_id === topic.id).length;
                 const div = document.createElement('div');
@@ -1194,6 +1100,30 @@ const DEFAULT_DATA = {
                 return;
             }
 
+            // 验证用户名和手机号唯一性
+            try {
+                let existingUsers = [];
+                if (USE_SUPABASE) {
+                    existingUsers = await db.registeredUsers.getAll() || [];
+                } else {
+                    existingUsers = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
+                }
+                // 检查用户名
+                if (existingUsers.find(u => u.user_name === user_name)) {
+                    errorDiv.textContent = '此用户名已被注册';
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+                // 检查手机号
+                if (existingUsers.find(u => u.phone === phone)) {
+                    errorDiv.textContent = '此手机号码已被注册';
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+            } catch(e) {
+                console.error('校验失败', e);
+            }
+
             // 验证房产地址是否在预导入列表中且未被注册
             try {
                 let addrValid = false;
@@ -1248,6 +1178,17 @@ window.showLoginModal = function() {
     document.getElementById('loginModal').style.display = 'flex';
     document.getElementById('loginAccount').value = '';
     document.getElementById('loginPassword').value = '';
+};
+
+// 显示联系我们模态框
+window.showContactModal = function() {
+    const contactEl = document.getElementById('contactContent');
+    if (window.contact_content) {
+        contactEl.textContent = window.contact_content;
+    } else {
+        contactEl.textContent = '联系电话：xxx\nEmail：xxx';
+    }
+    document.getElementById('contactModal').style.display = 'flex';
 };
 
 // 隐藏登录模态框
@@ -1361,14 +1302,7 @@ window.handleProfileUpdate = async function() {
             let users = await db.registeredUsers.getAll() || [];
             const duplicateUser = users.find(u => u.user_name === username && u.id !== currentUser.id);
             if (duplicateUser) {
-                // 生成建议用户名
-                let suggested = username;
-                let counter = 2;
-                while (users.find(u => u.user_name === suggested)) {
-                    suggested = username + counter;
-                    counter++;
-                }
-                document.getElementById('usernameCheckMsg').innerHTML = '此用户名已被注册，建议：<strong>' + suggested + '</strong> <button type="button" onclick="document.getElementById(\'editUsername\').value=\'' + suggested + '\';document.getElementById(\'usernameCheckMsg\').innerHTML=\'' + '\';" style="color:#2c6e49;cursor:pointer;text-decoration:underline;background:none;border:none;font-size:inherit;">一键采用</button>';
+                document.getElementById('usernameCheckMsg').textContent = '此用户名已被注册';
                 document.getElementById('usernameCheckMsg').style.color = '#c2410c';
                 return;
             }
@@ -1392,14 +1326,7 @@ window.handleProfileUpdate = async function() {
             let users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
             const duplicateUser = users.find(u => u.user_name === username && u.id !== currentUser.id);
             if (duplicateUser) {
-                // 生成建议用户名
-                let suggested = username;
-                let counter = 2;
-                while (users.find(u => u.user_name === suggested)) {
-                    suggested = username + counter;
-                    counter++;
-                }
-                document.getElementById('usernameCheckMsg').innerHTML = '此用户名已被注册，建议：<strong>' + suggested + '</strong> <button type="button" onclick="document.getElementById(\'editUsername\').value=\'' + suggested + '\';document.getElementById(\'usernameCheckMsg\').innerHTML=\'' + '\';" style="color:#2c6e49;cursor:pointer;text-decoration:underline;background:none;border:none;font-size:inherit;">一键采用</button>';
+                document.getElementById('usernameCheckMsg').textContent = '此用户名已被注册';
                 document.getElementById('usernameCheckMsg').style.color = '#c2410c';
                 return;
             }
@@ -1465,14 +1392,7 @@ window.handleRegister = async function() {
             // 验证用户名唯一性
             let users = await db.registeredUsers.getAll() || [];
             if (users.find(u => u.user_name === username)) {
-                // 生成建议用户名
-                let suggested = username;
-                let counter = 2;
-                while (users.find(u => u.user_name === suggested)) {
-                    suggested = username + counter;
-                    counter++;
-                }
-                document.getElementById('modalRegUsernameMsg').innerHTML = '此用户名已被注册，建议：<strong>' + suggested + '</strong> <button type="button" onclick="document.getElementById(\'modalRegUsername\').value=\'' + suggested + '\';document.getElementById(\'modalRegUsernameMsg\').innerHTML=\'' + '\';" style="color:#2c6e49;cursor:pointer;text-decoration:underline;background:none;border:none;font-size:inherit;">一键采用</button>';
+                document.getElementById('modalRegUsernameMsg').textContent = '此用户名已被注册';
                 document.getElementById('modalRegUsernameMsg').style.color = '#c2410c';
                 return;
             }
@@ -1516,14 +1436,7 @@ window.handleRegister = async function() {
             // 本地存储模式
             let users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
             if (users.find(u => u.user_name === username)) {
-                // 生成建议用户名
-                let suggested = username;
-                let counter = 2;
-                while (users.find(u => u.user_name === suggested)) {
-                    suggested = username + counter;
-                    counter++;
-                }
-                document.getElementById('modalRegUsernameMsg').innerHTML = '此用户名已被注册，建议：<strong>' + suggested + '</strong> <button type="button" onclick="document.getElementById(\'modalRegUsername\').value=\'' + suggested + '\';document.getElementById(\'modalRegUsernameMsg\').innerHTML=\'' + '\';" style="color:#2c6e49;cursor:pointer;text-decoration:underline;background:none;border:none;font-size:inherit;">一键采用</button>';
+                document.getElementById('modalRegUsernameMsg').textContent = '此用户名已被注册';
                 document.getElementById('modalRegUsernameMsg').style.color = '#c2410c';
                 return;
             }
@@ -1701,6 +1614,7 @@ window.checkSession = function() {
         
         // 登录模态框事件
         document.getElementById('closeLoginModal')?.addEventListener('click', hideLoginModal);
+        document.getElementById('closeContactModal')?.addEventListener('click', () => document.getElementById('contactModal').style.display = 'none');
         document.getElementById('loginSubmitBtn')?.addEventListener('click', handleLogin);
         document.getElementById('goRegisterLink')?.addEventListener('click', (e) => {
             e.preventDefault();
@@ -1738,6 +1652,81 @@ window.checkSession = function() {
         document.getElementById('modalRegisterSubmitBtn')?.addEventListener('click', handleRegister);
         document.getElementById('modalCancelRegisterBtn')?.addEventListener('click', hideRegisterModal);
         
+        // ========== 新增：用户名失焦实时校验 + 自动生成建议用户名 ==========
+        document.getElementById('modalRegUsername')?.addEventListener('blur', async function() {
+            const username = this.value.trim();
+            const msgDiv = document.getElementById('modalRegUsernameMsg');
+            if (!username) {
+                msgDiv.textContent = '';
+                msgDiv.style.color = '';
+                return;
+            }
+            try {
+                let users = [];
+                if (USE_SUPABASE) {
+                    users = await db.registeredUsers.getAll() || [];
+                } else {
+                    users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
+                }
+                const duplicate = users.find(u => u.user_name === username);
+                if (duplicate) {
+                    msgDiv.textContent = '此用户名已被注册';
+                    msgDiv.style.color = '#c2410c';
+                    // 自动生成可注册的用户名
+                    let suggestedName = username + Math.floor(Math.random() * 1000);
+                    let attempts = 0;
+                    while (users.find(u => u.user_name === suggestedName) && attempts < 10) {
+                        suggestedName = username + Math.floor(Math.random() * 10000);
+                        attempts++;
+                    }
+                    // 检查是否还有重复
+                    if (users.find(u => u.user_name === suggestedName)) {
+                        suggestedName = username + Date.now().toString().slice(-4);
+                    }
+                    msgDiv.innerHTML = `此用户名已被注册 <button style="margin-left:8px;padding:2px 8px;background:#2c6e49;color:white;border:none;border-radius:12px;cursor:pointer;font-size:0.75rem;" onclick="document.getElementById('modalRegUsername').value='${suggestedName}';document.getElementById('modalRegUsernameMsg').textContent='✓ 用户名可用';document.getElementById('modalRegUsernameMsg').style.color='#2c6e49';">采用: ${suggestedName}</button>`;
+                } else {
+                    msgDiv.textContent = '✓ 用户名可用';
+                    msgDiv.style.color = '#2c6e49';
+                }
+            } catch (e) {
+                console.error('校验用户名失败', e);
+            }
+        });
+        
+        // 手机号失焦实时校验
+        document.getElementById('modalRegPhone')?.addEventListener('blur', async function() {
+            const phone = this.value.trim();
+            const msgDiv = document.getElementById('modalRegPhoneMsg');
+            if (!phone) {
+                msgDiv.textContent = '';
+                msgDiv.style.color = '';
+                return;
+            }
+            if (!/^1\d{10}$/.test(phone)) {
+                msgDiv.textContent = '请输入正确的11位手机号码';
+                msgDiv.style.color = '#c2410c';
+                return;
+            }
+            try {
+                let users = [];
+                if (USE_SUPABASE) {
+                    users = await db.registeredUsers.getAll() || [];
+                } else {
+                    users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
+                }
+                const duplicate = users.find(u => u.phone === phone);
+                if (duplicate) {
+                    msgDiv.textContent = '此手机号码已被注册';
+                    msgDiv.style.color = '#c2410c';
+                } else {
+                    msgDiv.textContent = '✓ 手机号码可用';
+                    msgDiv.style.color = '#2c6e49';
+                }
+            } catch (e) {
+                console.error('校验手机号失败', e);
+            }
+        });
+        
         // 重置密码模态框事件
         document.getElementById('closeResetPasswordModal')?.addEventListener('click', hideResetPasswordModal);
         document.getElementById('verifyAddressBtn')?.addEventListener('click', async () => {
@@ -1747,6 +1736,21 @@ window.checkSession = function() {
                 return;
             }
             try {
+                // 首先检查地址是否在预录入库中
+                let addrs = [];
+                if (USE_SUPABASE) {
+                    addrs = await db.propertyAddresses.getAll() || [];
+                } else {
+                    addrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
+                }
+                // 模糊匹配地址
+                const matched = addrs.find(a => address.includes(a.address) || a.address.includes(address));
+                if (!matched) {
+                    document.getElementById('resetAddressMsg').textContent = '该房产地址不在系统允许范围内，请联系业委会';
+                    document.getElementById('resetAddressMsg').style.color = '#c2410c';
+                    return;
+                }
+                // 检查是否已有注册用户
                 let user = null;
                 if (USE_SUPABASE) {
                     const users = await db.registeredUsers.getAll() || [];
@@ -1756,7 +1760,8 @@ window.checkSession = function() {
                     user = users.find(u => u.property_address === address);
                 }
                 if (!user) {
-                    document.getElementById('resetAddressMsg').textContent = '该地址尚未注册用户';
+                    document.getElementById('resetAddressMsg').textContent = '该房产地址尚未注册用户';
+                    document.getElementById('resetAddressMsg').style.color = '#c2410c';
                     return;
                 }
                 // 找到用户，进入第二步
@@ -1767,6 +1772,8 @@ window.checkSession = function() {
                 document.getElementById('resetAddressMsg').textContent = '验证失败，请稍后重试';
             }
         });
+        
+        // ========== 新增：重置密码时用户名和手机号唯一性校验 ==========
         document.getElementById('submitResetBtn')?.addEventListener('click', async () => {
             const usernameCheck = document.getElementById('resetUsernameCheck').checked;
             const phoneCheck = document.getElementById('resetPhoneCheck').checked;
@@ -1777,49 +1784,49 @@ window.checkSession = function() {
                 return;
             }
             
-            // 功能5：重置时新用户名唯一性校验
-            if (usernameCheck) {
-                const newUsername = document.getElementById('newUsername').value.trim();
-                if (newUsername) {
-                    try {
-                        const users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
-                        if (users.find(u => u.user_name === newUsername)) {
-                            document.getElementById('resetMsg').textContent = '新用户名已被注册，请选择其他用户名';
-                            document.getElementById('resetMsg').style.color = '#c2410c';
-                            return;
-                        }
-                    } catch(e) {
-                        console.error('校验用户名失败:', e);
-                    }
-                }
-            }
-            
-            // 功能6：重置时新手机号唯一性校验
-            if (phoneCheck) {
-                const newPhone = document.getElementById('newPhone').value.trim();
-                if (newPhone) {
-                    try {
-                        const users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
-                        if (users.find(u => u.phone === newPhone)) {
-                            document.getElementById('resetMsg').textContent = '新手机号已被注册，请选择其他手机号';
-                            document.getElementById('resetMsg').style.color = '#c2410c';
-                            return;
-                        }
-                    } catch(e) {
-                        console.error('校验手机号失败:', e);
-                    }
-                }
-            }
-
-            
             const newUsername = document.getElementById('newUsername')?.value.trim();
             const newPhone = document.getElementById('newPhone')?.value.trim();
             const newPassword = document.getElementById('newPassword')?.value.trim();
             const confirmPassword = document.getElementById('confirmNewPassword')?.value.trim();
             
+            if (passwordCheck && (!newPassword || newPassword.length < 6)) {
+                alert('密码长度不能少于6位');
+                return;
+            }
+            
             if (passwordCheck && newPassword !== confirmPassword) {
                 alert('两次输入的密码不一致');
                 return;
+            }
+            
+            // 获取所有用户用于校验唯一性
+            let allUsers = [];
+            if (USE_SUPABASE) {
+                allUsers = await db.registeredUsers.getAll() || [];
+            } else {
+                allUsers = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
+            }
+            
+            // 校验新用户名唯一性（排除当前用户）
+            if (usernameCheck && newUsername) {
+                const duplicateUsername = allUsers.find(u => u.user_name === newUsername && u.id !== window.resetPasswordUser?.id);
+                if (duplicateUsername) {
+                    alert('该用户名已被其他用户使用，请更换');
+                    return;
+                }
+            }
+            
+            // 校验新手机号唯一性（排除当前用户）
+            if (phoneCheck && newPhone) {
+                if (!/^1\d{10}$/.test(newPhone)) {
+                    alert('请输入正确的11位手机号码');
+                    return;
+                }
+                const duplicatePhone = allUsers.find(u => u.phone === newPhone && u.id !== window.resetPasswordUser?.id);
+                if (duplicatePhone) {
+                    alert('该手机号码已被其他用户使用，请更换');
+                    return;
+                }
             }
             
             try {
@@ -1866,28 +1873,7 @@ window.checkSession = function() {
 
     }
     init();
-
-        
-        // 填充房产地址 datalist
-        function populateAddressList() {
-            const addrList = document.getElementById('addressList');
-            if (!addrList) return;
-            addrList.innerHTML = '';
-            try {
-                const addrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
-                addrs.forEach(addr => {
-                    if (addr && addr.address) {
-                        const opt = document.createElement('option');
-                        opt.value = addr.address;
-                        addrList.appendChild(opt);
-                    }
-                });
-            } catch(e) {
-                console.error('填充地址列表失败:', e);
-            }
-        }
-
-    </script>
+</script>
 </body>
 </html>
 
