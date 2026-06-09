@@ -116,6 +116,14 @@
 }
 @keyframes op-spin { to { transform: rotate(360deg); } }
 
+/* V13.0: 投票条形图 */
+.vote-result-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.vote-result-label { min-width: 80px; font-size: 0.9rem; font-weight: 500; color: #1e293b; }
+.vote-result-track { flex: 1; height: 28px; background: #e2e8f0; border-radius: 14px; overflow: hidden; position: relative; }
+.vote-result-fill { height: 100%; background: linear-gradient(90deg, #2c6e49, #4c9f70); border-radius: 14px; transition: width 0.5s ease; min-width: 4px; }
+.vote-result-stats { min-width: 110px; text-align: right; font-weight: 700; color: #2c6e49; font-size: 0.9rem; }
+.vote-total { font-size: 0.85rem; color: #6c7a91; margin-top: 10px; padding-top: 10px; border-top: 1px solid #e2e8f0; }
+
 </style>
 </head>
 <body>
@@ -681,7 +689,26 @@
             renderPollList();
         } finally { opLock.hide(); }
     };
-    window.viewPollResult = async (pollId) => { const options=await getAllPollOptions();const votes=await getAllVotes();const pollOpts=options.filter(o=>o.poll_id===pollId);const result=pollOpts.map(o=>({text:o.option_text,count:votes.filter(v=>v.option_id===o.id).length})); alert('投票结果：\n'+result.map(r=>`${r.text}: ${r.count}票`).join('\n')); };
+    window.viewPollResult = async (pollId) => {
+        const options = await getAllPollOptions();
+        const votes = await getAllVotes();
+        const polls = await getAllPolls();
+        const poll = polls.find(p => p.id === pollId);
+        const pollOpts = options.filter(o => o.poll_id === pollId);
+        const totalVotes = votes.filter(v => pollOpts.some(o => o.id === v.option_id)).length;
+        const result = pollOpts.map(o => ({ text: o.option_text, count: votes.filter(v => v.option_id === o.id).length }));
+        const maxCount = Math.max(...result.map(r => r.count), 1);
+        let html = `<span style="float:right;cursor:pointer;font-size:24px;" onclick="closeModal()">&times;</span>`;
+        html += `<h3 style="margin-bottom:16px;">${escapeHtml(poll?.title || '投票')} 结果</h3>`;
+        html += result.map(r => {
+            const pct = totalVotes > 0 ? ((r.count / totalVotes) * 100).toFixed(1) : 0;
+            const barWidth = (r.count / maxCount) * 100;
+            return `<div class="vote-result-bar"><div class="vote-result-label">${escapeHtml(r.text)}</div><div class="vote-result-track"><div class="vote-result-fill" style="width:${barWidth}%"></div></div><div class="vote-result-stats">${r.count}票 (${pct}%)</div></div>`;
+        }).join('');
+        html += `<div class="vote-total">共 ${totalVotes} 人参与投票</div>`;
+        html += `<div class="modal-footer" style="margin-top:16px;"><button class="modal-btn cancel" onclick="closeModal()">关闭</button></div>`;
+        showModal(html);
+    };
     window.addPoll = async () => {
             opLock.show();
             try {

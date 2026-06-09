@@ -91,7 +91,8 @@ const db = {
     votes: {
         getByPollId: (pollId) => supabaseFetch('votes', { params: { poll_id: 'eq.' + pollId } }),
         create: (item) => supabaseFetch('votes', { method: 'POST', body: item }),
-        checkVoted: (pollId, voterName) => supabaseFetch('votes', { params: { poll_id: 'eq.' + pollId, voter_name: 'eq.' + voterName } })
+        checkVoted: (pollId, voterName) => supabaseFetch('votes', { params: { poll_id: 'eq.' + pollId, voter_name: 'eq.' + voterName } }),
+        checkVotedByAddress: (pollId, address) => supabaseFetch('votes', { params: { poll_id: 'eq.' + pollId, property_address: 'eq.' + address } })
     },
     // 费用
     expenses: {

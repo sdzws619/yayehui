@@ -819,7 +819,13 @@ const DEFAULT_DATA = {
             
             // 启动实时更新轮询（每5秒刷新一次投票结果）
             votePollInterval = setInterval(async () => {
-                const activePolls = JSON.parse(localStorage.getItem('yayehui_polls') || '[]').filter(p => p.is_active);
+                let activePolls;
+                if (USE_SUPABASE) {
+                    activePolls = await db.polls.getActive();
+                    activePolls = activePolls || [];
+                } else {
+                    activePolls = JSON.parse(localStorage.getItem('yayehui_polls') || '[]').filter(p => p.is_active);
+                }
                 if (activePolls.length > 0) {
                     const pollContainer = document.getElementById('pollsList');
                     if (pollContainer && pollContainer.style.display !== 'none') {
@@ -917,8 +923,14 @@ const DEFAULT_DATA = {
                             document.getElementById('voteBtn' + poll.id).onclick = async () => {
                                 if (!currentUser) { showVoteNeedRegModal(); return; }
                                 // 检查是否已投票（防重复）
-                                const existingVotes = JSON.parse(localStorage.getItem('yayehui_votes') || '[]');
-                                if (existingVotes.some(v => v.poll_id === poll.id && v.property_address === currentUser.property_address)) {
+                                let alreadyVoted = false;
+                                if (USE_SUPABASE) {
+                                    const supabaseCheck = await db.votes.getByPollId(poll.id);
+                                    alreadyVoted = supabaseCheck && supabaseCheck.some(v => v.property_address === currentUser.property_address);
+                                } else {
+                                    alreadyVoted = JSON.parse(localStorage.getItem('yayehui_votes') || '[]').some(v => v.poll_id === poll.id && v.property_address === currentUser.property_address);
+                                }
+                                if (alreadyVoted) {
                                     alert('一个地址只能投一票');
                                     renderPolls();
                                     return;
@@ -966,8 +978,14 @@ const DEFAULT_DATA = {
                 if (!selectedOptionId) { alert('请先选择一个选项'); return; }
                 
                 // 检查是否已投票（防重复）
-                const existingVotes = JSON.parse(localStorage.getItem('yayehui_votes') || '[]');
-                if (existingVotes.some(v => v.poll_id === poll.id && v.property_address === currentUser.property_address)) {
+                let alreadyVoted = false;
+                if (USE_SUPABASE) {
+                    const supabaseCheck = await db.votes.getByPollId(poll.id);
+                    alreadyVoted = supabaseCheck && supabaseCheck.some(v => v.property_address === currentUser.property_address);
+                } else {
+                    alreadyVoted = JSON.parse(localStorage.getItem('yayehui_votes') || '[]').some(v => v.poll_id === poll.id && v.property_address === currentUser.property_address);
+                }
+                if (alreadyVoted) {
                     alert('一个地址只能投一票');
                     renderPolls();
                     return;
