@@ -166,4 +166,7 @@ async function checkDatabase() {
     } catch { return false; }
 }
 
+// 暴露 db 到全局作用域
+window.db = db;
+
 
