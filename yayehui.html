@@ -1218,6 +1218,18 @@ const DEFAULT_DATA = {
                         errorDiv.style.display = 'block';
                         return;
                     }
+                    // ✅ 检查地址是否在地址库中
+                    const allAddrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
+                    const addrInList = allAddrs.find(a => a.address === property_address);
+                    if (!addrInList) {
+                        errorDiv.textContent = '该房产地址不在系统允许范围内，请联系业委会。';
+                        errorDiv.style.display = 'block';
+                        return;
+                    }
+                    // ✅ 标记地址为已注册
+                    const updatedAddrs = allAddrs.map(a => a.address === property_address ? {...a, is_registered: true} : a);
+                    localStorage.setItem('yayehui_property_addresses', JSON.stringify(updatedAddrs));
+                    
                     userData.id = users.length ? Math.max(...users.map(u => u.id)) + 1 : 1;
                     users.push(userData);
                     localStorage.setItem('yayehui_registered_users', JSON.stringify(users));
