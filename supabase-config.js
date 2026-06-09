@@ -137,7 +137,8 @@ const db = {
         getById: (id) => supabaseFetch('registered_users?id=eq.' + id),
         create: (item) => supabaseFetch('registered_users', { method: 'POST', body: item }),
         update: (id, item) => supabaseFetch('registered_users?id=eq.' + id, { method: 'PATCH', body: item }),
-        delete: (id) => supabaseFetch('registered_users?id=eq.' + id, { method: 'DELETE' })
+        delete: (id) => supabaseFetch('registered_users?id=eq.' + id, { method: 'DELETE' }),
+        getByPhone: (phone) => supabaseFetch('registered_users?phone=eq.' + encodeURIComponent(phone))
     },
 
     // 房产地址库
@@ -145,7 +146,8 @@ const db = {
         getAll: () => supabaseFetch('property_addresses', { params: { order: 'id.asc' } }),
         create: (item) => supabaseFetch('property_addresses', { method: 'POST', body: item }),
         delete: (id) => supabaseFetch('property_addresses?id=eq.' + id, { method: 'DELETE' }),
-        markRegistered: (address) => supabaseFetch('property_addresses', { params: { address: 'eq.' + address }, method: 'PATCH', body: { is_registered: true } })
+        markRegistered: (address) => supabaseFetch('property_addresses', { params: { address: 'eq.' + address }, method: 'PATCH', body: { is_registered: true } }),
+        getByAddress: (address) => supabaseFetch('property_addresses?address=eq.' + encodeURIComponent(address))
     },
 
     // 管理员账号表
