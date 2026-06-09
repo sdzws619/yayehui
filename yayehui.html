@@ -119,7 +119,27 @@
 </head>
 <body>
 <div id="jsError" style="display:none;position:fixed;top:0;left:0;right:0;background:#e74c3c;color:white;padding:12px;z-index:99999;font-size:14px;cursor:pointer;" onclick="this.style.display='none'"></div>
-<script>window.onerror=function(msg,url,line,col,error){var el=document.getElementById('jsError');if(el){el.style.display='block';el.innerHTML='⚠️ JS错误: '+msg+' 位置:'+(url||'').substring(0,100)+':'+line;};return false;}</script>
+<script>
+        // 校验手机号唯一性
+        function checkPhoneUnique() {
+            const phone = document.getElementById('modalRegPhone').value.trim();
+            if (!phone) {
+                document.getElementById('modalRegPhoneMsg').textContent = '';
+                return;
+            }
+            try {
+                const users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
+                if (users.find(u => u.phone === phone)) {
+                    document.getElementById('modalRegPhoneMsg').textContent = '此手机号已被注册';
+                    document.getElementById('modalRegPhoneMsg').style.color = '#c2410c';
+                } else {
+                    document.getElementById('modalRegPhoneMsg').textContent = '';
+                }
+            } catch(e) {
+                console.error('校验手机号失败:', e);
+            }
+        }
+window.onerror=function(msg,url,line,col,error){var el=document.getElementById('jsError');if(el){el.style.display='block';el.innerHTML='⚠️ JS错误: '+msg+' 位置:'+(url||'').substring(0,100)+':'+line;};return false;}</script>
 <header class="header">
     <div class="container">
         <div class="nav-bar">
@@ -293,7 +313,7 @@
         </div>
         <div class="form-group">
             <label style="font-weight:600; font-size:0.9rem; color:#1e293b; display:block; margin-bottom:6px;">手机号码 <span style="color:#c2410c;">*</span></label>
-            <input type="tel" id="modalRegPhone" placeholder="手机号码（唯一）" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
+            <input type="tel" id="modalRegPhone" placeholder="手机号码（唯一）" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;" onblur="checkPhoneUnique()">
             <div id="modalRegPhoneMsg" style="font-size:0.8rem; margin-top:4px;"></div>
         </div>
         <div class="form-group">
@@ -306,7 +326,7 @@
         </div>
         <div class="form-group">
             <label style="font-weight:600; font-size:0.9rem; color:#1e293b; display:block; margin-bottom:6px;">房产地址 <span style="color:#c2410c;">*</span></label>
-            <input type="text" id="modalRegAddress" placeholder="房产地址（必须从后台地址库选择）" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
+            <input type="text" id="modalRegAddress" placeholder="房产地址（必须从后台地址库选择）" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;" onfocus="populateAddressList()">
             <div id="modalRegAddressMsg" style="font-size:0.8rem; margin-top:4px;"></div>
         </div>
         <div style="display:flex; gap:10px; margin-top:20px;">
@@ -1341,7 +1361,14 @@ window.handleProfileUpdate = async function() {
             let users = await db.registeredUsers.getAll() || [];
             const duplicateUser = users.find(u => u.user_name === username && u.id !== currentUser.id);
             if (duplicateUser) {
-                document.getElementById('usernameCheckMsg').textContent = '此用户名已被注册';
+                // 生成建议用户名
+                let suggested = username;
+                let counter = 2;
+                while (users.find(u => u.user_name === suggested)) {
+                    suggested = username + counter;
+                    counter++;
+                }
+                document.getElementById('usernameCheckMsg').innerHTML = '此用户名已被注册，建议：<strong>' + suggested + '</strong> <button type="button" onclick="document.getElementById(\'editUsername\').value=\'' + suggested + '\';document.getElementById(\'usernameCheckMsg\').innerHTML=\'' + '\';" style="color:#2c6e49;cursor:pointer;text-decoration:underline;background:none;border:none;font-size:inherit;">一键采用</button>';
                 document.getElementById('usernameCheckMsg').style.color = '#c2410c';
                 return;
             }
@@ -1365,7 +1392,14 @@ window.handleProfileUpdate = async function() {
             let users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
             const duplicateUser = users.find(u => u.user_name === username && u.id !== currentUser.id);
             if (duplicateUser) {
-                document.getElementById('usernameCheckMsg').textContent = '此用户名已被注册';
+                // 生成建议用户名
+                let suggested = username;
+                let counter = 2;
+                while (users.find(u => u.user_name === suggested)) {
+                    suggested = username + counter;
+                    counter++;
+                }
+                document.getElementById('usernameCheckMsg').innerHTML = '此用户名已被注册，建议：<strong>' + suggested + '</strong> <button type="button" onclick="document.getElementById(\'editUsername\').value=\'' + suggested + '\';document.getElementById(\'usernameCheckMsg\').innerHTML=\'' + '\';" style="color:#2c6e49;cursor:pointer;text-decoration:underline;background:none;border:none;font-size:inherit;">一键采用</button>';
                 document.getElementById('usernameCheckMsg').style.color = '#c2410c';
                 return;
             }
@@ -1431,7 +1465,14 @@ window.handleRegister = async function() {
             // 验证用户名唯一性
             let users = await db.registeredUsers.getAll() || [];
             if (users.find(u => u.user_name === username)) {
-                document.getElementById('modalRegUsernameMsg').textContent = '此用户名已被注册';
+                // 生成建议用户名
+                let suggested = username;
+                let counter = 2;
+                while (users.find(u => u.user_name === suggested)) {
+                    suggested = username + counter;
+                    counter++;
+                }
+                document.getElementById('modalRegUsernameMsg').innerHTML = '此用户名已被注册，建议：<strong>' + suggested + '</strong> <button type="button" onclick="document.getElementById(\'modalRegUsername\').value=\'' + suggested + '\';document.getElementById(\'modalRegUsernameMsg\').innerHTML=\'' + '\';" style="color:#2c6e49;cursor:pointer;text-decoration:underline;background:none;border:none;font-size:inherit;">一键采用</button>';
                 document.getElementById('modalRegUsernameMsg').style.color = '#c2410c';
                 return;
             }
@@ -1475,7 +1516,14 @@ window.handleRegister = async function() {
             // 本地存储模式
             let users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
             if (users.find(u => u.user_name === username)) {
-                document.getElementById('modalRegUsernameMsg').textContent = '此用户名已被注册';
+                // 生成建议用户名
+                let suggested = username;
+                let counter = 2;
+                while (users.find(u => u.user_name === suggested)) {
+                    suggested = username + counter;
+                    counter++;
+                }
+                document.getElementById('modalRegUsernameMsg').innerHTML = '此用户名已被注册，建议：<strong>' + suggested + '</strong> <button type="button" onclick="document.getElementById(\'modalRegUsername\').value=\'' + suggested + '\';document.getElementById(\'modalRegUsernameMsg\').innerHTML=\'' + '\';" style="color:#2c6e49;cursor:pointer;text-decoration:underline;background:none;border:none;font-size:inherit;">一键采用</button>';
                 document.getElementById('modalRegUsernameMsg').style.color = '#c2410c';
                 return;
             }
@@ -1708,7 +1756,7 @@ window.checkSession = function() {
                     user = users.find(u => u.property_address === address);
                 }
                 if (!user) {
-                    document.getElementById('resetAddressMsg').textContent = '该房产地址未注册';
+                    document.getElementById('resetAddressMsg').textContent = '该地址尚未注册用户';
                     return;
                 }
                 // 找到用户，进入第二步
@@ -1728,6 +1776,41 @@ window.checkSession = function() {
                 alert('请至少选择一项需要重置的内容');
                 return;
             }
+            
+            // 功能5：重置时新用户名唯一性校验
+            if (usernameCheck) {
+                const newUsername = document.getElementById('newUsername').value.trim();
+                if (newUsername) {
+                    try {
+                        const users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
+                        if (users.find(u => u.user_name === newUsername)) {
+                            document.getElementById('resetMsg').textContent = '新用户名已被注册，请选择其他用户名';
+                            document.getElementById('resetMsg').style.color = '#c2410c';
+                            return;
+                        }
+                    } catch(e) {
+                        console.error('校验用户名失败:', e);
+                    }
+                }
+            }
+            
+            // 功能6：重置时新手机号唯一性校验
+            if (phoneCheck) {
+                const newPhone = document.getElementById('newPhone').value.trim();
+                if (newPhone) {
+                    try {
+                        const users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
+                        if (users.find(u => u.phone === newPhone)) {
+                            document.getElementById('resetMsg').textContent = '新手机号已被注册，请选择其他手机号';
+                            document.getElementById('resetMsg').style.color = '#c2410c';
+                            return;
+                        }
+                    } catch(e) {
+                        console.error('校验手机号失败:', e);
+                    }
+                }
+            }
+
             
             const newUsername = document.getElementById('newUsername')?.value.trim();
             const newPhone = document.getElementById('newPhone')?.value.trim();
@@ -1783,7 +1866,28 @@ window.checkSession = function() {
 
     }
     init();
-</script>
+
+        
+        // 填充房产地址 datalist
+        function populateAddressList() {
+            const addrList = document.getElementById('addressList');
+            if (!addrList) return;
+            addrList.innerHTML = '';
+            try {
+                const addrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
+                addrs.forEach(addr => {
+                    if (addr && addr.address) {
+                        const opt = document.createElement('option');
+                        opt.value = addr.address;
+                        addrList.appendChild(opt);
+                    }
+                });
+            } catch(e) {
+                console.error('填充地址列表失败:', e);
+            }
+        }
+
+    </script>
 </body>
 </html>
 
