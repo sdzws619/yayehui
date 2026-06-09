@@ -842,6 +842,7 @@ const DEFAULT_DATA = {
     // 娓叉煋鍗曚釜鎶曠エ
     async function renderSinglePoll(poll, container, isUpdate = false) {
         let options, votes;
+        let selectedOptionId = null;
         if (USE_SUPABASE) {
             options = await db.pollOptions.getByPollId(poll.id);
             options = options || [];
@@ -945,14 +946,14 @@ const DEFAULT_DATA = {
                                 };
                                 try {
                                 if (USE_SUPABASE) await db.votes.create(voteData);
+                                else {
+                                    votes.push(voteData);
+                                    localStorage.setItem('yayehui_votes', JSON.stringify(votes));
+                                }
                                 } catch(err) {
                                     alert('投票失败：' + (err.message || err));
                                     console.error('Vote error:', err);
                                     return;
-                                }
-                                else {
-                                    votes.push(voteData);
-                                    localStorage.setItem('yayehui_votes', JSON.stringify(votes));
                                 }
                                 renderPolls();
                                 alert('鎶曠エ鎴愬姛锛?);
@@ -964,7 +965,6 @@ const DEFAULT_DATA = {
             btnDiv.innerHTML = '';
         } else {
             // 宸茬櫥褰曚絾鏈姇绁?
-            let selectedOptionId = null;
             let optsHtml = '';
             options.forEach(opt => {
                 optsHtml += `<span class="poll-option" data-opt-id="${opt.id}">${escapeHtml(opt.option_text)}</span>`;
