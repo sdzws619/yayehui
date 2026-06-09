@@ -943,7 +943,7 @@
         if (!container) return;
         container.innerHTML = `
             <div class="card-panel">
-                <h3><i class="fas fa-map-marked-alt"></i> 房产地址管理 <button class="export-btn" onclick="exportPropertyAddresses()"><i class="fas fa-download"></i> 导出</button></h3>
+                <h3><i class="fas fa-map-marked-alt"></i> 房产地址管理 <button class="export-btn" onclick="exportPropertyAddresses()"><i class="fas fa-download"></i> 导出</button><button class="btn-sm secondary" onclick="fixHistoricalRegisteredStatus()" title="根据已注册用户自动更新 is_registered 状态"><i class="fas fa-magic"></i> 修复历史</button></h3>
                 <div class="addr-import-area">
                     <h4 style="margin-bottom:12px;"><i class="fas fa-upload"></i> 批量导入房产地址</h4>
                     <p style="color:#6c7a91;font-size:0.85rem;margin-bottom:10px;">每行一个地址，格式示例：<br>1座1楼101<br>2座2楼201<br>7座7楼701</p>
@@ -987,7 +987,33 @@
                 opLock.hide();
             }
         };
-    window.exportPropertyAddresses = async () => { const addrs=await getAllPropertyAddresses(); exportData(addrs,'房产地址',[{field:'address',label:'房产地址'},{field:'building',label:'栋'},{field:'floor',label:'楼层'},{field:'unit',label:'房号'},{field:'is_registered',label:'是否已注册'}]); };
+    
+    window.fixHistoricalRegisteredStatus = async () => {
+        opLock.show();
+        try {
+            if (!confirm('将根据已注册用户自动更新所有地址的注册状态。是否继续？')) return;
+            const users = await getAllRegisteredUsers();
+            let addrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
+            const regAddrSet = new Set(
+                users.map(u => u.property_address && u.property_address.trim()).filter(Boolean)
+            );
+            let fixed = 0;
+            addrs = addrs.map(a => {
+                if (regAddrSet.has(a.address.trim()) && !a.is_registered) {
+                    fixed++;
+                    return { ...a, is_registered: true };
+                }
+                return a;
+            });
+            localStorage.setItem('yayehui_property_addresses', JSON.stringify(addrs));
+            alert('修复完成！共更新 ' + fixed + ' 个地址的注册状态。');
+            renderAddrList();
+        } finally {
+            opLock.hide();
+        }
+    };
+
+window.exportPropertyAddresses = async () => { const addrs=await getAllPropertyAddresses(); exportData(addrs,'房产地址',[{field:'address',label:'房产地址'},{field:'building',label:'栋'},{field:'floor',label:'楼层'},{field:'unit',label:'房号'},{field:'is_registered',label:'是否已注册'}]); };
 
     // 站点设置
     async function renderSiteSettingsPanel() {
