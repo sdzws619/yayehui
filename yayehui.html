@@ -784,6 +784,8 @@ const DEFAULT_DATA = {
 
     // ========== 鎶曠エ绯荤粺锛堝惈鏉″舰鍥?+ 娉ㄥ唽鎻愰啋 + 瀹炴椂鏇存柊锛?==========
     async function renderPolls() {
+
+        console.log('renderPolls called');
         const container = document.getElementById('pollsList');
         if (!container) return;
         
@@ -843,6 +845,7 @@ const DEFAULT_DATA = {
     async function renderSinglePoll(poll, container, isUpdate = false) {
         let options, votes;
         let selectedOptionId = null;
+        console.log('renderSinglePoll:', poll.id, 'SUPABASE:', USE_SUPABASE);
         if (USE_SUPABASE) {
             options = await db.pollOptions.getByPollId(poll.id);
             options = options || [];
