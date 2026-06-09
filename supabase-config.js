@@ -1,4 +1,4 @@
-﻿// 闆呬笟浼?Supabase 閰嶇疆 V2锛?026-05-25锛?// 妯箙/椤佃剼鍚庡彴鍙敼銆佺敤鎴锋敞鍐屻€佽秴绾х鐞嗗憳
+// 闆呬笟浼?Supabase 閰嶇疆 V2锛?026-05-25锛?// 妯箙/椤佃剼鍚庡彴鍙敼銆佺敤鎴锋敞鍐屻€佽秴绾х鐞嗗憳
 
 const SUPABASE_CONFIG = {
     url: 'https://wrodvjsbdrxunaiwoaml.supabase.co',
