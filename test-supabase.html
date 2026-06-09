@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test Supabase Config</title>
+</head>
+<body>
+    <h1>Supabase Config Test</h1>
+    <div id="result"></div>
+    
+    <script src="supabase-config.js"></script>
+    <script>
+        const result = document.getElementById('result');
+        
+        // 妫€鏌ュ叏灞€鍙橀噺
+        result.innerHTML += '<p>SUPABASE_CONFIG: ' + (typeof SUPABASE_CONFIG !== 'undefined' ? '鉁?瀛樺湪' : '鉂?涓嶅瓨鍦?) + '</p>';
+        result.innerHTML += '<p>db: ' + (typeof db !== 'undefined' ? '鉁?瀛樺湪' : '鉂?涓嶅瓨鍦?) + '</p>';
+        result.innerHTML += '<p>window.db: ' + (typeof window.db !== 'undefined' ? '鉁?瀛樺湪' : '鉂?涓嶅瓨鍦?) + '</p>';
+        
+        if (typeof window.db !== 'undefined') {
+            result.innerHTML += '<p>db.announcements: ' + (typeof window.db.announcements !== 'undefined' ? '鉁?瀛樺湪' : '鉂?涓嶅瓨鍦?) + '</p>';
+        }
+        
+        // 娴嬭瘯 API 璋冪敤
+        async function testApi() {
+            try {
+                const data = await window.db.announcements.getAll();
+                result.innerHTML += '<p>API Test: 鉁?鎴愬姛锛岃幏鍙栧埌 ' + (data ? data.length : 0) + ' 鏉¤褰?/p>';
+            } catch (e) {
+                result.innerHTML += '<p>API Test: 鉂?澶辫触 - ' + e.message + '</p>';
+            }
+        }
+        
+        if (typeof window.db !== 'undefined') {
+            testApi();
+        }
+    </script>
+</body>
+</html>
