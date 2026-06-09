@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test</title>
+</head>
+<body>
+    <h1>Test Page</h1>
+    <div id="result"></div>
+    <script src="supabase-config.js"></script>
+    <script>
+        const r = document.getElementById("result");
+        r.innerHTML += "<p>SUPABASE_CONFIG: " + (typeof SUPABASE_CONFIG !== "undefined" ? "OK" : "FAIL") + "</p>";
+        r.innerHTML += "<p>db: " + (typeof db !== "undefined" ? "OK" : "FAIL") + "</p>";
+        r.innerHTML += "<p>window.db: " + (typeof window.db !== "undefined" ? "OK" : "FAIL") + "</p>";
+        if (typeof window.db !== "undefined") {
+            r.innerHTML += "<p>db.announcements: " + (typeof window.db.announcements !== "undefined" ? "OK" : "FAIL") + "</p>";
+        }
+    </script>
+</body>
+</html>
