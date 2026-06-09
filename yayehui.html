@@ -139,6 +139,52 @@
                 console.error('校验手机号失败:', e);
             }
         }
+        
+        // 校验用户名唯一性（实时失焦校验）
+        function checkUsernameUnique() {
+            const username = document.getElementById('modalRegUsername').value.trim();
+            if (!username) {
+                document.getElementById('modalRegUsernameMsg').textContent = '';
+                return;
+            }
+            try {
+                const users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
+                if (users.find(u => u.user_name === username)) {
+                    // 生成建议用户名
+                    let suggested = username;
+                    let counter = 2;
+                    while (users.find(u => u.user_name === suggested)) {
+                        suggested = username + counter;
+                        counter++;
+                    }
+                    document.getElementById('modalRegUsernameMsg').innerHTML = '此用户名已被注册，建议：<strong>' + suggested + '</strong> <button type="button" onclick="document.getElementById(\'modalRegUsername\').value=\'' + suggested + '\';document.getElementById(\'modalRegUsernameMsg\').innerHTML=\'\';" style="color:#2c6e49;cursor:pointer;text-decoration:underline;background:none;border:none;font-size:inherit;">一键采用</button>';
+                    document.getElementById('modalRegUsernameMsg').style.color = '#c2410c';
+                } else {
+                    document.getElementById('modalRegUsernameMsg').textContent = '';
+                }
+            } catch(e) {
+                console.error('校验用户名失败:', e);
+            }
+        }
+        
+        // 密码加密相关函数（使用 Web Crypto API）
+        async function generateSalt() {
+            const salt = crypto.getRandomValues(new Uint8Array(16));
+            return Array.from(salt, b => b.toString(16).padStart(2, '0')).join('');
+        }
+        
+        async function hashPassword(password, salt) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password + salt);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            return Array.from(new Uint8Array(hashBuffer), b => b.toString(16).padStart(2, '0')).join('');
+        }
+        
+        async function verifyPassword(password, salt, storedHash) {
+            const hash = await hashPassword(password, salt);
+            return hash === storedHash;
+        }
+        
 window.onerror=function(msg,url,line,col,error){var el=document.getElementById('jsError');if(el){el.style.display='block';el.innerHTML='⚠️ JS错误: '+msg+' 位置:'+(url||'').substring(0,100)+':'+line;};return false;}</script>
 <header class="header">
     <div class="container">
@@ -308,7 +354,7 @@ window.onerror=function(msg,url,line,col,error){var el=document.getElementById('
         <div class="modal-title"><i class="fas fa-user-plus" style="color:#2c6e49;"></i> 用户注册</div>
         <div class="form-group">
             <label style="font-weight:600; font-size:0.9rem; color:#1e293b; display:block; margin-bottom:6px;">用户名称 <span style="color:#c2410c;">*</span></label>
-            <input type="text" id="modalRegUsername" placeholder="登录名（唯一）" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
+            <input type="text" id="modalRegUsername" placeholder="登录名（唯一）" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;" onblur="checkUsernameUnique()">
             <div id="modalRegUsernameMsg" style="font-size:0.8rem; margin-top:4px;"></div>
         </div>
         <div class="form-group">
@@ -1333,10 +1379,22 @@ window.handleLogin = async function() {
         let user = null;
         if (USE_SUPABASE) {
             let users = await db.registeredUsers.getAll() || [];
-            user = users.find(u => (u.user_name === account || u.phone === account) && u.password === password);
+            // 先找到用户（通过用户名或手机号）
+            const foundUser = users.find(u => (u.user_name === account || u.phone === account));
+            if (foundUser && foundUser.passwordHash && foundUser.passwordSalt) {
+                // 验证加密后的密码
+                const isValid = await verifyPassword(password, foundUser.passwordSalt, foundUser.passwordHash);
+                if (isValid) user = foundUser;
+            }
         } else {
             let users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
-            user = users.find(u => (u.user_name === account || u.phone === account) && u.password === password);
+            // 先找到用户（通过用户名或手机号）
+            const foundUser = users.find(u => (u.user_name === account || u.phone === account));
+            if (foundUser && foundUser.passwordHash && foundUser.passwordSalt) {
+                // 验证加密后的密码
+                const isValid = await verifyPassword(password, foundUser.passwordSalt, foundUser.passwordHash);
+                if (isValid) user = foundUser;
+            }
         }
         if (user) {
             currentUser = user;
@@ -1507,11 +1565,14 @@ window.handleRegister = async function() {
                 document.getElementById('modalRegAddressMsg').style.color = '#c2410c';
                 return;
             }
-            // 创建用户
+            // 创建用户（加密密码）
+            const salt = await generateSalt();
+            const hashedPassword = await hashPassword(password, salt);
             const userData = {
                 user_name: username,
                 phone: phone,
-                password: password, // 注意：实际应该加密存储
+                passwordHash: hashedPassword,
+                passwordSalt: salt,
                 property_address: address,
                 created_at: new Date().toISOString()
             };
@@ -1557,12 +1618,15 @@ window.handleRegister = async function() {
             //     document.getElementById('modalRegAddressMsg').style.color = '#c2410c';
             //     return;
             // }
-            // 创建用户
+            // 创建用户（加密密码）
+            const salt = await generateSalt();
+            const hashedPassword = await hashPassword(password, salt);
             const userData = {
                 id: users.length ? Math.max(...users.map(u => u.id)) + 1 : 1,
                 user_name: username,
                 phone: phone,
-                password: password,
+                passwordHash: hashedPassword,
+                passwordSalt: salt,
                 property_address: address,
                 created_at: new Date().toISOString()
             };
@@ -1761,10 +1825,38 @@ window.checkSession = function() {
             try {
                 let user = null;
                 if (USE_SUPABASE) {
-                    const users = await db.registeredUsers.getAll() || [];
+                    // 验证地址是否在预录入库中
+                    let addrs = await db.propertyAddresses.getAll() || [];
+                    const matched = addrs.find(a => a.address === address);
+                    if (!matched) {
+                        document.getElementById('resetAddressMsg').textContent = '该房产地址不在系统允许范围内，请联系业委会。';
+                        document.getElementById('resetAddressMsg').style.color = '#c2410c';
+                        return;
+                    }
+                    if (!matched.is_registered) {
+                        document.getElementById('resetAddressMsg').textContent = '该地址尚未注册用户';
+                        document.getElementById('resetAddressMsg').style.color = '#c2410c';
+                        return;
+                    }
+                    // 地址验证通过，查找用户
+                    let users = await db.registeredUsers.getAll() || [];
                     user = users.find(u => u.property_address === address);
                 } else {
-                    const users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
+                    // 本地模式：验证地址是否在预录入库中
+                    let addrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
+                    const matched = addrs.find(a => a.address === address);
+                    if (!matched) {
+                        document.getElementById('resetAddressMsg').textContent = '该房产地址不在系统允许范围内，请联系业委会。';
+                        document.getElementById('resetAddressMsg').style.color = '#c2410c';
+                        return;
+                    }
+                    if (!matched.is_registered) {
+                        document.getElementById('resetAddressMsg').textContent = '该地址尚未注册用户';
+                        document.getElementById('resetAddressMsg').style.color = '#c2410c';
+                        return;
+                    }
+                    // 地址验证通过，查找用户
+                    let users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
                     user = users.find(u => u.property_address === address);
                 }
                 if (!user) {
@@ -1839,7 +1931,13 @@ window.checkSession = function() {
                     const updates = {};
                     if (usernameCheck && newUsername) updates.user_name = newUsername;
                     if (phoneCheck && newPhone) updates.phone = newPhone;
-                    if (passwordCheck && newPassword) updates.password = newPassword;
+                    if (passwordCheck && newPassword) {
+                        // 加密新密码
+                        const salt = await generateSalt();
+                        const hashedPassword = await hashPassword(newPassword, salt);
+                        updates.passwordHash = hashedPassword;
+                        updates.passwordSalt = salt;
+                    }
                     await db.registeredUsers.update(window.resetPasswordUser.id, updates);
                 } else {
                     const users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
@@ -1847,7 +1945,13 @@ window.checkSession = function() {
                     if (userIndex !== -1) {
                         if (usernameCheck && newUsername) users[userIndex].user_name = newUsername;
                         if (phoneCheck && newPhone) users[userIndex].phone = newPhone;
-                        if (passwordCheck && newPassword) users[userIndex].password = newPassword;
+                        if (passwordCheck && newPassword) {
+                            // 加密新密码
+                            const salt = await generateSalt();
+                            const hashedPassword = await hashPassword(newPassword, salt);
+                            users[userIndex].passwordHash = hashedPassword;
+                            users[userIndex].passwordSalt = salt;
+                        }
                         localStorage.setItem('yayehui_registered_users', JSON.stringify(users));
                     }
                 }
