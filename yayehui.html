@@ -1070,13 +1070,10 @@ const DEFAULT_DATA = {
             let topics, replies;
             if (USE_SUPABASE) {
                 topics = await db.topics.getAll();
-                
-                else {
-                    replies = [];
-                    for (const t of topics) {
-                        const r = await db.replies.getByTopicId(t.id);
-                        if (r) replies.push(...r);
-                    }
+                replies = [];
+                for (const t of topics) {
+                    const r = await db.replies.getByTopicId(t.id);
+                    if (r) replies.push(...r);
                 }
             } else {
                 const topicsStored = localStorage.getItem('yayehui_topics');
