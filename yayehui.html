@@ -365,7 +365,7 @@
 
 <script src="supabase-config.js"></script>
 <script>
-    const USE_SUPABASE = false;
+    const USE_SUPABASE = true;
     let pageSizes = {
         ann: 3, dyn: 3, topics: 3, members: 3, expenses: 3
     };
@@ -556,7 +556,7 @@ const DEFAULT_DATA = {
             let items;
             if (USE_SUPABASE) {
                 items = await db.announcements.getAll();
-                if (!items || items.length === 0) items = DEFAULT_DATA.announcements;
+                // items = [] if empty from Supabase
             } else {
                 const stored = localStorage.getItem('yayehui_announcements');
                 const initialized = localStorage.getItem('init_ann') === '1';
@@ -656,7 +656,7 @@ const DEFAULT_DATA = {
             let members;
             if (USE_SUPABASE) {
                 members = await db.members.getAll();
-                if (!members || members.length === 0) members = DEFAULT_DATA.members;
+                // members = [] if empty from Supabase
             } else {
                 const stored = localStorage.getItem('yayehui_members');
                 const initialized = localStorage.getItem('init_members') === '1';
@@ -713,7 +713,7 @@ const DEFAULT_DATA = {
             let polls;
             if (USE_SUPABASE) {
                 polls = await db.polls.getActive();
-                if (!polls || polls.length === 0) polls = DEFAULT_DATA.polls;
+                // polls = [] if empty from Supabase
             } else {
                 const allPolls = JSON.parse(localStorage.getItem('yayehui_polls') || '[]');
                 const initialized = localStorage.getItem('init_polls') === '1';
@@ -760,7 +760,7 @@ const DEFAULT_DATA = {
             options = options || [];
             votes = await db.votes.getByPollId(poll.id);
             votes = votes || [];
-            if (options.length === 0) options = DEFAULT_DATA.pollOptions.filter(o => o.poll_id === poll.id);
+            // options stay [] if empty
         } else {
             options = JSON.parse(localStorage.getItem('yayehui_poll_options') || '[]').filter(o => o.poll_id === poll.id);
             votes = JSON.parse(localStorage.getItem('yayehui_votes') || '[]');
@@ -999,7 +999,7 @@ const DEFAULT_DATA = {
             let topics, replies;
             if (USE_SUPABASE) {
                 topics = await db.topics.getAll();
-                if (!topics || topics.length === 0) { topics = DEFAULT_DATA.topics; replies = DEFAULT_DATA.replies; }
+                if (!topics || topics.length === 0) { topics = []; replies = []; }
                 else {
                     replies = [];
                     for (const t of topics) {
