@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>检查 Supabase 表结构</title></head>
+<body>
+<h2>Supabase 表结构检查</h2>
+<pre id="out"></pre>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://wrodvjsbdrxunaiwoaml.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indyb2R2anNiZHJ4dW5haXdvYW1sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1MTg1OTYsImV4cCI6MjA5NTA5NDU5Nn0.fQF-gyK53zsaqyojHxXrCBR5lZ6Ioib4rNvgPZ4J4Ww';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const out = document.getElementById('out');
+function log(msg) { out.textContent += msg + '\n'; }
+
+const tables = [
+  'registered_users', 'poll_options', 'replies',
+  'admin_accounts', 'site_settings'
+];
+
+(async () => {
+  for (const t of tables) {
+    log(`=== ${t} ===`);
+    try {
+      // 尝试获取一条数据看字段
+      const { data, error } = await db.from(t).select('*').limit(1);
+      if (error) throw error;
+      if (data && data.length > 0) {
+        log(`字段: ${Object.keys(data[0]).join(', ')}`);
+        log(`示例: ${JSON.stringify(data[0], null, 2).substring(0, 400)}`);
+      } else {
+        log('表为空，尝试插入探测...');
+        // 尝试插入最小字段
+        const testData = t === 'registered_users' ? { phone: '13800000001' } :
+                         t === 'poll_options' ? { poll_id: 999, option_text: 'test' } :
+                         t === 'replies' ? { topic_id: 999, content: 'test' } :
+                         t === 'admin_accounts' ? { username: 'test', password: 'test', role: 'admin' } :
+                         { setting_key: 'test', setting_value: 'test' };
+        const { data: ins, error: insErr } = await db.from(t).insert(testData).select();
+        if (insErr) {
+          log(`插入失败: ${insErr.message}`);
+          if (insErr.message.includes('column')) {
+            // 尝试找出哪些字段不存在
+            log('尝试找出可用字段...');
+          }
+        } else {
+          log(`插入成功! 字段: ${Object.keys(ins[0]).join(', ')}`);
+          // 清理
+          await db.from(t).delete().eq('id', ins[0].id);
+        }
+      }
+    } catch (e) {
+      log(`错误: ${e.message}`);
+    }
+    log('');
+  }
+})();
+</script>
+</body>
+</html>
