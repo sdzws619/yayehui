@@ -322,12 +322,20 @@
         <span class="modal-close" id="closeResetPasswordModal">&times;</span>
         <div class="modal-title"><i class="fas fa-key" style="color:#2c6e49;"></i> 重置密码</div>
         <div id="resetStep1">
-            <p style="color:#475569; margin-bottom:16px;">请输入您的房产地址以验证身份：</p>
+            <p style="color:#475569; margin-bottom:16px;">请输入您的注册手机号以验证身份：</p>
             <div class="form-group">
-                <input type="text" id="resetAddress" placeholder="房产地址" style="width:100%; padding:12px 16px; border:1px solid #cfdfd3; border-radius:40px; font-size:1rem;">
-                <div id="resetAddressMsg" style="font-size:0.8rem; margin-top:4px;"></div>
+                <input type="tel" id="resetPhoneInput" placeholder="手机号码" style="width:100%; padding:12px 16px; border:1px solid #cfdfd3; border-radius:40px; font-size:1rem;">
+                <div id="resetPhoneMsg" style="font-size:0.8rem; margin-top:4px;"></div>
             </div>
-            <button class="btn" id="verifyAddressBtn" style="width:100%; margin-top:12px;">验证地址</button>
+            <div id="resetCodeSection" style="display:none; margin-top:12px;">
+                <div class="form-group" style="display:flex; gap:8px;">
+                    <input type="text" id="resetSmsCode" placeholder="短信验证码" style="flex:1; padding:12px 16px; border:1px solid #cfdfd3; border-radius:40px; font-size:1rem;" maxlength="6">
+                    <button class="btn btn-secondary" id="resendCodeBtn" style="white-space:nowrap; min-width:90px;" disabled>重新发送</button>
+                </div>
+                <div id="resetCodeMsg" style="font-size:0.8rem; margin-top:4px;"></div>
+            </div>
+            <button class="btn" id="sendCodeBtn" style="width:100%; margin-top:12px;">发送验证码</button>
+            <button class="btn" id="verifyCodeBtn" style="width:100%; margin-top:12px; display:none;">验证并继续</button>
         </div>
         <div id="resetStep2" style="display:none;">
             <p style="color:#475569; margin-bottom:16px;">请选择要重置的内容：</p>
@@ -1239,8 +1247,18 @@ window.showResetPasswordModal = function() {
     document.getElementById('resetPasswordModal').style.display = 'flex';
     document.getElementById('resetStep1').style.display = 'block';
     document.getElementById('resetStep2').style.display = 'none';
-    document.getElementById('resetAddress').value = '';
-    document.getElementById('resetAddressMsg').textContent = '';
+    document.getElementById('resetPhoneInput').value = '';
+    document.getElementById('resetPhoneMsg').textContent = '';
+    document.getElementById('resetSmsCode').value = '';
+    document.getElementById('resetCodeMsg').textContent = '';
+    document.getElementById('resetCodeSection').style.display = 'none';
+    document.getElementById('sendCodeBtn').style.display = 'block';
+    document.getElementById('verifyCodeBtn').style.display = 'none';
+    document.getElementById('resendCodeBtn').disabled = true;
+    window._resetCode = null;
+    window._resetPhone = null;
+    window._resetUser = null;
+    window._codeCountdown = 0;
 };
 
 // 隐藏重置密码模态框
@@ -1727,53 +1745,120 @@ window.checkSession = function() {
             }
         });
         
-        // 重置密码模态框事件
-        document.getElementById('closeResetPasswordModal')?.addEventListener('click', hideResetPasswordModal);
-        document.getElementById('verifyAddressBtn')?.addEventListener('click', async () => {
-            const address = document.getElementById('resetAddress').value.trim();
-            if (!address) {
-                document.getElementById('resetAddressMsg').textContent = '请输入房产地址';
+        // ========== 重置密码：手机验证码验证 ==========
+        // 生成6位随机验证码
+        function generateCode() {
+            return String(Math.floor(100000 + Math.random() * 900000));
+        }
+        
+        // 发送验证码
+        document.getElementById('sendCodeBtn')?.addEventListener('click', async () => {
+            const phone = document.getElementById('resetPhoneInput').value.trim();
+            const msgDiv = document.getElementById('resetPhoneMsg');
+            if (!phone) {
+                msgDiv.textContent = '请输入手机号码';
+                msgDiv.style.color = '#c2410c';
                 return;
             }
-            try {
-                // 首先检查地址是否在预录入库中
-                let addrs = [];
-                if (USE_SUPABASE) {
-                    addrs = await db.propertyAddresses.getAll() || [];
-                } else {
-                    addrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
-                }
-                // 模糊匹配地址
-                const matched = addrs.find(a => address.includes(a.address) || a.address.includes(address));
-                if (!matched) {
-                    document.getElementById('resetAddressMsg').textContent = '该房产地址不在系统允许范围内，请联系业委会';
-                    document.getElementById('resetAddressMsg').style.color = '#c2410c';
-                    return;
-                }
-                // 检查是否已有注册用户
-                let user = null;
-                if (USE_SUPABASE) {
-                    const users = await db.registeredUsers.getAll() || [];
-                    user = users.find(u => u.property_address === address);
-                } else {
-                    const users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
-                    user = users.find(u => u.property_address === address);
-                }
-                if (!user) {
-                    document.getElementById('resetAddressMsg').textContent = '该房产地址尚未注册用户';
-                    document.getElementById('resetAddressMsg').style.color = '#c2410c';
-                    return;
-                }
-                // 找到用户，进入第二步
-                window.resetPasswordUser = user;
-                document.getElementById('resetStep1').style.display = 'none';
-                document.getElementById('resetStep2').style.display = 'block';
-            } catch (e) {
-                document.getElementById('resetAddressMsg').textContent = '验证失败，请稍后重试';
+            if (!/^1\d{10}$/.test(phone)) {
+                msgDiv.textContent = '请输入正确的11位手机号码';
+                msgDiv.style.color = '#c2410c';
+                return;
             }
+            // 检查该手机号是否已注册
+            let allUsers = [];
+            if (USE_SUPABASE) {
+                allUsers = await db.registeredUsers.getAll() || [];
+            } else {
+                allUsers = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
+            }
+            const user = allUsers.find(u => u.phone === phone);
+            if (!user) {
+                msgDiv.textContent = '该手机号码未注册，请先注册';
+                msgDiv.style.color = '#c2410c';
+                return;
+            }
+            // 生成验证码
+            const code = generateCode();
+            window._resetCode = code;
+            window._resetPhone = phone;
+            window._resetUser = user;
+            // 显示验证码（模拟短信发送）
+            msgDiv.textContent = '验证码已发送至 ' + phone + '（演示模式，验证码：' + code + '）';
+            msgDiv.style.color = '#2c6e49';
+            // 显示验证码输入区和验证按钮
+            document.getElementById('resetCodeSection').style.display = 'block';
+            document.getElementById('sendCodeBtn').style.display = 'none';
+            document.getElementById('verifyCodeBtn').style.display = 'block';
+            document.getElementById('resetSmsCode').value = '';
+            document.getElementById('resetCodeMsg').textContent = '';
+            // 倒计时60秒后才能重新发送
+            window._codeCountdown = 60;
+            const resendBtn = document.getElementById('resendCodeBtn');
+            resendBtn.disabled = true;
+            resendBtn.textContent = '60s后重发';
+            const countdownInterval = setInterval(() => {
+                window._codeCountdown--;
+                if (window._codeCountdown <= 0) {
+                    clearInterval(countdownInterval);
+                    resendBtn.disabled = false;
+                    resendBtn.textContent = '重新发送';
+                } else {
+                    resendBtn.textContent = window._codeCountdown + 's后重发';
+                }
+            }, 1000);
         });
         
-        // ========== 新增：重置密码时用户名和手机号唯一性校验 ==========
+        // 重新发送验证码
+        document.getElementById('resendCodeBtn')?.addEventListener('click', async () => {
+            const code = generateCode();
+            window._resetCode = code;
+            const phone = window._resetPhone;
+            document.getElementById('resetPhoneMsg').textContent = '验证码已重新发送（演示模式，验证码：' + code + '）';
+            document.getElementById('resetPhoneMsg').style.color = '#2c6e49';
+            document.getElementById('resetSmsCode').value = '';
+            document.getElementById('resetCodeMsg').textContent = '';
+            // 重新倒计时
+            window._codeCountdown = 60;
+            const resendBtn = document.getElementById('resendCodeBtn');
+            resendBtn.disabled = true;
+            resendBtn.textContent = '60s后重发';
+            const countdownInterval = setInterval(() => {
+                window._codeCountdown--;
+                if (window._codeCountdown <= 0) {
+                    clearInterval(countdownInterval);
+                    resendBtn.disabled = false;
+                    resendBtn.textContent = '重新发送';
+                } else {
+                    resendBtn.textContent = window._codeCountdown + 's后重发';
+                }
+            }, 1000);
+        });
+        
+        // 验证验证码并进入第二步
+        document.getElementById('verifyCodeBtn')?.addEventListener('click', () => {
+            const inputCode = document.getElementById('resetSmsCode').value.trim();
+            const msgDiv = document.getElementById('resetCodeMsg');
+            if (!inputCode) {
+                msgDiv.textContent = '请输入验证码';
+                msgDiv.style.color = '#c2410c';
+                return;
+            }
+            if (inputCode !== window._resetCode) {
+                msgDiv.textContent = '验证码错误，请重新输入';
+                msgDiv.style.color = '#c2410c';
+                return;
+            }
+            // 验证成功，进入第二步
+            window.resetPasswordUser = window._resetUser;
+            document.getElementById('resetStep1').style.display = 'none';
+            document.getElementById('resetStep2').style.display = 'block';
+        });
+        
+        // 关闭重置密码模态框
+        document.getElementById('closeResetPasswordModal')?.addEventListener('click', hideResetPasswordModal);
+        
+        // ========== 重置密码时用户名和手机号唯一性校验 ==========
         document.getElementById('submitResetBtn')?.addEventListener('click', async () => {
             const usernameCheck = document.getElementById('resetUsernameCheck').checked;
             const phoneCheck = document.getElementById('resetPhoneCheck').checked;
