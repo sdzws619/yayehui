@@ -6,6 +6,8 @@
     <title>雅业会 | 智慧业委会平台</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="admin_db.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; line-height: 1.5; scroll-behavior: smooth; }
@@ -384,7 +386,7 @@
 
 
 <script>
-    const USE_SUPABASE = false;
+    const USE_SUPABASE = true;
     let pageSizes = {
         ann: 3, dyn: 3, topics: 3, members: 3, expenses: 3
     };
