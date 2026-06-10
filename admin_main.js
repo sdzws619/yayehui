@@ -783,6 +783,24 @@
                 <div class="stats-row" id="userStatsRow">
                     <div class="stat-card"><div class="num" id="statTotalUsers">-</div><div class="label">注册用户总数</div></div>
                 </div>
+                <div class="import-section">
+                    <h4><i class="fas fa-file-import"></i> 批量导入</h4>
+                    <p>选择 CSV/TXT 文件或粘贴内容 → 点击导入</p>
+                    <div class="template-btns">
+                        <button class="btn-sm primary" onclick="document.getElementById('userFileInput').click()"><i class="fas fa-file-upload"></i> 选择文件</button>
+                        <button class="btn-sm primary" onclick="downloadUsersTemplate()"><i class="fas fa-file-csv"></i> 下载模板</button>
+                    </div>
+                    <input type="file" id="userFileInput" accept=".csv,.txt" style="display:none" onchange="handleUserFileSelect(this)">
+                    <div id="userFileName" style="font-size:0.8rem;color:#2c6e49;margin:6px 0;"></div>
+                    <textarea id="userImportData" placeholder="粘贴 CSV（用户名称,手机号码,房产地址）" style="margin-top:8px;width:100%;height:80px;border-radius:16px;border:1px solid #cfdfd3;padding:10px;font-family:inherit;resize:vertical;"></textarea>
+                    <button class="btn-sm success" style="margin-top:8px;" onclick="importUsers()"><i class="fas fa-upload"></i> 导入数据</button>
+                </div>
+                <div class="add-form">
+                    <input type="text" id="newUserName" placeholder="用户名称">
+                    <input type="text" id="newUserPhone" placeholder="手机号码">
+                    <input type="text" id="newUserAddress" placeholder="房产地址">
+                    <button onclick="addRegisteredUser()">➕ 新增用户</button>
+                </div>
                 <div class="item-list" id="usersList"><div class="loading">加载中...</div></div>
             </div>`;
         renderUsersList();
@@ -803,6 +821,67 @@
             }
         };
     window.exportUsers = async () => { const users=await getAllRegisteredUsers(); exportData(users,'注册用户',[{key:'user_name',label:'用户名称'},{key:'phone',label:'手机号码'},{key:'property_address',label:'房产地址'},{key:'created_at',label:'注册时间'}]); };
+    window.downloadUsersTemplate = () => downloadTemplate([{key:'user_name',label:'用户名称'},{key:'phone',label:'手机号码'},{key:'property_address',label:'房产地址'}],'注册用户');
+    window.handleUserFileSelect = function(input) {
+        const file = input.files[0];
+        if (!file) return;
+        document.getElementById('userFileName').textContent = '已选择: ' + file.name;
+        readTextFileWithEncoding(file).then(text => {
+            document.getElementById('userImportData').value = text;
+        }).catch(err => {
+            alert('文件读取失败: ' + err.message);
+        });
+    };
+    window.importUsers = async () => {
+        opLock.show();
+        try {
+            const text = document.getElementById('userImportData').value.trim();
+            if (!text) return alert('请粘贴数据');
+            const lines = text.split('\n').filter(l => l.trim());
+            if (lines.length < 2) return alert('数据格式错误，至少需要标题行和数据行');
+            for (let i = 1; i < lines.length; i++) {
+                const parts = parseCSVLine(lines[i]);
+                if (parts.length >= 1) {
+                    const data = {
+                        user_name: parts[0] || '',
+                        phone: parts[1] || '',
+                        property_address: parts[2] || '',
+                        created_at: new Date().toISOString()
+                    };
+                    if (USE_SUPABASE) {
+                        await db.registeredUsers.create(data);
+                    } else {
+                        let a = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
+                        data.id = nextId(a);
+                        a.push(data);
+                        localStorage.setItem('yayehui_registered_users', JSON.stringify(a));
+                    }
+                }
+            }
+            alert('导入成功！');
+            document.getElementById('userImportData').value = '';
+            renderUsersList();
+        } finally {
+            opLock.hide();
+        }
+    };
+    window.addRegisteredUser = async () => {
+        const name = document.getElementById('newUserName').value.trim();
+        const phone = document.getElementById('newUserPhone').value.trim();
+        const address = document.getElementById('newUserAddress').value.trim();
+        if (!name) return alert('请输入用户名称');
+        opLock.show();
+        try {
+            const data = { user_name: name, phone: phone, property_address: address, created_at: new Date().toISOString() };
+            if (USE_SUPABASE) { await db.registeredUsers.create(data); } else { let a = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]'); data.id = nextId(a); a.push(data); localStorage.setItem('yayehui_registered_users', JSON.stringify(a)); }
+            document.getElementById('newUserName').value = '';
+            document.getElementById('newUserPhone').value = '';
+            document.getElementById('newUserAddress').value = '';
+            renderUsersList();
+        } finally {
+            opLock.hide();
+        }
+    };
 
     // 房产地址导入
     async function renderPropertyPanel() {
@@ -811,10 +890,17 @@
         container.innerHTML = `
             <div class="card-panel">
                 <h3><i class="fas fa-map-marked-alt"></i> 房产地址管理 <button class="export-btn" onclick="exportPropertyAddresses()"><i class="fas fa-download"></i> 导出</button></h3>
-                <div class="addr-import-area">
-                    <h4 style="margin-bottom:12px;"><i class="fas fa-upload"></i> 批量导入房产地址</h4>
-                    <p style="color:#6c7a91;font-size:0.85rem;margin-bottom:10px;">每行一个地址，格式示例：<br>1座1楼101<br>2座2楼201<br>7座7楼701</p>
-                    <textarea id="addrImportText" placeholder="每行一个房产地址" style="width:100%;height:160px;border-radius:16px;border:1px solid #cfdfd3;padding:10px;font-family:inherit;resize:vertical;"></textarea>
+                <div class="import-section">
+                    <h4><i class="fas fa-file-import"></i> 批量导入</h4>
+                    <p>选择 CSV/TXT 文件或粘贴内容 → 点击导入</p>
+                    <div class="template-btns">
+                        <button class="btn-sm primary" onclick="document.getElementById('addrFileInput').click()"><i class="fas fa-file-upload"></i> 选择文件</button>
+                        <button class="btn-sm primary" onclick="downloadAddrTemplate()"><i class="fas fa-file-csv"></i> 下载模板</button>
+                    </div>
+                    <input type="file" id="addrFileInput" accept=".csv,.txt" style="display:none" onchange="handleAddrFileSelect(this)">
+                    <div id="addrFileName" style="font-size:0.8rem;color:#2c6e49;margin:6px 0;"></div>
+                    <p style="color:#6c7a91;font-size:0.85rem;margin-bottom:10px;">CSV 格式：房产地址<br>或每行一个地址，格式示例：<br>1座1楼101<br>2座2楼201<br>7座7楼701</p>
+                    <textarea id="addrImportText" placeholder="粘贴 CSV 数据或每行一个地址" style="width:100%;height:160px;border-radius:16px;border:1px solid #cfdfd3;padding:10px;font-family:inherit;resize:vertical;"></textarea>
                     <div style="margin-top:12px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
                         <button class="btn-sm success" onclick="importPropertyAddresses()"><i class="fas fa-upload"></i> 导入地址</button>
                         <button class="btn-sm danger" onclick="clearPropertyAddresses()"><i class="fas fa-trash-alt"></i> 清空全部</button>
@@ -855,6 +941,17 @@
             }
         };
     window.exportPropertyAddresses = async () => { const addrs=await getAllPropertyAddresses(); exportData(addrs,'房产地址',[{key:'address',label:'房产地址'},{key:'building',label:'栋'},{key:'floor',label:'楼层'},{key:'unit',label:'房号'},{key:'is_registered',label:'是否已注册'}]); };
+    window.downloadAddrTemplate = () => downloadTemplate([{key:'address',label:'房产地址'}],'房产地址');
+    window.handleAddrFileSelect = function(input) {
+        const file = input.files[0];
+        if (!file) return;
+        document.getElementById('addrFileName').textContent = '已选择: ' + file.name;
+        readTextFileWithEncoding(file).then(text => {
+            document.getElementById('addrImportText').value = text;
+        }).catch(err => {
+            alert('文件读取失败: ' + err.message);
+        });
+    };
 
     // 站点设置
     async function renderSiteSettingsPanel() {
