@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据迁移工具 - localStorage → Supabase</title>
+<style>
+  body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; background: #f5f5f5; }
+  .card { background: white; padding: 24px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
+  h2 { margin-top: 0; color: #333; }
+  button { background: #e74c3c; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; cursor: pointer; margin: 8px 8px 8px 0; }
+  button:disabled { background: #ccc; cursor: not-allowed; }
+  button.secondary { background: #3498db; }
+  #log { background: #1e1e1e; color: #0f0; padding: 16px; border-radius: 6px; height: 300px; overflow-y: auto; font-family: monospace; font-size: 13px; white-space: pre-wrap; }
+  .status { padding: 12px; border-radius: 6px; margin: 12px 0; }
+  .status.ok { background: #d4edda; color: #155724; }
+  .status.err { background: #f8d7da; color: #721c24; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+  th, td { padding: 8px 12px; border: 1px solid #ddd; text-align: left; font-size: 14px; }
+  th { background: #f0f0f0; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h2>📦 数据迁移工具</h2>
+  <p>此工具将当前浏览器 <b>localStorage</b> 中的数据迁移到 <b>Supabase</b> 云端数据库，实现跨设备同步。</p>
+  
+  <div id="connStatus" class="status">正在连接 Supabase...</div>
+
+  <h3>检测到以下数据（来自 localStorage）：</h3>
+  <div id="dataPreview"></div>
+
+  <div style="margin-top: 20px;">
+    <button id="btnMigrate" disabled>🚀 开始迁移数据</button>
+    <button id="btnClear" class="secondary" disabled>🗑️ 清空 localStorage（迁移后执行）</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>📋 迁移日志</h2>
+  <div id="log"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://wrodvjsbdrxunaiwoaml.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indyb2R2anNiZHJ4dW5haXdvYW1sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1MTg1OTYsImV4cCI6MjA5NTA5NDU5Nn0.fQF-gyK53zsaqyojHxXrCBR5lZ6Ioib4rNvgPZ4J4Ww';
+
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const TABLES = [
+  'announcements', 'dynamics', 'members', 'polls', 'poll_options',
+  'votes', 'expenses', 'topics', 'replies',
+  'registered_users', 'property_addresses',
+  'admin_accounts', 'admin_login_logs', 'site_settings'
+];
+
+const logEl = document.getElementById('log');
+function log(msg, color = '#0f0') {
+  const t = new Date().toLocaleTimeString();
+  logEl.innerHTML += `<span style="color:${color}">[${t}] ${msg}</span>\n`;
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function getLocalData(key) {
+  try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; }
+}
+
+async function checkSupabase() {
+  const statusEl = document.getElementById('connStatus');
+  try {
+    const { data, error } = await db.from('property_addresses').select('id').limit(1);
+    if (error) throw error;
+    statusEl.className = 'status ok';
+    statusEl.innerHTML = '✅ Supabase 连接成功！';
+    document.getElementById('btnMigrate').disabled = false;
+    document.getElementById('btnClear').disabled = false;
+    log('Supabase 连接成功', '#0f0');
+    previewLocalData();
+  } catch (e) {
+    statusEl.className = 'status err';
+    statusEl.innerHTML = '❌ Supabase 连接失败：' + e.message;
+    log('Supabase 连接失败: ' + e.message, '#f44');
+  }
+}
+
+function previewLocalData() {
+  const el = document.getElementById('dataPreview');
+  let html = '<table><tr><th>数据表</th><th>localStorage 条数</th><th>Supabase 状态</th></tr>';
+  
+  // Check each table's localStorage data
+  const keyMap = {
+    'announcements': 'yayehui_announcements',
+    'dynamics': 'yayehui_dynamics',
+    'members': 'yayehui_members',
+    'polls': 'yayehui_polls',
+    'poll_options': 'yayehui_poll_options',
+    'votes': 'yayehui_votes',
+    'expenses': 'yayehui_expenses',
+    'topics': 'yayehui_topics',
+    'replies': 'yayehui_replies',
+    'registered_users': 'yayehui_registered_users',
+    'property_addresses': 'yayehui_property_addresses',
+    'admin_accounts': 'yayehui_admin_accounts',
+    'admin_login_logs': 'yayehui_admin_login_logs',
+    'site_settings': 'yayehui_site_settings'
+  };
+
+  for (const t of TABLES) {
+    const lsKey = keyMap[t];
+    const data = getLocalData(lsKey);
+    const count = Array.isArray(data) ? data.length : (data ? 1 : 0);
+    html += `<tr><td>${t}</td><td>${count} 条</td><td id="st-${t}">待迁移</td></tr>`;
+  }
+  html += '</table>';
+  el.innerHTML = html;
+}
+
+async function migrateTable(tableName, lsKey) {
+  const data = getLocalData(lsKey);
+  if (!Array.isArray(data) || data.length === 0) {
+    log(`  ${tableName}: localStorage 无数据，跳过`, '#aaa');
+    return { table: tableName, inserted: 0, skipped: true };
+  }
+
+  log(`  📤 迁移 ${tableName}: ${data.length} 条...`, '#ffa');
+  
+  // Remove 'id' field if exists (let Supabase auto-generate)
+  const clean = data.map(row => {
+    const { id, created_at, ...rest } = row;
+    return rest;
+  });
+
+  try {
+    const { data: inserted, error } = await db.from(tableName).insert(clean).select();
+    if (error) throw error;
+    log(`  ✅ ${tableName}: 成功插入 ${inserted?.length || clean.length} 条`, '#0f0');
+    document.getElementById(`st-${tableName}`).innerHTML = `✅ ${inserted?.length || clean.length} 条`;
+    return { table: tableName, inserted: inserted?.length || clean.length };
+  } catch (e) {
+    log(`  ❌ ${tableName}: 插入失败 - ${e.message}`, '#f44');
+    document.getElementById(`st-${tableName}`).innerHTML = `❌ 失败`;
+    return { table: tableName, error: e.message };
+  }
+}
+
+async function doMigrate() {
+  const btn = document.getElementById('btnMigrate');
+  btn.disabled = true;
+  btn.textContent = '⏳ 迁移中...';
+
+  log('=== 开始迁移 ===', '#0ff');
+
+  const migrations = [
+    { table: 'property_addresses', key: 'yayehui_property_addresses' },
+    { table: 'registered_users', key: 'yayehui_registered_users' },
+    { table: 'announcements', key: 'yayehui_announcements' },
+    { table: 'dynamics', key: 'yayehui_dynamics' },
+    { table: 'members', key: 'yayehui_members' },
+    { table: 'polls', key: 'yayehui_polls' },
+    { table: 'poll_options', key: 'yayehui_poll_options' },
+    { table: 'votes', key: 'yayehui_votes' },
+    { table: 'expenses', key: 'yayehui_expenses' },
+    { table: 'topics', key: 'yayehui_topics' },
+    { table: 'replies', key: 'yayehui_replies' },
+    { table: 'admin_accounts', key: 'yayehui_admin_accounts' },
+    { table: 'site_settings', key: 'yayehui_site_settings' },
+  ];
+
+  const results = [];
+  for (const m of migrations) {
+    const r = await migrateTable(m.table, m.key);
+    results.push(r);
+  }
+
+  log('=== 迁移完成 ===', '#0ff');
+  const total = results.filter(r => r.inserted).reduce((s, r) => s + r.inserted, 0);
+  log(`共迁移 ${total} 条数据`, '#0f0');
+
+  btn.textContent = '✅ 迁移完成';
+  document.getElementById('btnClear').disabled = false;
+}
+
+function doClear() {
+  if (!confirm('确定要清空 localStorage 吗？\n\n迁移成功后，数据已在 Supabase 中，可以清空本地数据避免重复。')) return;
+  localStorage.clear();
+  log('✅ localStorage 已清空', '#0f0');
+  alert('localStorage 已清空！现在刷新页面，系统将从 Supabase 读取数据。');
+}
+
+document.getElementById('btnMigrate').addEventListener('click', doMigrate);
+document.getElementById('btnClear').addEventListener('click', doClear);
+
+checkSupabase();
+</script>
+</body>
+</html>
