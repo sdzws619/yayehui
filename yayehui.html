@@ -1162,6 +1162,13 @@
                     userData.id = users.length ? Math.max(...users.map(u => u.id)) + 1 : 1;
                     users.push(userData);
                     localStorage.setItem('yayehui_registered_users', JSON.stringify(users));
+                    // 同步更新房产地址注册状态
+                    let addrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
+                    const addrMatch = addrs.find(a => a.address === property_address);
+                    if (addrMatch && !addrMatch.is_registered) {
+                        addrMatch.is_registered = true;
+                        localStorage.setItem('yayehui_property_addresses', JSON.stringify(addrs));
+                    }
                 }
 
                 currentUser = { phone, user_name, password: regPwd, property_address, id: Date.now() };
@@ -1490,12 +1497,13 @@ window.handleRegister = async function() {
             };
             users.push(userData);
             localStorage.setItem('yayehui_registered_users', JSON.stringify(users));
-            // 更新房产地址注册状态（暂时注释）
-            // const addrIndex = addrs.findIndex(a => a.address === address);
-            // if (addrIndex !== -1) {
-            //     addrs[addrIndex].is_registered = true;
-            //     localStorage.setItem('yayehui_property_addresses', JSON.stringify(addrs));
-            // }
+            // 同步更新房产地址注册状态
+            let addrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
+            const addrMatch = addrs.find(a => a.address === address);
+            if (addrMatch && !addrMatch.is_registered) {
+                addrMatch.is_registered = true;
+                localStorage.setItem('yayehui_property_addresses', JSON.stringify(addrs));
+            }
             
             currentUser = userData;
             localStorage.setItem('yayehui_current_user', JSON.stringify(currentUser));
