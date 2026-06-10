@@ -833,7 +833,29 @@
     window.deleteUser = async (id) => {
             opLock.show();
             try {
-                if(!confirm('确定删除该用户？'))return; if(USE_SUPABASE)await db.registeredUsers.delete(id); else{let u=JSON.parse(localStorage.getItem('yayehui_registered_users')||'[]').filter(u=>u.id!==id);localStorage.setItem('yayehui_registered_users',JSON.stringify(u));} renderUsersList();
+                if(!confirm('确定删除该用户？'))return;
+                // 获取被删除用户的地址，用于同步更新房产地址注册状态
+                let deletedUserAddress = null;
+                if (!USE_SUPABASE) {
+                    const users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
+                    const user = users.find(u => u.id === id);
+                    if (user) deletedUserAddress = user.property_address;
+                }
+                if(USE_SUPABASE)await db.registeredUsers.delete(id); else{let u=JSON.parse(localStorage.getItem('yayehui_registered_users')||'[]').filter(u=>u.id!==id);localStorage.setItem('yayehui_registered_users',JSON.stringify(u));}
+                // 同步更新房产地址：如果该地址不再有注册用户，设为未注册
+                if (deletedUserAddress && !USE_SUPABASE) {
+                    const remainingUsers = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
+                    const stillRegistered = remainingUsers.some(u => u.property_address === deletedUserAddress);
+                    if (!stillRegistered) {
+                        let addrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
+                        const match = addrs.find(a => a.address === deletedUserAddress);
+                        if (match) {
+                            match.is_registered = false;
+                            localStorage.setItem('yayehui_property_addresses', JSON.stringify(addrs));
+                        }
+                    }
+                }
+                renderUsersList();
             } finally {
                 opLock.hide();
             }
@@ -844,12 +866,37 @@
         if (!confirm('确定删除选中的 ' + ids.length + ' 个用户？')) return;
         opLock.show();
         try {
+            // 收集被删除用户的地址
+            let deletedAddresses = [];
+            if (!USE_SUPABASE) {
+                const users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
+                deletedAddresses = users.filter(u => ids.includes(u.id)).map(u => u.property_address).filter(a => a);
+            }
             if (USE_SUPABASE) {
                 for (const id of ids) await db.registeredUsers.delete(id);
             } else {
                 let u = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
                 u = u.filter(user => !ids.includes(user.id));
                 localStorage.setItem('yayehui_registered_users', JSON.stringify(u));
+            }
+            // 同步更新房产地址注册状态
+            if (deletedAddresses.length > 0 && !USE_SUPABASE) {
+                const remainingUsers = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
+                let addrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
+                let updated = false;
+                for (const delAddr of deletedAddresses) {
+                    const stillRegistered = remainingUsers.some(u => u.property_address === delAddr);
+                    if (!stillRegistered) {
+                        const match = addrs.find(a => a.address === delAddr);
+                        if (match && match.is_registered) {
+                            match.is_registered = false;
+                            updated = true;
+                        }
+                    }
+                }
+                if (updated) {
+                    localStorage.setItem('yayehui_property_addresses', JSON.stringify(addrs));
+                }
             }
             renderUsersList();
         } finally {
@@ -875,6 +922,21 @@
             if (!text) return alert('请粘贴数据');
             const lines = text.split('\n').filter(l => l.trim());
             if (lines.length < 2) return alert('数据格式错误，至少需要标题行和数据行');
+            // 预检：检查导入数据中是否有与存量重复的地址
+            const existingAddrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
+            const existingAddrSet = new Set(existingAddrs.map(a => a.address));
+            const duplicates = [];
+            for (let i = 1; i < lines.length; i++) {
+                const parts = parseCSVLine(lines[i]);
+                const addr = (parts[2] || '').trim();
+                if (addr && existingAddrSet.has(addr)) {
+                    duplicates.push(addr);
+                }
+            }
+            if (duplicates.length > 0) {
+                alert('以下地址与存量地址重复，请先处理重复地址后再导入：\n' + duplicates.join('\n'));
+                return;
+            }
             const importedAddresses = []; // 收集导入的地址
             for (let i = 1; i < lines.length; i++) {
                 const parts = parseCSVLine(lines[i]);
@@ -995,23 +1057,34 @@
                     startIdx = 1;
                 }
             }
-            let importedCount = 0;
+            // 预检：收集导入地址并检查是否与存量重复
+            const existingAddrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
+            const existingAddrSet = new Set(existingAddrs.map(a => a.address));
+            const importAddrs = [];
+            const duplicates = [];
             for (let i = startIdx; i < lines.length; i++) {
                 const addr = lines[i];
                 let clean = addr.trim();
                 if (!clean) continue;
-                // 使用 CSV 解析器正确处理可能的多字段行（如导出的 CSV）
                 const csvParts = parseCSVLine(clean);
-                // 如果包含逗号（多字段 CSV），取第一个字段作为地址
-                // 否则整行作为地址（兼容每行一个地址的格式）
                 if (clean.includes(',')) {
                     clean = csvParts[0];
                 } else {
-                    clean = csvParts[0]; // parseCSVLine 处理单字段也会去引号
+                    clean = csvParts[0];
                 }
                 if (!clean) continue;
-                // 额外过滤：如果看起来像表头（纯中文描述），跳过
                 if (/^[\u4e00-\u9fa5]+$/.test(clean) && !/\d/.test(clean) && clean.length <= 10) continue;
+                if (existingAddrSet.has(clean)) {
+                    duplicates.push(clean);
+                }
+                importAddrs.push(clean);
+            }
+            if (duplicates.length > 0) {
+                alert('以下地址与存量地址重复，请先处理重复地址后再导入：\n' + duplicates.join('\n'));
+                return;
+            }
+            let importedCount = 0;
+            for (const clean of importAddrs) {
                 const parts = clean.match(/(\d+)座(\d+)楼(\d+)/);
                 const data = {
                     address: clean,
