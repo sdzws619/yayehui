@@ -47,28 +47,28 @@
     function nextId(arr) { return arr.length ? Math.max(...arr.map(i => i.id)) + 1 : 1; }
     function formatDate(str) { if (!str) return ''; return new Date(str).toLocaleString(); }
     
-    // 文件读取辅助函数 - 支持 GBK/UTF-8 自动识别
+    // 文件读取辅助函数 - 支持 UTF-8/GBK 自动识别
     function readTextFileWithEncoding(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = function(e) {
                 const buffer = e.target.result;
-                // 先尝试 UTF-8 解码
-                let text = new TextDecoder('utf-8', { fatal: true }).decode(buffer);
-                resolve(text);
+                try {
+                    // 先尝试 UTF-8 解码（strict 模式，含 BOM 自动跳过）
+                    const text = new TextDecoder('utf-8', { fatal: true }).decode(buffer);
+                    resolve(text);
+                } catch (utf8Err) {
+                    // UTF-8 解码失败，回退到 GBK
+                    try {
+                        const text = new TextDecoder('gbk').decode(buffer);
+                        resolve(text);
+                    } catch (gbkErr) {
+                        reject(new Error('文件编码无法识别，请保存为 UTF-8 格式'));
+                    }
+                }
             };
             reader.onerror = function() {
-                // UTF-8 失败，尝试 GBK
-                const reader2 = new FileReader();
-                reader2.onload = function(e2) {
-                    try {
-                        const text = new TextDecoder('gbk').decode(e2.target.result);
-                        resolve(text);
-                    } catch (err) {
-                        reject(err);
-                    }
-                };
-                reader2.readAsArrayBuffer(file);
+                reject(new Error('文件读取失败，请检查文件是否损坏'));
             };
             reader.readAsArrayBuffer(file);
         });
@@ -917,13 +917,55 @@
         list.innerHTML = addrs.map(a => `<div class="admin-item"><div class="item-info"><strong>${escapeHtml(a.address||'')}</strong><br><small>栋: ${escapeHtml(a.building||'')} | 楼层: ${escapeHtml(a.floor||'')} | 房号: ${escapeHtml(a.unit||'')}</small><br><small>导入: ${formatDate(a.imported_at)} | ${a.is_registered?'<span style="color:#c2410c;">已注册</span>':'<span style="color:#2c6e49;">未注册</span>'}</small></div><div class="item-actions"><button class="btn-sm danger" onclick="deleteAddr(${a.id})"><i class="fas fa-trash-alt"></i></button></div></div>`).join('') || '<p class="loading">暂无地址</p>';
     }
     window.importPropertyAddresses = async () => {
-            opLock.show();
-            try {
-                const text=document.getElementById('addrImportText').value.trim(); if(!text)return alert('请输入地址'); const lines=text.split('\n').filter(l=>l.trim()); for(const addr of lines){const clean=addr.trim(); if(!clean)continue; const parts=clean.match(/(\d+)座(\d+)楼(\d+)/); const data={address:clean,imported_at:new Date().toISOString(),is_registered:false}; if(parts){data.building=parts[1]+'座';data.floor=parts[2]+'楼';data.unit=parts[3];} if(USE_SUPABASE)await db.propertyAddresses.create(data); else{let a=JSON.parse(localStorage.getItem('yayehui_property_addresses')||'[]');if(!a.find(x=>x.address===clean)){data.id=nextId(a);a.push(data);localStorage.setItem('yayehui_property_addresses',JSON.stringify(a));}} } alert(`成功导入 ${lines.length} 个地址！`);document.getElementById('addrImportText').value='';renderAddrList();
-            } finally {
-                opLock.hide();
+        opLock.show();
+        try {
+            const text = document.getElementById('addrImportText').value.trim();
+            if (!text) return alert('请输入地址');
+            const lines = text.split('\n').filter(l => l.trim());
+            let importedCount = 0;
+            for (const addr of lines) {
+                let clean = addr.trim();
+                if (!clean) continue;
+                // 使用 CSV 解析器正确处理可能的多字段行（如导出的 CSV）
+                const csvParts = parseCSVLine(clean);
+                // 如果包含逗号（多字段 CSV），取第一个字段作为地址
+                // 否则整行作为地址（兼容每行一个地址的格式）
+                if (clean.includes(',')) {
+                    clean = csvParts[0];
+                } else {
+                    clean = csvParts[0]; // parseCSVLine 处理单字段也会去引号
+                }
+                if (!clean) continue;
+                const parts = clean.match(/(\d+)座(\d+)楼(\d+)/);
+                const data = {
+                    address: clean,
+                    imported_at: new Date().toISOString(),
+                    is_registered: false
+                };
+                if (parts) {
+                    data.building = parts[1] + '座';
+                    data.floor = parts[2] + '楼';
+                    data.unit = parts[3];
+                }
+                if (USE_SUPABASE) {
+                    await db.propertyAddresses.create(data);
+                } else {
+                    let a = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
+                    if (!a.find(x => x.address === clean)) {
+                        data.id = nextId(a);
+                        a.push(data);
+                        localStorage.setItem('yayehui_property_addresses', JSON.stringify(a));
+                    }
+                }
+                importedCount++;
             }
-        };
+            alert(`成功导入 ${importedCount} 个地址！`);
+            document.getElementById('addrImportText').value = '';
+            renderAddrList();
+        } finally {
+            opLock.hide();
+        }
+    };
     window.deleteAddr = async (id) => {
             opLock.show();
             try {
