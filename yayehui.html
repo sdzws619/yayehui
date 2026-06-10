@@ -206,16 +206,15 @@
     </div>
 </div>
 
-<!-- 注册提醒模态框（投票未注册时弹出） -->
-<div id="voteNeedRegModal" class="modal">
+<!-- 投票需登录提示模态框 -->
+<div id="voteNeedLoginModal" class="modal">
     <div class="modal-content" style="text-align:center;">
-        <span class="modal-close" id="closeVoteNeedRegModal">&times;</span>
-        <div class="modal-title"><i class="fas fa-user-edit" style="color:#2c6e49;font-size:2rem;"></i><br>需要先注册</div>
-        <p style="color:#475569;margin:16px 0;">您需要先注册成为平台用户，才能参与投票。</p>
-        <p style="color:#6c7a91;font-size:0.85rem;">注册需填写手机号码、用户名称和房产地址信息。</p>
+        <span class="modal-close" id="closeVoteNeedLoginModal">&times;</span>
+        <div class="modal-title"><i class="fas fa-lock" style="color:#2c6e49;font-size:2rem;"></i><br>请先登录</div>
+        <p style="color:#475569;margin:16px 0;">您需要登录后才能参与投票。</p>
         <div style="margin-top:24px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
-            <button class="btn" id="goRegisterBtn">立即注册</button>
-            <button class="btn btn-secondary" id="closeVoteRegBtn">暂不注册</button>
+            <button class="btn" id="goLoginFromVoteBtn">立即登录</button>
+            <button class="btn btn-secondary" id="goRegisterFromVoteBtn">没有账号？去注册</button>
         </div>
     </div>
 </div>
@@ -789,7 +788,7 @@
                 span.onclick = () => {
                     if (!currentUser) {
                         // 未登录，弹出登录提示
-                        showVoteNeedRegModal();
+                        showVoteNeedLoginModal();
                     } else {
                         // 已登录但未投票，选择选项
                         optionsDiv.querySelectorAll('.poll-option').forEach(s => s.classList.remove('selected'));
@@ -799,7 +798,7 @@
                         if (!document.getElementById('voteBtn' + poll.id)) {
                             btnDiv.innerHTML = `<button class="vote-btn" id="voteBtn${poll.id}">确认投票</button>`;
                             document.getElementById('voteBtn' + poll.id).onclick = async () => {
-                                if (!currentUser) { showVoteNeedRegModal(); return; }
+                                if (!currentUser) { showVoteNeedLoginModal(); return; }
                                 // 检查是否已投票（防重复）
                                 const existingVotes = JSON.parse(localStorage.getItem('yayehui_votes') || '[]');
                                 if (existingVotes.some(v => v.poll_id === poll.id && v.property_address === currentUser.property_address)) {
@@ -846,7 +845,7 @@
             });
             btnDiv.innerHTML = `<button class="vote-btn" id="voteBtn${poll.id}">确认投票</button>`;
             document.getElementById('voteBtn' + poll.id).onclick = async () => {
-                if (!currentUser) { showVoteNeedRegModal(); return; }
+                if (!currentUser) { showVoteNeedLoginModal(); return; }
                 if (!selectedOptionId) { alert('请先选择一个选项'); return; }
                 
                 // 检查是否已投票（防重复）
@@ -876,17 +875,21 @@
         }
     }
 
-    function showVoteNeedRegModal() {
-        document.getElementById('voteNeedRegModal').style.display = 'flex';
+    function showVoteNeedLoginModal() {
+        document.getElementById('voteNeedLoginModal').style.display = 'flex';
     }
-    document.getElementById('closeVoteNeedRegModal')?.addEventListener('click', () => {
-        document.getElementById('voteNeedRegModal').style.display = 'none';
+    function hideVoteNeedLoginModal() {
+        document.getElementById('voteNeedLoginModal').style.display = 'none';
+    }
+    document.getElementById('closeVoteNeedLoginModal')?.addEventListener('click', hideVoteNeedLoginModal);
+    // 点击"立即登录"→ 关闭提示框，打开登录框
+    document.getElementById('goLoginFromVoteBtn')?.addEventListener('click', () => {
+        hideVoteNeedLoginModal();
+        showLoginModal();
     });
-    document.getElementById('closeVoteRegBtn')?.addEventListener('click', () => {
-        document.getElementById('voteNeedRegModal').style.display = 'none';
-    });
-    document.getElementById('goRegisterBtn')?.addEventListener('click', () => {
-        document.getElementById('voteNeedRegModal').style.display = 'none';
+    // 点击"去注册"→ 关闭提示框，滚动到注册区
+    document.getElementById('goRegisterFromVoteBtn')?.addEventListener('click', () => {
+        hideVoteNeedLoginModal();
         document.getElementById('register').scrollIntoView({ behavior: 'smooth' });
     });
 
