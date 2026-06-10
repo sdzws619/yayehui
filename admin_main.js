@@ -1499,6 +1499,7 @@
             currentUser = null; 
             isSuperAdmin = false; 
             clearSession();
+            sessionStorage.removeItem('yayehui_current_panel');
             showLogin(); 
         };
         // 加载上次保存的面板，如果没有则默认公告栏
