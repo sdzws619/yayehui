@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>检查 localStorage 数据结构</title></head>
+<body>
+<h2>localStorage 数据结构检查</h2>
+<pre id="out"></pre>
+<script>
+const out = document.getElementById('out');
+function log(msg) { out.textContent += msg + '\n'; }
+
+const keys = [
+  'yayehui_announcements',
+  'yayehui_dynamics',
+  'yayehui_members',
+  'yayehui_polls',
+  'yayehui_poll_options',
+  'yayehui_votes',
+  'yayehui_expenses',
+  'yayehui_topics',
+  'yayehui_replies',
+  'yayehui_registered_users',
+  'yayehui_property_addresses',
+  'yayehui_admin_accounts',
+  'yayehui_admin_login_logs',
+  'yayehui_site_settings'
+];
+
+for (const k of keys) {
+  const raw = localStorage.getItem(k);
+  if (!raw) { log(`${k}: (无数据)`); continue; }
+  try {
+    const data = JSON.parse(raw);
+    if (Array.isArray(data) && data.length > 0) {
+      log(`${k}: ${data.length} 条`);
+      log(`  字段: ${Object.keys(data[0]).join(', ')}`);
+      log(`  示例: ${JSON.stringify(data[0], null, 2).substring(0, 300)}`);
+    } else if (typeof data === 'object' && data !== null) {
+      log(`${k}: 对象`);
+      log(`  字段: ${Object.keys(data).join(', ')}`);
+      log(`  内容: ${JSON.stringify(data).substring(0, 300)}`);
+    } else {
+      log(`${k}: ${typeof data} = ${String(data).substring(0, 100)}`);
+    }
+  } catch (e) {
+    log(`${k}: 解析失败 - ${e.message}`);
+    log(`  原始: ${raw.substring(0, 200)}`);
+  }
+  log('');
+}
+</script>
+</body>
+</html>
