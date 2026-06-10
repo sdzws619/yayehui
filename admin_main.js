@@ -526,7 +526,7 @@
     window.deletePoll = async (id) => {
             opLock.show();
             try {
-                if(!confirm('确定删除？'))return; if(USE_SUPABASE){await db.pollOptions.delete(id);await db.polls.delete(id);} else{let p=JSON.parse(localStorage.getItem('yayehui_polls')||'[]').filter(p=>p.id!==id);let o=JSON.parse(localStorage.getItem('yayehui_poll_options')||'[]').filter(o=>o.poll_id!==id);localStorage.setItem('yayehui_polls',JSON.stringify(p));localStorage.setItem('yayehui_poll_options',JSON.stringify(o));} renderPollList();
+                if(!confirm('确定删除？'))return; if(USE_SUPABASE){await db.pollOptions.delete(id);await db.polls.delete(id);} else{let p=JSON.parse(localStorage.getItem('yayehui_polls')||'[]').filter(p=>p.id!==id);let o=JSON.parse(localStorage.getItem('yayehui_poll_options')||'[]').filter(o=>o.poll_id!==id);localStorage.setItem('yayehui_polls',JSON.stringify(p));localStorage.setItem('yayehui_poll_options',JSON.stringify(o));let v=JSON.parse(localStorage.getItem('yayehui_votes')||'[]').filter(v=>v.poll_id!==id);localStorage.setItem('yayehui_votes',JSON.stringify(v));} renderPollList();
             } finally {
                 opLock.hide();
             }
@@ -538,7 +538,7 @@
         opLock.show();
         try {
             if (USE_SUPABASE) { for (const id of ids) { await db.pollOptions.delete(id); await db.polls.delete(id); } }
-            else { let p = JSON.parse(localStorage.getItem('yayehui_polls')||'[]').filter(p => !ids.includes(p.id)); let o = JSON.parse(localStorage.getItem('yayehui_poll_options')||'[]').filter(o => !ids.includes(o.poll_id)); localStorage.setItem('yayehui_polls',JSON.stringify(p)); localStorage.setItem('yayehui_poll_options',JSON.stringify(o)); }
+            else { let p = JSON.parse(localStorage.getItem('yayehui_polls')||'[]').filter(p => !ids.includes(p.id)); let o = JSON.parse(localStorage.getItem('yayehui_poll_options')||'[]').filter(o => !ids.includes(o.poll_id)); localStorage.setItem('yayehui_polls',JSON.stringify(p)); localStorage.setItem('yayehui_poll_options',JSON.stringify(o)); let v=JSON.parse(localStorage.getItem('yayehui_votes')||'[]').filter(v=>!ids.includes(v.poll_id));localStorage.setItem('yayehui_votes',JSON.stringify(v)); }
             renderPollList();
         } finally { opLock.hide(); }
     };
