@@ -768,8 +768,8 @@
         resultHtml += `<div class="vote-total">共 ${totalVotes} 人参与投票</div>`;
         resultContainer.innerHTML = resultHtml;
 
-        // 检查是否已投票
-        const hasVoted = currentUser && votes.some(v => v.property_address === currentUser.property_address);
+        // 检查是否已投票（限定当前投票项目）
+        const hasVoted = currentUser && votes.some(v => v.poll_id === poll.id && v.property_address === currentUser.property_address);
         const optionsDiv = document.getElementById('voteOptionsPoll' + poll.id);
         const btnDiv = document.getElementById('voteBtnPoll' + poll.id);
 
