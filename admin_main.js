@@ -922,19 +922,24 @@
             if (!text) return alert('请粘贴数据');
             const lines = text.split('\n').filter(l => l.trim());
             if (lines.length < 2) return alert('数据格式错误，至少需要标题行和数据行');
-            // 预检：检查导入数据中是否有与存量重复的地址
-            const existingAddrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
-            const existingAddrSet = new Set(existingAddrs.map(a => a.address));
+            // 预检：检查导入数据中的地址是否在存量注册用户中已存在（排除CSV内部重复）
+            const existingUsers = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
+            const existingAddrSet = new Set(existingUsers.map(u => u.property_address).filter(Boolean));
+            const seenInCSV = new Set();
             const duplicates = [];
             for (let i = 1; i < lines.length; i++) {
                 const parts = parseCSVLine(lines[i]);
                 const addr = (parts[2] || '').trim();
-                if (addr && existingAddrSet.has(addr)) {
+                if (!addr) continue;
+                // 跳过CSV文件内部的重复行
+                if (seenInCSV.has(addr)) continue;
+                seenInCSV.add(addr);
+                if (existingAddrSet.has(addr)) {
                     duplicates.push(addr);
                 }
             }
             if (duplicates.length > 0) {
-                alert('以下地址与存量地址重复，请先处理重复地址后再导入：\n' + duplicates.join('\n'));
+                alert('以下地址已被其他注册用户占用，请先处理重复地址后再导入：\n' + duplicates.join('\n'));
                 return;
             }
             const importedAddresses = []; // 收集导入的地址
@@ -1057,9 +1062,10 @@
                     startIdx = 1;
                 }
             }
-            // 预检：收集导入地址并检查是否与存量重复
+            // 预检：收集导入地址并检查是否与存量重复（排除CSV内部重复）
             const existingAddrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
             const existingAddrSet = new Set(existingAddrs.map(a => a.address));
+            const seenInCSV = new Set();
             const importAddrs = [];
             const duplicates = [];
             for (let i = startIdx; i < lines.length; i++) {
@@ -1074,6 +1080,9 @@
                 }
                 if (!clean) continue;
                 if (/^[\u4e00-\u9fa5]+$/.test(clean) && !/\d/.test(clean) && clean.length <= 10) continue;
+                // 跳过CSV文件内部的重复行
+                if (seenInCSV.has(clean)) continue;
+                seenInCSV.add(clean);
                 if (existingAddrSet.has(clean)) {
                     duplicates.push(clean);
                 }
