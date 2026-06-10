@@ -39,7 +39,7 @@
         };
     }
     
-    const USE_SUPABASE = false;
+    const USE_SUPABASE = true;
     let currentUser = null;
     let isSuperAdmin = false;
 
