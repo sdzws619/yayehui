@@ -39,7 +39,7 @@
         };
     }
     
-    const USE_SUPABASE = true;
+    // USE_SUPABASE is declared in admin_db.js - do not redeclare here to avoid SyntaxError
     let currentUser = null;
     let isSuperAdmin = false;
 
