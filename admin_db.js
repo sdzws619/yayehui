@@ -164,6 +164,12 @@ const db = {
                 .update({ is_registered: true }).eq('address', address).select();
             if (error) throw error;
             return data;
+        },
+        async markUnregistered(address) {
+            const { data, error } = await supabaseClient.from('property_addresses')
+                .update({ is_registered: false }).eq('address', address).select();
+            if (error) throw error;
+            return data;
         }
     },
 
