@@ -1515,8 +1515,12 @@ window.handleRegister = async function() {
                 user_name: username,
                 phone: phone,
                 password_hash: password,
+                property_address: address,
+                created_at: new Date().toISOString()
+            };
+            const result = await db.registeredUsers.create(userData);
             await db.propertyAddresses.markRegistered(address);
-            
+
             currentUser = { ...userData, id: result[0]?.id || result.id };
             localStorage.setItem('yayehui_current_user', JSON.stringify(currentUser));
             hideRegisterModal();
