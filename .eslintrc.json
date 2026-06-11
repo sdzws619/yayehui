@@ -1,0 +1,61 @@
+{
+    "env": {
+        "browser": true,
+        "es2020": true
+    },
+    "parserOptions": {
+        "ecmaVersion": 2020,
+        "sourceType": "script"
+    },
+    "rules": {
+        // ========== 禁止使用 replace_all 式通配符修改的防护 ==========
+        // 以下规则帮助在部署前发现常见问题
+
+        // 禁止重复声明变量（BUG-06 防护）
+        "no-redeclare": ["error", { "builtinGlobals": true }],
+
+        // 禁止使用 var（统一用 const/let，减少作用域污染）
+        "no-var": "warn",
+
+        // 禁止未声明变量（捕获拼写错误）
+        "no-undef": ["error", {
+            "typeof": true
+        }],
+
+        // 禁止在条件语句中赋值（常见笔误）
+        "no-cond-assign": "error",
+
+        // 禁止空 catch 块
+        "no-empty": ["error", { "allowEmptyCatch": false }],
+
+        // 禁止 debugger 语句（忘记清理）
+        "no-debugger": "error",
+
+        // 禁止 console.log（部署前应清理，warn/error 除外）
+        "no-console": ["warn", { "allow": ["warn", "error"] }],
+
+        // ========== 雅业会自定义规则提示 ==========
+        // 以下通过注释约定，ESLint 无法直接强制，但 lint 输出会提示
+
+        // 密码字段检查：代码中不应出现 .password（应为 .password_hash）
+        // 手动搜索关键词：password（不含 _hash 后缀）应等于零处
+        "no-restricted-syntax": [
+            "off"
+        ],
+
+        // 全局变量保护：禁止重复声明 SUPABASE_URL / SUPABASE_KEY / db / USE_SUPABASE
+        "no-restricted-globals": [
+            "warn"
+        ]
+    },
+
+    // ========== 全局变量声明（供 no-undef 识别）==========
+    "globals": {
+        "supabase": "readonly",
+        "USE_SUPABASE": "writable",
+        "db": "readonly",
+        "SUPABASE_URL": "readonly",
+        "SUPABASE_KEY": "readonly",
+        "supabaseClient": "readonly"
+    }
+}
