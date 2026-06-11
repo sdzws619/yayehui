@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>数据迁移工具 V3 - localStorage → Supabase</title>
+<title>鏁版嵁杩佺Щ宸ュ叿 V4 - localStorage 鈫?Supabase锛堝幓閲嶇増锛?/title>
 <style>
   body { font-family: sans-serif; max-width: 900px; margin: 40px auto; padding: 20px; background: #f5f5f5; }
   .card { background: white; padding: 24px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
@@ -23,21 +23,22 @@
 <body>
 
 <div class="card">
-  <h2>📦 数据迁移工具 V3</h2>
-  <p>将当前浏览器 <b>localStorage</b> 数据迁移到 <b>Supabase</b>，实现跨设备同步。</p>
-  <div id="connStatus" class="status">正在连接 Supabase...</div>
+  <h2>馃摝 鏁版嵁杩佺Щ宸ュ叿 V4锛堝幓閲嶇増锛?/h2>
+  <p>灏嗗綋鍓嶆祻瑙堝櫒 <b>localStorage</b> 鏁版嵁杩佺Щ鍒?<b>Supabase</b>锛屽疄鐜拌法璁惧鍚屾銆?br>
+  <b>V4 鏂扮壒鎬э細</b>澶氭鎵ц涓嶄細浜х敓閲嶅鏁版嵁锛岃嚜鍔ㄦ娴嬪苟璺宠繃宸插瓨鍦ㄨ褰曘€?/p>
+  <div id="connStatus" class="status">姝ｅ湪杩炴帴 Supabase...</div>
 
-  <h3>检测到以下数据（来自 localStorage）：</h3>
+  <h3>妫€娴嬪埌浠ヤ笅鏁版嵁锛堟潵鑷?localStorage锛夛細</h3>
   <div id="dataPreview"></div>
 
   <div style="margin-top: 20px;">
-    <button id="btnMigrate" disabled>🚀 开始迁移数据</button>
-    <button id="btnClear" class="secondary" style="display:none">🗑️ 清空 localStorage（迁移后执行）</button>
+    <button id="btnMigrate" disabled>馃殌 寮€濮嬭縼绉绘暟鎹?/button>
+    <button id="btnClear" class="secondary" style="display:none">馃棏锔?娓呯┖ localStorage锛堣縼绉诲悗鎵ц锛?/button>
   </div>
 </div>
 
 <div class="card">
-  <h2>📋 迁移日志</h2>
+  <h2>馃搵 杩佺Щ鏃ュ織</h2>
   <div id="log"></div>
 </div>
 
@@ -59,7 +60,7 @@ function getLS(key) {
 }
 
 // ====================================================
-// 精确的字段白名单（基于 Supabase 实际表结构）
+// 绮剧‘鐨勫瓧娈电櫧鍚嶅崟锛堝熀浜?Supabase 瀹為檯琛ㄧ粨鏋勶級
 // ====================================================
 const TABLE_SCHEMA = {
   announcements:     ['title', 'date', 'content'],
@@ -78,9 +79,28 @@ const TABLE_SCHEMA = {
   site_settings:     ['setting_key', 'setting_value', 'description'],
 };
 
-// 主键映射：localStorage 中数字 id → Supabase 中的 id（用于外键修复）
-const idRemapPolls = {};   // localPollId → supabasePollId
-const idRemapTopics = {};  // localTopicId → supabaseTopicId
+// ====================================================
+// 鍘婚噸瑙勫垯瀹氫箟锛氭瘡涓〃鐢ㄤ粈涔堝瓧娈电粍鍚堟潵鍒ゆ柇"宸插瓨鍦?
+// ====================================================
+const DEDUP_RULES = {
+  announcements:     ['title', 'date'],        // 鏍囬+鏃ユ湡鍞竴
+  dynamics:          ['title', 'date'],
+  members:           ['name'],
+  polls:             ['title'],                // 鏍囬鍞竴
+  poll_options:      ['poll_id', 'option_text'], // 鍚屼竴鎶曠エ鐨勯€夐」鍞竴
+  votes:             ['poll_id', 'property_address'], // 鍚屼竴鍦板潃鍦ㄥ悓涓€鎶曠エ涓彧鎶曚竴娆?  expenses:          ['item_name', 'date', 'amount'], // 椤圭洰鍚?鏃ユ湡+閲戦鍞竴
+  topics:            ['title', 'author'],      // 鏍囬+浣滆€呭敮涓€
+  replies:           ['topic_id', 'content', 'author'],
+  registered_users:  ['user_name'],            // 鐢ㄦ埛鍚嶅敮涓€
+  property_addresses:['address'],              // 鍦板潃鍞竴
+  admin_accounts:    ['username'],             // 鐢ㄦ埛鍚嶅敮涓€
+  admin_login_logs:  ['username', 'login_time'], // 鐢ㄦ埛+鐧诲綍鏃堕棿鍞竴
+  site_settings:     ['setting_key'],          // key 鍞竴
+};
+
+// 涓婚敭鏄犲皠锛歭ocalStorage 涓暟瀛?id 鈫?Supabase 涓殑 id锛堢敤浜庡閿慨澶嶏級
+const idRemapPolls = {};
+const idRemapTopics = {};
 
 function cleanRow(row, tableName) {
   const allowed = TABLE_SCHEMA[tableName] || [];
@@ -93,49 +113,103 @@ function cleanRow(row, tableName) {
   return out;
 }
 
+// ====================================================
+// 鏍稿績鍘婚噸鍑芥暟锛氭鏌?Supabase 涓槸鍚﹀凡瀛樺湪鐩稿悓鏁版嵁
+// ====================================================
+async function checkDuplicate(tableName, cleanRow) {
+  const dedupFields = DEDUP_RULES[tableName];
+  if (!dedupFields || dedupFields.length === 0) {
+    // 娌℃湁鍘婚噸瑙勫垯鐨勮〃锛屼笉鍋氬幓閲嶆鏌ワ紙渚濊禆 Supabase 鑷韩绾︽潫锛?    return false;
+  }
+
+  // 鏋勫缓鏌ヨ锛氱敤 OR 缁勫悎澶氫釜鏉′欢
+  const filters = [];
+  for (const field of dedupFields) {
+    if (cleanRow[field] !== undefined && cleanRow[field] !== null) {
+      filters.push(`${field}.eq.${encodeURIComponent(cleanRow[field])}`);
+    }
+  }
+
+  if (filters.length === 0) return false;
+
+  try {
+    const query = filters.join('&');
+    const { data, error } = await db.from(tableName)
+      .select('id')
+      .or(filters.map((f, i) => {
+        const field = dedupFields[i];
+        const val = cleanRow[field];
+        if (typeof val === 'string') return `${field}.eq.${val}`;
+        return `${field}.eq.${val}`;
+      }).join(','))
+      .limit(1);
+
+    if (error) {
+      // 鏌ヨ澶辫触锛屼繚瀹堢瓥鐣ワ細涓嶈烦杩囷紝璁?insert 鑷繁鍒ゆ柇
+      return false;
+    }
+
+    return data && data.length > 0;
+  } catch (e) {
+    return false;
+  }
+}
+
 async function migrateTable(tableName, lsKey, opts = {}) {
   const raw = getLS(lsKey);
   const data = Array.isArray(raw) ? raw : (raw ? [raw] : []);
 
   if (data.length === 0) {
-    log(`  ${tableName}: 无数据，跳过`, '#888');
-    return { inserted: 0, failed: 0 };
+    log(`  ${tableName}: 鏃犳暟鎹紝璺宠繃`, '#888');
+    return { inserted: 0, failed: 0, skipped: 0 };
   }
 
-  log(`  📤 ${tableName}: ${data.length} 条...`, '#ff0');
+  log(`  馃摛 ${tableName}: ${data.length} 鏉?..`, '#ff0');
 
-  let success = 0, fail = 0;
+  let success = 0, fail = 0, skipped = 0;
   const inserted = [];
 
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
     let clean = cleanRow(row, tableName);
 
-    // 修复外键：poll_options 和 votes 中 poll_id 需要映射
-    if ((tableName === 'poll_options' || tableName === 'votes') && clean.poll_id) {
+    // 淇澶栭敭锛歱oll_options 鍜?votes 涓?poll_id 闇€瑕佹槧灏?    if ((tableName === 'poll_options' || tableName === 'votes') && clean.poll_id) {
       const mapped = idRemapPolls[clean.poll_id];
       if (mapped) clean.poll_id = mapped;
     }
-    // 修复外键：replies 中 topic_id 需要映射
-    if (tableName === 'replies' && clean.topic_id) {
+    // 淇澶栭敭锛歳eplies 涓?topic_id 闇€瑕佹槧灏?    if (tableName === 'replies' && clean.topic_id) {
       const mapped = idRemapTopics[clean.topic_id];
       if (mapped) clean.topic_id = mapped;
     }
 
     if (Object.keys(clean).length === 0) {
-      log(`    #${i+1}: 无有效字段，跳过`, '#888');
+      log(`    #${i+1}: 鏃犳湁鏁堝瓧娈碉紝璺宠繃`, '#888');
       fail++;
+      continue;
+    }
+
+    // ========== V4 鏂板锛氬幓閲嶆鏌?==========
+    const isDuplicate = await checkDuplicate(tableName, clean);
+    if (isDuplicate) {
+      log(`    #${i+1}: 鈴笍 宸插瓨鍦紝璺宠繃锛堝幓閲嶏級`, '#888');
+      skipped++;
       continue;
     }
 
     const { data: ins, error } = await db.from(tableName).insert(clean).select('id');
     if (error) {
-      log(`    #${i+1}: ❌ ${error.message}`, '#f44');
-      fail++;
+      // 濡傛灉閿欒鏄敮涓€绾︽潫鍐茬獊锛堥噸澶嶏級锛岃涓鸿烦杩囪€岄潪澶辫触
+      if (error.code === '23505' || error.message.includes('duplicate') || error.message.includes('unique')) {
+        log(`    #${i+1}: 鈴笍 閲嶅锛堟暟鎹簱绾︽潫锛夛紝璺宠繃`, '#888');
+        skipped++;
+      } else {
+        log(`    #${i+1}: 鉂?${error.message}`, '#f44');
+        fail++;
+      }
     } else {
       success++;
       inserted.push({ localId: row.id, newId: ins?.[0]?.id });
-      // 记录 id 映射
+      // 璁板綍 id 鏄犲皠
       if (tableName === 'polls' && row.id && ins?.[0]?.id) {
         idRemapPolls[row.id] = ins[0].id;
       }
@@ -147,26 +221,33 @@ async function migrateTable(tableName, lsKey, opts = {}) {
 
   const el = document.getElementById(`st-${tableName}`);
   if (el) {
-    if (fail === 0) {
-      el.innerHTML = `✅ ${success} 条`;
+    if (fail === 0 && skipped === 0) {
+      el.innerHTML = `鉁?${success} 鏉;
+    } else if (fail === 0) {
+      el.innerHTML = `鉁?${success} 鏉?(璺宠繃 ${skipped})`;
     } else if (success > 0) {
-      el.innerHTML = `⚠️ ${success}/${data.length}`;
+      el.innerHTML = `鈿狅笍 ${success}/${data.length}`;
     } else {
-      el.innerHTML = `❌ 全部失败`;
+      el.innerHTML = `鉂?鍏ㄩ儴澶辫触`;
     }
   }
 
+  const parts = [];
+  if (success > 0) parts.push(`${success} 鎴愬姛`);
+  if (skipped > 0) parts.push(`${skipped} 璺宠繃`);
+  if (fail > 0) parts.push(`${fail} 澶辫触`);
+
   if (fail === 0) {
-    log(`  ✅ ${tableName}: ${success} 条成功`, '#0f0');
+    log(`  鉁?${tableName}: ${parts.join(', ')}`, '#0f0');
   } else {
-    log(`  ⚠️ ${tableName}: ${success} 成功, ${fail} 失败`, '#f90');
+    log(`  鈿狅笍 ${tableName}: ${parts.join(', ')}`, '#f90');
   }
 
-  return { inserted: success, failed: fail };
+  return { inserted: success, failed: fail, skipped: skipped };
 }
 
 const MIGRATIONS = [
-  // 无外键依赖的表（先迁移）
+  // 鏃犲閿緷璧栫殑琛紙鍏堣縼绉伙級
   { table: 'property_addresses',  key: 'yayehui_property_addresses' },
   { table: 'announcements',       key: 'yayehui_announcements' },
   { table: 'dynamics',            key: 'yayehui_dynamics' },
@@ -176,22 +257,20 @@ const MIGRATIONS = [
   { table: 'admin_login_logs',    key: 'yayehui_admin_login_logs' },
   { table: 'site_settings',       key: 'yayehui_site_settings' },
   { table: 'registered_users',    key: 'yayehui_registered_users' },
-  // 父表（需要在子表前迁移，并记录 id 映射）
-  { table: 'polls',               key: 'yayehui_polls' },
+  // 鐖惰〃锛堥渶瑕佸湪瀛愯〃鍓嶈縼绉伙紝骞惰褰?id 鏄犲皠锛?  { table: 'polls',               key: 'yayehui_polls' },
   { table: 'topics',              key: 'yayehui_topics' },
-  // 子表（依赖父表的 id）
-  { table: 'poll_options',        key: 'yayehui_poll_options' },
+  // 瀛愯〃锛堜緷璧栫埗琛ㄧ殑 id锛?  { table: 'poll_options',        key: 'yayehui_poll_options' },
   { table: 'votes',               key: 'yayehui_votes' },
   { table: 'replies',             key: 'yayehui_replies' },
 ];
 
 function previewData() {
   const el = document.getElementById('dataPreview');
-  let html = '<table><tr><th>数据表</th><th>本地条数</th><th>Supabase 状态</th></tr>';
+  let html = '<table><tr><th>鏁版嵁琛?/th><th>鏈湴鏉℃暟</th><th>Supabase 鐘舵€?/th></tr>';
   for (const m of MIGRATIONS) {
     const data = getLS(m.key);
     const count = Array.isArray(data) ? data.length : (data ? 1 : 0);
-    html += `<tr><td>${m.table}</td><td>${count} 条</td><td id="st-${m.table}">待迁移</td></tr>`;
+    html += `<tr><td>${m.table}</td><td>${count} 鏉?/td><td id="st-${m.table}">寰呰縼绉?/td></tr>`;
   }
   html += '</table>';
   el.innerHTML = html;
@@ -200,20 +279,21 @@ function previewData() {
 async function doMigrate() {
   const btn = document.getElementById('btnMigrate');
   btn.disabled = true;
-  btn.textContent = '⏳ 迁移中...';
-  log('=== 开始迁移 ===', '#0ff');
+  btn.textContent = '鈴?杩佺Щ涓?..';
+  log('=== 寮€濮嬭縼绉?(V4 鍘婚噸鐗? ===', '#0ff');
 
-  let totalOk = 0, totalFail = 0;
+  let totalOk = 0, totalFail = 0, totalSkip = 0;
   for (const m of MIGRATIONS) {
     const r = await migrateTable(m.table, m.key);
     totalOk += r.inserted;
     totalFail += r.failed;
+    totalSkip += (r.skipped || 0);
   }
 
-  log(`\n=== 迁移完成: ${totalOk} 成功, ${totalFail} 失败 ===`,
-    totalFail === 0 ? '#0ff' : '#f90');
+  const summary = `鎴愬姛: ${totalOk}, 璺宠繃(鍘婚噸): ${totalSkip}, 澶辫触: ${totalFail}`;
+  log(`\n=== 杩佺Щ瀹屾垚: ${summary} ===`, totalFail === 0 ? '#0ff' : '#f90');
 
-  btn.textContent = totalFail === 0 ? '✅ 全部成功' : '⚠️ 部分完成';
+  btn.textContent = totalFail === 0 ? '鉁?鍏ㄩ儴鎴愬姛' : '鈿狅笍 閮ㄥ垎瀹屾垚';
 
   if (totalOk > 0) {
     document.getElementById('btnClear').style.display = 'inline-block';
@@ -221,13 +301,12 @@ async function doMigrate() {
 }
 
 function doClear() {
-  if (!confirm('确认清空 localStorage 吗？\n迁移成功后数据已在 Supabase，可以清空本地缓存。')) return;
-  // 只清空业务数据，保留非业务 key
+  if (!confirm('纭娓呯┖ localStorage 鍚楋紵\n杩佺Щ鎴愬姛鍚庢暟鎹凡鍦?Supabase锛屽彲浠ユ竻绌烘湰鍦扮紦瀛樸€?)) return;
   const businessKeys = MIGRATIONS.map(m => m.key);
   businessKeys.push('yayehui_current_user', 'yayehui_current_panel');
   for (const k of businessKeys) localStorage.removeItem(k);
-  log('✅ localStorage 业务数据已清空', '#0f0');
-  alert('清空完成！请刷新前端页面，系统将从 Supabase 读取数据。');
+  log('鉁?localStorage 涓氬姟鏁版嵁宸叉竻绌?, '#0f0');
+  alert('娓呯┖瀹屾垚锛佽鍒锋柊鍓嶇椤甸潰锛岀郴缁熷皢浠?Supabase 璇诲彇鏁版嵁銆?);
 }
 
 async function init() {
@@ -236,14 +315,14 @@ async function init() {
     const { error } = await db.from('property_addresses').select('id').limit(1);
     if (error) throw error;
     statusEl.className = 'status ok';
-    statusEl.innerHTML = '✅ Supabase 连接成功！';
+    statusEl.innerHTML = '鉁?Supabase 杩炴帴鎴愬姛锛侊紙V4 鍘婚噸鐗堬級';
     document.getElementById('btnMigrate').disabled = false;
     previewData();
-    log('已就绪，Supabase 连接成功');
+    log('宸插氨缁紝Supabase 杩炴帴鎴愬姛銆俈4 鐗堟敮鎸侀槻閲嶅杩佺Щ銆?);
   } catch (e) {
     statusEl.className = 'status err';
-    statusEl.innerHTML = '❌ Supabase 连接失败：' + e.message;
-    log('连接失败: ' + e.message, '#f44');
+    statusEl.innerHTML = '鉂?Supabase 杩炴帴澶辫触锛? + e.message;
+    log('杩炴帴澶辫触: ' + e.message, '#f44');
   }
 }
 
