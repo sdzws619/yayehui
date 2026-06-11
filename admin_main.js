@@ -836,22 +836,37 @@
                 if(!confirm('确定删除该用户？'))return;
                 // 获取被删除用户的地址，用于同步更新房产地址注册状态
                 let deletedUserAddress = null;
-                if (!USE_SUPABASE) {
+                if (USE_SUPABASE) {
+                    try {
+                        const user = await db.registeredUsers.getById(id);
+                        if (user) deletedUserAddress = user.property_address;
+                    } catch(e) { console.warn('Failed to get user before delete:', e); }
+                } else {
                     const users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
                     const user = users.find(u => u.id === id);
                     if (user) deletedUserAddress = user.property_address;
                 }
                 if(USE_SUPABASE)await db.registeredUsers.delete(id); else{let u=JSON.parse(localStorage.getItem('yayehui_registered_users')||'[]').filter(u=>u.id!==id);localStorage.setItem('yayehui_registered_users',JSON.stringify(u));}
                 // 同步更新房产地址：如果该地址不再有注册用户，设为未注册
-                if (deletedUserAddress && !USE_SUPABASE) {
-                    const remainingUsers = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
-                    const stillRegistered = remainingUsers.some(u => u.property_address === deletedUserAddress);
-                    if (!stillRegistered) {
-                        let addrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
-                        const match = addrs.find(a => a.address === deletedUserAddress);
-                        if (match) {
-                            match.is_registered = false;
-                            localStorage.setItem('yayehui_property_addresses', JSON.stringify(addrs));
+                if (deletedUserAddress) {
+                    if (USE_SUPABASE) {
+                        try {
+                            const remainingUsers = await db.registeredUsers.getAll() || [];
+                            const stillRegistered = remainingUsers.some(u => u.property_address === deletedUserAddress);
+                            if (!stillRegistered) {
+                                await db.propertyAddresses.markUnregistered(deletedUserAddress);
+                            }
+                        } catch(e) { console.warn('Failed to unregister address:', e); }
+                    } else {
+                        const remainingUsers = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
+                        const stillRegistered = remainingUsers.some(u => u.property_address === deletedUserAddress);
+                        if (!stillRegistered) {
+                            let addrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
+                            const match = addrs.find(a => a.address === deletedUserAddress);
+                            if (match) {
+                                match.is_registered = false;
+                                localStorage.setItem('yayehui_property_addresses', JSON.stringify(addrs));
+                            }
                         }
                     }
                 }
@@ -868,7 +883,14 @@
         try {
             // 收集被删除用户的地址
             let deletedAddresses = [];
-            if (!USE_SUPABASE) {
+            if (USE_SUPABASE) {
+                for (const id of ids) {
+                    try {
+                        const user = await db.registeredUsers.getById(id);
+                        if (user && user.property_address) deletedAddresses.push(user.property_address);
+                    } catch(e) {}
+                }
+            } else {
                 const users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
                 deletedAddresses = users.filter(u => ids.includes(u.id)).map(u => u.property_address).filter(a => a);
             }
@@ -880,22 +902,32 @@
                 localStorage.setItem('yayehui_registered_users', JSON.stringify(u));
             }
             // 同步更新房产地址注册状态
-            if (deletedAddresses.length > 0 && !USE_SUPABASE) {
-                const remainingUsers = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
-                let addrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
-                let updated = false;
-                for (const delAddr of deletedAddresses) {
-                    const stillRegistered = remainingUsers.some(u => u.property_address === delAddr);
-                    if (!stillRegistered) {
-                        const match = addrs.find(a => a.address === delAddr);
-                        if (match && match.is_registered) {
-                            match.is_registered = false;
-                            updated = true;
+            if (deletedAddresses.length > 0) {
+                if (USE_SUPABASE) {
+                    const remainingUsers = await db.registeredUsers.getAll() || [];
+                    for (const delAddr of deletedAddresses) {
+                        const stillRegistered = remainingUsers.some(u => u.property_address === delAddr);
+                        if (!stillRegistered) {
+                            try { await db.propertyAddresses.markUnregistered(delAddr); } catch(e) { console.warn('markUnregistered failed:', e); }
                         }
                     }
-                }
-                if (updated) {
-                    localStorage.setItem('yayehui_property_addresses', JSON.stringify(addrs));
+                } else {
+                    const remainingUsers = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
+                    let addrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
+                    let updated = false;
+                    for (const delAddr of deletedAddresses) {
+                        const stillRegistered = remainingUsers.some(u => u.property_address === delAddr);
+                        if (!stillRegistered) {
+                            const match = addrs.find(a => a.address === delAddr);
+                            if (match && match.is_registered) {
+                                match.is_registered = false;
+                                updated = true;
+                            }
+                        }
+                    }
+                    if (updated) {
+                        localStorage.setItem('yayehui_property_addresses', JSON.stringify(addrs));
+                    }
                 }
             }
             renderUsersList();
@@ -965,17 +997,23 @@
             }
             // 同步更新房产地址的注册状态
             if (importedAddresses.length > 0) {
-                let addrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
-                let updated = false;
-                for (const importedAddr of importedAddresses) {
-                    const match = addrs.find(a => a.address === importedAddr);
-                    if (match && !match.is_registered) {
-                        match.is_registered = true;
-                        updated = true;
+                if (USE_SUPABASE) {
+                    for (const importedAddr of importedAddresses) {
+                        try { await db.propertyAddresses.markRegistered(importedAddr); } catch(e) { console.warn('markRegistered failed for', importedAddr, e); }
                     }
-                }
-                if (updated) {
-                    localStorage.setItem('yayehui_property_addresses', JSON.stringify(addrs));
+                } else {
+                    let addrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
+                    let updated = false;
+                    for (const importedAddr of importedAddresses) {
+                        const match = addrs.find(a => a.address === importedAddr);
+                        if (match && !match.is_registered) {
+                            match.is_registered = true;
+                            updated = true;
+                        }
+                    }
+                    if (updated) {
+                        localStorage.setItem('yayehui_property_addresses', JSON.stringify(addrs));
+                    }
                 }
             }
             alert('导入成功！');
@@ -993,14 +1031,22 @@
         opLock.show();
         try {
             const data = { user_name: name, phone: phone, property_address: address, created_at: new Date().toISOString() };
-            if (USE_SUPABASE) { await db.registeredUsers.create(data); } else { let a = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]'); data.id = nextId(a); a.push(data); localStorage.setItem('yayehui_registered_users', JSON.stringify(a)); }
-            // 同步更新房产地址的注册状态
-            if (address) {
-                let addrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
-                const match = addrs.find(a => a.address === address);
-                if (match && !match.is_registered) {
-                    match.is_registered = true;
-                    localStorage.setItem('yayehui_property_addresses', JSON.stringify(addrs));
+            if (USE_SUPABASE) {
+                await db.registeredUsers.create(data);
+                // 同步更新房产地址的注册状态
+                if (address) {
+                    try { await db.propertyAddresses.markRegistered(address); } catch(e) { console.warn('markRegistered failed:', e); }
+                }
+            } else {
+                let a = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]'); data.id = nextId(a); a.push(data); localStorage.setItem('yayehui_registered_users', JSON.stringify(a));
+                // 同步更新房产地址的注册状态
+                if (address) {
+                    let addrs = JSON.parse(localStorage.getItem('yayehui_property_addresses') || '[]');
+                    const match = addrs.find(a => a.address === address);
+                    if (match && !match.is_registered) {
+                        match.is_registered = true;
+                        localStorage.setItem('yayehui_property_addresses', JSON.stringify(addrs));
+                    }
                 }
             }
             document.getElementById('newUserName').value = '';
@@ -1042,9 +1088,26 @@
             </div>`;
         renderAddrList();
     }
+    // Auto-sync property_addresses.is_registered with registered_users
+    async function syncPropertyAddressStatus() {
+        if (!USE_SUPABASE) return;
+        try {
+            const users = await db.registeredUsers.getAll() || [];
+            const addrs = await db.propertyAddresses.getAll() || [];
+            const registeredAddrSet = new Set(users.map(u => u.property_address).filter(Boolean));
+            for (const addr of addrs) {
+                const shouldBeRegistered = registeredAddrSet.has(addr.address);
+                if (!!addr.is_registered !== shouldBeRegistered) {
+                    await db.propertyAddresses.update(addr.id, { is_registered: shouldBeRegistered });
+                }
+            }
+        } catch(e) { console.warn('Sync property status failed:', e); }
+    }
+
     async function renderAddrList() {
         const list = document.getElementById('addrList');
         if (!list) return;
+        await syncPropertyAddressStatus();
         const addrs = await getAllPropertyAddresses();
         list.innerHTML = addrs.map(a => `<div class="admin-item"><div class="item-checkbox-wrap"><input type="checkbox" class="item-checkbox" value="${a.id}"></div><div class="item-info"><strong>${escapeHtml(a.address||'')}</strong><br><small>栋: ${escapeHtml(a.building||'')} | 楼层: ${escapeHtml(a.floor||'')} | 房号: ${escapeHtml(a.unit||'')}</small><br><small>导入: ${formatDate(a.imported_at)} | ${a.is_registered?'<span style="color:#c2410c;">已注册</span>':'<span style="color:#2c6e49;">未注册</span>'}</small></div><div class="item-actions"><button class="btn-sm danger" onclick="deleteAddr(${a.id})"><i class="fas fa-trash-alt"></i></button></div></div>`).join('') || '<p class="loading">暂无地址</p>';
     }
