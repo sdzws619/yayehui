@@ -1191,7 +1191,7 @@
                 }
 
                 // 插入用户
-                const userData = { phone, user_name, password: regPwd, property_address, created_at: new Date().toISOString() };
+                const userData = { phone, user_name, password_hash: regPwd, property_address, created_at: new Date().toISOString() };
                 if (USE_SUPABASE) {
                     const result = await db.registeredUsers.create(userData);
                     // 更新房产地址注册状态
@@ -1336,10 +1336,10 @@ window.handleLogin = async function() {
         let user = null;
         if (USE_SUPABASE) {
             let users = await db.registeredUsers.getAll() || [];
-            user = users.find(u => (u.user_name === account || u.phone === account) && u.password === password);
+            user = users.find(u => (u.user_name === account || u.phone === account) && u.password_hash === password);
         } else {
             let users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
-            user = users.find(u => (u.user_name === account || u.phone === account) && u.password === password);
+            user = users.find(u => (u.user_name === account || u.phone === account) && u.password_hash === password);
         }
         if (user) {
             currentUser = user;
@@ -1514,12 +1514,7 @@ window.handleRegister = async function() {
             const userData = {
                 user_name: username,
                 phone: phone,
-                password: password,
-                property_address: address,
-                created_at: new Date().toISOString()
-            };
-            const result = await db.registeredUsers.create(userData);
-            // 更新房产地址注册状态
+                password_hash: password,
             await db.propertyAddresses.markRegistered(address);
             
             currentUser = { ...userData, id: result[0]?.id || result.id };
@@ -1558,7 +1553,7 @@ window.handleRegister = async function() {
                 id: users.length ? Math.max(...users.map(u => u.id)) + 1 : 1,
                 user_name: username,
                 phone: phone,
-                password: password,
+                password_hash: password,
                 property_address: address,
                 created_at: new Date().toISOString()
             };
@@ -2001,7 +1996,7 @@ window.checkSession = function() {
                     const updates = {};
                     if (usernameCheck && newUsername) updates.user_name = newUsername;
                     if (phoneCheck && newPhone) updates.phone = newPhone;
-                    if (passwordCheck && newPassword) updates.password = newPassword;
+                    if (passwordCheck && newPassword) updates.password_hash = newPassword;
                     if (Object.keys(updates).length === 0) {
                         alert('请至少填写一项要重置的内容');
                         return;
@@ -2013,7 +2008,7 @@ window.checkSession = function() {
                     if (userIndex !== -1) {
                         if (usernameCheck && newUsername) users[userIndex].user_name = newUsername;
                         if (phoneCheck && newPhone) users[userIndex].phone = newPhone;
-                        if (passwordCheck && newPassword) users[userIndex].password = newPassword;
+                        if (passwordCheck && newPassword) users[userIndex].password_hash = newPassword;
                         localStorage.setItem('yayehui_registered_users', JSON.stringify(users));
                     }
                 }
