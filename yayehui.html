@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="admin_db.js?v=20260611"></script>
+    <script src="admin_db.js?v=20260611b"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; line-height: 1.5; scroll-behavior: smooth; }
@@ -307,7 +307,9 @@
         </div>
         <div class="form-group">
             <label style="font-weight:600; font-size:0.9rem; color:#1e293b; display:block; margin-bottom:6px;">房产地址 <span style="color:#c2410c;">*</span></label>
-            <input type="text" id="modalRegAddress" placeholder="房产地址（必须从后台地址库选择）" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
+            <select id="modalRegAddress" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
+                <option value="">-- 请选择房产地址 --</option>
+            </select>
             <div id="modalRegAddressMsg" style="font-size:0.8rem; margin-top:4px;"></div>
         </div>
         <div style="display:flex; gap:10px; margin-top:20px;">
@@ -386,7 +388,8 @@
 
 
 <script>
-        let pageSizes = {
+    const USE_SUPABASE = true;
+    let pageSizes = {
         ann: 3, dyn: 3, topics: 3, members: 3, expenses: 3
     };
     let votePollInterval = null;
@@ -1038,6 +1041,38 @@
         return true;
     }
 
+    // 加载房产地址下拉列表（注册页面和模态框共用）
+    async function loadRegAddressDropdown(selectId = 'regAddress') {
+        const addrSelect = document.getElementById(selectId);
+        if (!addrSelect) return;
+        addrSelect.innerHTML = '<option value="">加载中...</option>';
+        try {
+            if (USE_SUPABASE) {
+                const [addrs, users] = await Promise.all([
+                    db.propertyAddresses.getAll() || [],
+                    db.registeredUsers.getAll() || []
+                ]);
+                const registeredAddrSet = new Set(users.map(u => u.property_address).filter(Boolean));
+                const available = addrs.filter(a => !registeredAddrSet.has(a.address));
+                const registered = addrs.filter(a => registeredAddrSet.has(a.address));
+                if (available.length === 0) {
+                    addrSelect.innerHTML = '<option value="">暂无可用地址（所有地址已被注册）</option>';
+                } else {
+                    addrSelect.innerHTML = '<option value="">-- 请选择房产地址 --</option>' +
+                        available.map(a => `<option value="${escapeHtml(a.address)}">${escapeHtml(a.address)} [可注册]</option>`).join('');
+                    if (registered.length > 0) {
+                        addrSelect.innerHTML += '<optgroup label="以下地址已被注册（不可选）">' +
+                            registered.map(a => `<option value="${escapeHtml(a.address)}" disabled style="color:#999;">${escapeHtml(a.address)} [已注册]</option>`).join('') +
+                            '</optgroup>';
+                    }
+                }
+            }
+        } catch(e) {
+            console.error('Failed to load addresses:', e);
+            addrSelect.innerHTML = '<option value="">加载地址失败，请刷新重试</option>';
+        }
+    }
+
     // 用户注册页面
     async function renderRegister() {
         const container = document.getElementById('registerSection');
@@ -1075,20 +1110,25 @@
                 <div class="form-group"><label>确认密码</label><input type="password" id="regConfirmPassword" placeholder="请再次输入密码"></div>
                 <div class="form-group">
                     <label style="font-weight:600;color:#1e293b;display:block;margin-bottom:6px;">房产地址 *</label>
-                    <input type="text" id="regAddress" placeholder="例：7座7楼701">
-                    <small style="color:#6c7a91;display:block;margin-top:4px;">格式：X座X楼X号，如 7座7楼701</small>
+                    <select id="regAddress" style="width:100%; padding:14px 18px; border:1px solid #cfdfd3; border-radius:40px; font-family:inherit; font-size:1rem; background:#fefefe;">
+                        <option value="">-- 请选择房产地址 --</option>
+                    </select>
+                    <small style="color:#6c7a91;display:block;margin-top:4px;">请从下拉列表中选择您的房产地址</small>
                 </div>
                 <div class="form-group" style="margin-top:24px;">
                     <button class="btn" id="doRegisterBtn" style="width:100%;">完成注册</button>
                 </div>
             </div>`;
 
+        // 加载房产地址下拉列表
+        loadRegAddressDropdown();
+
         document.getElementById('doRegisterBtn').onclick = async () => {
             const phone = document.getElementById('regPhone').value.trim();
             const user_name = document.getElementById('regName').value.trim();
             const regPwd = document.getElementById('regPassword').value.trim();
             const regConfirmPwd = document.getElementById('regConfirmPassword').value.trim();
-            const property_address = document.getElementById('regAddress').value.trim();
+            const property_address = document.getElementById('regAddress').value;
             const errorDiv = document.getElementById('registerError');
 
             if (!phone || !user_name || !regPwd || !regConfirmPwd || !property_address) {
@@ -1237,15 +1277,17 @@ window.hideProfileModal = function() {
 };
 
 // 显示注册模态框
-window.showRegisterModal = function() {
+window.showRegisterModal = async function() {
     document.getElementById('registerModal').style.display = 'flex';
     // 清空表单
-    ['modalRegUsername','modalRegPhone','modalRegPassword','modalRegConfirmPassword','modalRegAddress'].forEach(id => {
+    ['modalRegUsername','modalRegPhone','modalRegPassword','modalRegConfirmPassword'].forEach(id => {
         document.getElementById(id).value = '';
     });
     ['modalRegUsernameMsg','modalRegPhoneMsg','modalRegAddressMsg'].forEach(id => {
         document.getElementById(id).textContent = '';
     });
+    // 加载房产地址下拉列表
+    await loadRegAddressDropdown('modalRegAddress');
 };
 
 // 隐藏注册模态框
@@ -1342,8 +1384,15 @@ window.handleProfileUpdate = async function() {
                 document.getElementById('addressCheckMsg').style.color = '#c2410c';
                 return;
             }
+            // 同步房产地址注册状态：旧地址→未注册，新地址→已注册
+            const oldAddress = currentUser.property_address;
+            if (oldAddress && oldAddress !== address) {
+                try { await db.propertyAddresses.updateByField('address', oldAddress, { is_registered: false }); } catch(e) { console.warn('Failed to unregister old address:', e); }
+            }
             // 更新用户信息
             await db.registeredUsers.update(currentUser.id, { phone, user_name: username, property_address: address });
+            // 标记新地址为已注册
+            try { await db.propertyAddresses.markRegistered(address); } catch(e) { console.warn('Failed to mark address registered:', e); }
             currentUser.phone = phone;
             currentUser.user_name = username;
             currentUser.property_address = address;
@@ -1396,7 +1445,14 @@ window.handleRegister = async function() {
     const phone = phoneEl ? phoneEl.value.trim() : '';
     const password = passwordEl ? passwordEl.value.trim() : '';
     const confirmPassword = confirmPasswordEl ? confirmPasswordEl.value.trim() : '';
-    const address = addressEl ? addressEl.value.trim() : '';
+    const address = addressEl ? addressEl.value : '';  // select element - value is already trimmed by HTML
+    
+    // Check if selected option is disabled (already registered)
+    if (addressEl && addressEl.selectedOptions[0] && addressEl.selectedOptions[0].disabled) {
+        document.getElementById('modalRegAddressMsg').textContent = '该房产地址已被注册，请选择其他地址。';
+        document.getElementById('modalRegAddressMsg').style.color = '#c2410c';
+        return;
+    }
     
     // 调试：显示每个字段的值
     console.log('注册调试：', { username, phone, password, confirmPassword, address });
@@ -1431,7 +1487,14 @@ window.handleRegister = async function() {
                 document.getElementById('modalRegPhoneMsg').style.color = '#c2410c';
                 return;
             }
-            // 验证房产地址
+            // 再次验证房产地址（防止并发注册）
+            const alreadyRegistered = users.find(u => u.property_address === address);
+            if (alreadyRegistered) {
+                document.getElementById('modalRegAddressMsg').textContent = '该房产地址已被注册，一个房产地址只能注册一个用户。';
+                document.getElementById('modalRegAddressMsg').style.color = '#c2410c';
+                return;
+            }
+            // 验证房产地址在地址库中
             let addrs = await db.propertyAddresses.getAll() || [];
             const matched = addrs.find(a => a.address === address);
             if (!matched) {
@@ -1448,7 +1511,7 @@ window.handleRegister = async function() {
             const userData = {
                 user_name: username,
                 phone: phone,
-                password: password, // 注意：实际应该加密存储
+                password: password,
                 property_address: address,
                 created_at: new Date().toISOString()
             };
@@ -1456,7 +1519,7 @@ window.handleRegister = async function() {
             // 更新房产地址注册状态
             await db.propertyAddresses.markRegistered(address);
             
-            currentUser = { ...userData, id: result.id };
+            currentUser = { ...userData, id: result[0]?.id || result.id };
             localStorage.setItem('yayehui_current_user', JSON.stringify(currentUser));
             hideRegisterModal();
             alert('注册成功！');
@@ -1928,10 +1991,18 @@ window.checkSession = function() {
             
             try {
                 if (USE_SUPABASE) {
+                    if (!window.resetPasswordUser || !window.resetPasswordUser.id) {
+                        alert('用户信息丢失，请重新验证手机号');
+                        return;
+                    }
                     const updates = {};
                     if (usernameCheck && newUsername) updates.user_name = newUsername;
                     if (phoneCheck && newPhone) updates.phone = newPhone;
                     if (passwordCheck && newPassword) updates.password = newPassword;
+                    if (Object.keys(updates).length === 0) {
+                        alert('请至少填写一项要重置的内容');
+                        return;
+                    }
                     await db.registeredUsers.update(window.resetPasswordUser.id, updates);
                 } else {
                     const users = JSON.parse(localStorage.getItem('yayehui_registered_users') || '[]');
@@ -1946,7 +2017,8 @@ window.checkSession = function() {
                 alert('重置成功！');
                 hideResetPasswordModal();
             } catch (e) {
-                alert('重置失败，请稍后重试');
+                console.error('Reset error:', e);
+                alert('重置失败：' + (e.message || '请稍后重试'));
             }
         });
         
@@ -1973,5 +2045,4 @@ window.checkSession = function() {
 </script>
 </body>
 </html>
-
 
