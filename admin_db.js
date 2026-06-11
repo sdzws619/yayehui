@@ -198,4 +198,5 @@ const db = {
     }
 };
 
-const USE_SUPABASE = true;
+// 娉ㄦ剰锛歎SE_SUPABASE 鍦?yayehui.html 鍐呰仈鑴氭湰涓篃澹版槑浜嗭紝
+// 鎵€浠ヨ繖閲屼笉鑳界敤 const锛堟祻瑙堝櫒鍏ㄥ眬浣滅敤鍩熶腑閲嶅澹版槑 const 浼氭姤 SyntaxError锛?var USE_SUPABASE = true;
