@@ -1,11 +1,12 @@
-// Supabase 鍒濆鍖?鈥?闆呬笟浼氬钩鍙?// 姝ゆ枃浠剁敱 admin.html 鍜?yayehui.html 鍏变韩
+// Supabase initialization - Yayehui Platform
+// Shared by admin.html and yayehui.html
 
 const SUPABASE_URL = 'https://wrodvjsbdrxunaiwoaml.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indyb2R2anNiZHJ4dW5haXdvYW1sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1MTg1OTYsImV4cCI6MjA5NTA5NDU5Nn0.fQF-gyK53zsaqyojHxXrCBR5lZ6Ioib4rNvgPZ4J4Ww';
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ========== 閫氱敤 Supabase CRUD 杈呭姪 ==========
+// ========== Generic Supabase CRUD helpers ==========
 function sbTable(tableName) {
     return {
         async getAll() {
@@ -35,7 +36,7 @@ function sbTable(tableName) {
     };
 }
 
-// 杈呭姪锛氭寜闈?id 瀛楁鏌ヨ
+// Helper: query by non-id field
 function sbQuery(tableName) {
     return {
         async getByField(field, value) {
@@ -55,9 +56,9 @@ function sbQuery(tableName) {
     };
 }
 
-// ========== db 瀵硅薄 鈥?鎵€鏈夎〃鐨勫皝瑁呮柟娉?==========
+// ========== db object - all table CRUD methods ==========
 const db = {
-    // --- 鍏憡 announcements ---
+    // --- announcements ---
     announcements: {
         getAll: sbTable('announcements').getAll,
         getById: sbTable('announcements').getById,
@@ -66,7 +67,7 @@ const db = {
         delete: sbTable('announcements').delete
     },
 
-    // --- 宸ヤ綔鍔ㄦ€?dynamics ---
+    // --- dynamics ---
     dynamics: {
         getAll: sbTable('dynamics').getAll,
         getById: sbTable('dynamics').getById,
@@ -75,7 +76,7 @@ const db = {
         delete: sbTable('dynamics').delete
     },
 
-    // --- 涓氬浼氭垚鍛?members ---
+    // --- members ---
     members: {
         getAll: sbTable('members').getAll,
         getById: sbTable('members').getById,
@@ -84,7 +85,7 @@ const db = {
         delete: sbTable('members').delete
     },
 
-    // --- 鎶曠エ polls ---
+    // --- polls ---
     polls: {
         getAll: sbTable('polls').getAll,
         getById: sbTable('polls').getById,
@@ -98,7 +99,7 @@ const db = {
         delete: sbTable('polls').delete
     },
 
-    // --- 鎶曠エ閫夐」 poll_options ---
+    // --- poll_options ---
     pollOptions: {
         getAll: sbTable('poll_options').getAll,
         getById: sbTable('poll_options').getById,
@@ -108,7 +109,7 @@ const db = {
         delete: sbTable('poll_options').delete
     },
 
-    // --- 鎶曠エ璁板綍 votes ---
+    // --- votes ---
     votes: {
         getAll: sbTable('votes').getAll,
         getByPollId: sbQuery('votes').getByField.bind(null, 'poll_id'),
@@ -116,7 +117,7 @@ const db = {
         delete: sbTable('votes').delete
     },
 
-    // --- 璐圭敤鍏ず expenses ---
+    // --- expenses ---
     expenses: {
         getAll: sbTable('expenses').getAll,
         getById: sbTable('expenses').getById,
@@ -125,7 +126,7 @@ const db = {
         delete: sbTable('expenses').delete
     },
 
-    // --- 涓氫富蹇冨０ topics ---
+    // --- topics ---
     topics: {
         getAll: sbTable('topics').getAll,
         getById: sbTable('topics').getById,
@@ -134,7 +135,7 @@ const db = {
         delete: sbTable('topics').delete
     },
 
-    // --- 蹇冨０鍥炲 replies ---
+    // --- replies ---
     replies: {
         getAll: sbTable('replies').getAll,
         getByTopicId: sbQuery('replies').getByField.bind(null, 'topic_id'),
@@ -142,7 +143,7 @@ const db = {
         delete: sbTable('replies').delete
     },
 
-    // --- 娉ㄥ唽鐢ㄦ埛 registered_users ---
+    // --- registered_users ---
     registeredUsers: {
         getAll: sbTable('registered_users').getAll,
         getById: sbTable('registered_users').getById,
@@ -151,7 +152,7 @@ const db = {
         delete: sbTable('registered_users').delete
     },
 
-    // --- 鎴夸骇鍦板潃 property_addresses ---
+    // --- property_addresses ---
     propertyAddresses: {
         getAll: sbTable('property_addresses').getAll,
         getById: sbTable('property_addresses').getById,
@@ -166,7 +167,7 @@ const db = {
         }
     },
 
-    // --- 绔欑偣璁剧疆 site_settings ---
+    // --- site_settings ---
     siteSettings: {
         getAll: sbTable('site_settings').getAll,
         getById: sbTable('site_settings').getById,
@@ -175,7 +176,7 @@ const db = {
         delete: sbTable('site_settings').delete
     },
 
-    // --- 绠＄悊鍛樿处鍙?admin_accounts ---
+    // --- admin_accounts ---
     adminAccounts: {
         getAll: sbTable('admin_accounts').getAll,
         getById: sbTable('admin_accounts').getById,
@@ -190,7 +191,7 @@ const db = {
         }
     },
 
-    // --- 鐧诲綍鏃ュ織 admin_login_logs ---
+    // --- admin_login_logs ---
     adminLoginLogs: {
         getAll: sbTable('admin_login_logs').getAll,
         create: sbTable('admin_login_logs').create,
@@ -198,5 +199,6 @@ const db = {
     }
 };
 
-// 娉ㄦ剰锛歎SE_SUPABASE 鍦?yayehui.html 鍐呰仈鑴氭湰涓篃澹版槑浜嗭紝
-// 鎵€浠ヨ繖閲屼笉鑳界敤 const锛堟祻瑙堝櫒鍏ㄥ眬浣滅敤鍩熶腑閲嶅澹版槑 const 浼氭姤 SyntaxError锛?var USE_SUPABASE = true;
+// Note: USE_SUPABASE may also be declared in yayehui.html inline script,
+// so use var instead of const to avoid SyntaxError on redeclaration in browser global scope.
+var USE_SUPABASE = true;
