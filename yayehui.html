@@ -1045,6 +1045,9 @@
     }
 
     // 加载房产地址下拉列表（注册页面和模态框共用）
+    // 支持关键词搜索过滤，保持原有分组和禁用状态
+    let __addrCache = {}; // 缓存地址数据供搜索使用
+
     async function loadRegAddressDropdown(selectId = 'regAddress') {
         const addrSelect = document.getElementById(selectId);
         if (!addrSelect) return;
@@ -1058,22 +1061,94 @@
                 const registeredAddrSet = new Set(users.map(u => u.property_address).filter(Boolean));
                 const available = addrs.filter(a => !registeredAddrSet.has(a.address));
                 const registered = addrs.filter(a => registeredAddrSet.has(a.address));
-                if (available.length === 0) {
-                    addrSelect.innerHTML = '<option value="">暂无可用地址（所有地址已被注册）</option>';
-                } else {
-                    addrSelect.innerHTML = '<option value="">-- 请选择房产地址 --</option>' +
-                        available.map(a => `<option value="${escapeHtml(a.address)}">${escapeHtml(a.address)} [可注册]</option>`).join('');
-                    if (registered.length > 0) {
-                        addrSelect.innerHTML += '<optgroup label="以下地址已被注册（不可选）">' +
-                            registered.map(a => `<option value="${escapeHtml(a.address)}" disabled style="color:#999;">${escapeHtml(a.address)} [已注册]</option>`).join('') +
-                            '</optgroup>';
-                    }
-                }
+
+                // 缓存数据供搜索使用
+                __addrCache[selectId] = { available, registered };
+
+                renderAddressOptions(addrSelect, available, registered, '');
+                setupAddressSearch(selectId);
             }
         } catch(e) {
             console.error('Failed to load addresses:', e);
             addrSelect.innerHTML = '<option value="">加载地址失败，请刷新重试</option>';
         }
+    }
+
+    // 渲染地址选项（支持过滤关键词）
+    function renderAddressOptions(selectEl, available, registered, keyword) {
+        const k = keyword.trim().toLowerCase();
+        const filteredAvailable = k ? available.filter(a => a.address.toLowerCase().includes(k)) : available;
+        const filteredRegistered = k ? registered.filter(a => a.address.toLowerCase().includes(k)) : registered;
+
+        if (filteredAvailable.length === 0 && filteredRegistered.length === 0) {
+            selectEl.innerHTML = '<option value="">无匹配地址</option>';
+            return;
+        }
+
+        let html = '<option value="">-- 请选择房产地址 --</option>';
+
+        if (filteredAvailable.length > 0) {
+            html += filteredAvailable.map(a =>
+                `<option value="${escapeHtml(a.address)}">${escapeHtml(a.address)} [可注册]</option>`
+            ).join('');
+        }
+
+        if (filteredRegistered.length > 0) {
+            html += '<optgroup label="以下地址已被注册（不可选）">' +
+                filteredRegistered.map(a =>
+                    `<option value="${escapeHtml(a.address)}" disabled style="color:#999;">${escapeHtml(a.address)} [已注册]</option>`
+                ).join('') +
+                '</optgroup>';
+        }
+
+        // 保留当前选中值
+        const currentValue = selectEl.value;
+        selectEl.innerHTML = html;
+        if (currentValue) {
+            const option = selectEl.querySelector(`option[value="${CSS.escape(currentValue)}"]`);
+            if (option && !option.disabled) selectEl.value = currentValue;
+        }
+    }
+
+    // 设置地址搜索功能
+    function setupAddressSearch(selectId) {
+        const selectEl = document.getElementById(selectId);
+        if (!selectEl) return;
+
+        // 检查是否已存在搜索框
+        const existingSearch = document.getElementById(selectId + '_search');
+        if (existingSearch) return; // 已初始化过
+
+        // 创建搜索输入框
+        const searchWrap = document.createElement('div');
+        searchWrap.className = 'addr-search-wrap';
+        searchWrap.style.cssText = 'position:relative;margin-bottom:8px;';
+        searchWrap.innerHTML = `
+            <input type="text" id="${selectId}_search" placeholder="输入关键词搜索地址（如：2座、201）" 
+                style="width:100%;padding:10px 14px 10px 36px;border:1px solid #cfdfd3;border-radius:40px;font-family:inherit;font-size:0.95rem;background:#fefefe;outline:none;transition:border-color 0.2s;">
+            <i class="fas fa-search" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:0.85rem;"></i>
+        `;
+
+        // 插入到 select 前面
+        selectEl.parentNode.insertBefore(searchWrap, selectEl);
+
+        // 绑定输入事件
+        const searchInput = document.getElementById(selectId + '_search');
+        searchInput.addEventListener('input', (e) => {
+            const keyword = e.target.value;
+            const cache = __addrCache[selectId];
+            if (cache) {
+                renderAddressOptions(selectEl, cache.available, cache.registered, keyword);
+            }
+        });
+
+        // 聚焦时展开下拉（可选体验优化）
+        searchInput.addEventListener('focus', () => {
+            searchInput.style.borderColor = '#2c6e49';
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.style.borderColor = '#cfdfd3';
+        });
     }
 
     // 用户注册页面
