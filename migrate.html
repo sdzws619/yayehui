@@ -5,25 +5,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>数据迁移工具 - localStorage → Supabase</title>
 <style>
-  body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; background: #f5f5f5; }
+  body { font-family: sans-serif; max-width: 900px; margin: 40px auto; padding: 20px; background: #f5f5f5; }
   .card { background: white; padding: 24px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
   h2 { margin-top: 0; color: #333; }
   button { background: #e74c3c; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; cursor: pointer; margin: 8px 8px 8px 0; }
   button:disabled { background: #ccc; cursor: not-allowed; }
   button.secondary { background: #3498db; }
-  #log { background: #1e1e1e; color: #0f0; padding: 16px; border-radius: 6px; height: 300px; overflow-y: auto; font-family: monospace; font-size: 13px; white-space: pre-wrap; }
+  #log { background: #1e1e1e; color: #0f0; padding: 16px; border-radius: 6px; height: 350px; overflow-y: auto; font-family: monospace; font-size: 13px; white-space: pre-wrap; }
   .status { padding: 12px; border-radius: 6px; margin: 12px 0; }
   .status.ok { background: #d4edda; color: #155724; }
   .status.err { background: #f8d7da; color: #721c24; }
   table { width: 100%; border-collapse: collapse; margin: 12px 0; }
   th, td { padding: 8px 12px; border: 1px solid #ddd; text-align: left; font-size: 14px; }
   th { background: #f0f0f0; }
+  .warn { color: #f39c12; }
+  .success { color: #27ae60; }
+  .error { color: #e74c3c; }
 </style>
 </head>
 <body>
 
 <div class="card">
-  <h2>📦 数据迁移工具</h2>
+  <h2>📦 数据迁移工具 V2</h2>
   <p>此工具将当前浏览器 <b>localStorage</b> 中的数据迁移到 <b>Supabase</b> 云端数据库，实现跨设备同步。</p>
   
   <div id="connStatus" class="status">正在连接 Supabase...</div>
@@ -48,12 +51,6 @@ const SUPABASE_URL = 'https://wrodvjsbdrxunaiwoaml.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indyb2R2anNiZHJ4dW5haXdvYW1sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1MTg1OTYsImV4cCI6MjA5NTA5NDU5Nn0.fQF-gyK53zsaqyojHxXrCBR5lZ6Ioib4rNvgPZ4J4Ww';
 
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-const TABLES = [
-  'announcements', 'dynamics', 'members', 'polls', 'poll_options',
-  'votes', 'expenses', 'topics', 'replies',
-  'registered_users', 'property_addresses',
-  'admin_accounts', 'admin_login_logs', 'site_settings'
-];
 
 const logEl = document.getElementById('log');
 function log(msg, color = '#0f0') {
@@ -65,6 +62,35 @@ function log(msg, color = '#0f0') {
 function getLocalData(key) {
   try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; }
 }
+
+// 字段映射：localStorage字段名 -> Supabase字段名
+const FIELD_MAP = {
+  'registered_users': {
+    'name': 'username',      // localStorage用 name, Supabase可能用 username
+    'phone': 'phone',
+    'property_address': 'property_address',
+    'password': 'password',
+    'is_verified': 'is_verified',
+    'registered_at': 'registered_at'
+  },
+  'poll_options': {
+    'poll_id': 'poll_id',
+    'option_text': 'option_text',
+    'votes': 'votes'
+  },
+  'replies': {
+    'topic_id': 'topic_id',
+    'content': 'content',
+    'author': 'author',
+    'created_at': 'created_at'
+  },
+  'votes': {
+    'poll_id': 'poll_id',
+    'property_address': 'property_address',
+    'option_id': 'option_id',
+    'voted_at': 'voted_at'
+  }
+};
 
 async function checkSupabase() {
   const statusEl = document.getElementById('connStatus');
@@ -88,7 +114,6 @@ function previewLocalData() {
   const el = document.getElementById('dataPreview');
   let html = '<table><tr><th>数据表</th><th>localStorage 条数</th><th>Supabase 状态</th></tr>';
   
-  // Check each table's localStorage data
   const keyMap = {
     'announcements': 'yayehui_announcements',
     'dynamics': 'yayehui_dynamics',
@@ -106,7 +131,7 @@ function previewLocalData() {
     'site_settings': 'yayehui_site_settings'
   };
 
-  for (const t of TABLES) {
+  for (const t of Object.keys(keyMap)) {
     const lsKey = keyMap[t];
     const data = getLocalData(lsKey);
     const count = Array.isArray(data) ? data.length : (data ? 1 : 0);
@@ -114,6 +139,27 @@ function previewLocalData() {
   }
   html += '</table>';
   el.innerHTML = html;
+}
+
+// 清理数据：移除 id 和 created_at，映射字段名
+function cleanRow(row, tableName) {
+  const { id, created_at, ...rest } = row;
+  const map = FIELD_MAP[tableName];
+  if (!map) return rest;
+  
+  const mapped = {};
+  for (const [lsKey, sbKey] of Object.entries(map)) {
+    if (rest[lsKey] !== undefined) {
+      mapped[sbKey] = rest[lsKey];
+    }
+  }
+  // 保留未映射的字段（以防万一）
+  for (const key of Object.keys(rest)) {
+    if (!map[key] && !mapped[key]) {
+      mapped[key] = rest[key];
+    }
+  }
+  return mapped;
 }
 
 async function migrateTable(tableName, lsKey) {
@@ -125,23 +171,54 @@ async function migrateTable(tableName, lsKey) {
 
   log(`  📤 迁移 ${tableName}: ${data.length} 条...`, '#ffa');
   
-  // Remove 'id' field if exists (let Supabase auto-generate)
-  const clean = data.map(row => {
-    const { id, created_at, ...rest } = row;
-    return rest;
-  });
-
+  // 先尝试批量插入
+  const clean = data.map(row => cleanRow(row, tableName));
+  
   try {
     const { data: inserted, error } = await db.from(tableName).insert(clean).select();
-    if (error) throw error;
-    log(`  ✅ ${tableName}: 成功插入 ${inserted?.length || clean.length} 条`, '#0f0');
-    document.getElementById(`st-${tableName}`).innerHTML = `✅ ${inserted?.length || clean.length} 条`;
-    return { table: tableName, inserted: inserted?.length || clean.length };
+    if (!error) {
+      log(`  ✅ ${tableName}: 批量插入成功 ${inserted?.length || clean.length} 条`, '#0f0');
+      document.getElementById(`st-${tableName}`).innerHTML = `✅ ${inserted?.length || clean.length} 条`;
+      return { table: tableName, inserted: inserted?.length || clean.length };
+    }
+    // 批量失败，尝试逐条插入
+    log(`  ⚠️ 批量插入失败: ${error.message}，尝试逐条插入...`, '#f90');
   } catch (e) {
-    log(`  ❌ ${tableName}: 插入失败 - ${e.message}`, '#f44');
-    document.getElementById(`st-${tableName}`).innerHTML = `❌ 失败`;
-    return { table: tableName, error: e.message };
+    log(`  ⚠️ 批量插入异常: ${e.message}，尝试逐条插入...`, '#f90');
   }
+
+  // 逐条插入
+  let success = 0, fail = 0;
+  const errors = [];
+  for (let i = 0; i < clean.length; i++) {
+    try {
+      const { error } = await db.from(tableName).insert(clean[i]);
+      if (error) {
+        fail++;
+        if (errors.length < 3) errors.push(`#${i+1}: ${error.message}`);
+      } else {
+        success++;
+      }
+    } catch (e) {
+      fail++;
+      if (errors.length < 3) errors.push(`#${i+1}: ${e.message}`);
+    }
+  }
+  
+  if (fail === 0) {
+    log(`  ✅ ${tableName}: 逐条插入成功 ${success} 条`, '#0f0');
+    document.getElementById(`st-${tableName}`).innerHTML = `✅ ${success} 条`;
+  } else if (success > 0) {
+    log(`  ⚠️ ${tableName}: ${success} 条成功, ${fail} 条失败`, '#f90');
+    errors.forEach(e => log(`    - ${e}`, '#f44'));
+    document.getElementById(`st-${tableName}`).innerHTML = `⚠️ ${success}/${clean.length}`;
+  } else {
+    log(`  ❌ ${tableName}: 全部 ${fail} 条失败`, '#f44');
+    errors.forEach(e => log(`    - ${e}`, '#f44'));
+    document.getElementById(`st-${tableName}`).innerHTML = `❌ 失败`;
+  }
+  
+  return { table: tableName, inserted: success, failed: fail };
 }
 
 async function doMigrate() {
@@ -151,20 +228,26 @@ async function doMigrate() {
 
   log('=== 开始迁移 ===', '#0ff');
 
+  // 按依赖顺序迁移：父表在前，子表在后
   const migrations = [
+    // 无依赖的表
     { table: 'property_addresses', key: 'yayehui_property_addresses' },
-    { table: 'registered_users', key: 'yayehui_registered_users' },
     { table: 'announcements', key: 'yayehui_announcements' },
     { table: 'dynamics', key: 'yayehui_dynamics' },
     { table: 'members', key: 'yayehui_members' },
+    { table: 'expenses', key: 'yayehui_expenses' },
+    { table: 'site_settings', key: 'yayehui_site_settings' },
+    { table: 'admin_accounts', key: 'yayehui_admin_accounts' },
+    { table: 'admin_login_logs', key: 'yayehui_admin_login_logs' },
+    // polls 在 poll_options 和 votes 之前
     { table: 'polls', key: 'yayehui_polls' },
+    { table: 'topics', key: 'yayehui_topics' },
+    // 依赖 polls 的表
+    { table: 'registered_users', key: 'yayehui_registered_users' },
     { table: 'poll_options', key: 'yayehui_poll_options' },
     { table: 'votes', key: 'yayehui_votes' },
-    { table: 'expenses', key: 'yayehui_expenses' },
-    { table: 'topics', key: 'yayehui_topics' },
+    // 依赖 topics 的表
     { table: 'replies', key: 'yayehui_replies' },
-    { table: 'admin_accounts', key: 'yayehui_admin_accounts' },
-    { table: 'site_settings', key: 'yayehui_site_settings' },
   ];
 
   const results = [];
@@ -175,7 +258,8 @@ async function doMigrate() {
 
   log('=== 迁移完成 ===', '#0ff');
   const total = results.filter(r => r.inserted).reduce((s, r) => s + r.inserted, 0);
-  log(`共迁移 ${total} 条数据`, '#0f0');
+  const totalFail = results.filter(r => r.failed).reduce((s, r) => s + r.failed, 0);
+  log(`共迁移 ${total} 条数据${totalFail > 0 ? `, ${totalFail} 条失败` : ''}`, totalFail > 0 ? '#f90' : '#0f0');
 
   btn.textContent = '✅ 迁移完成';
   document.getElementById('btnClear').disabled = false;
