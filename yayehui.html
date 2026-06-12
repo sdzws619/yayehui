@@ -74,6 +74,15 @@
         .form-group { margin-bottom: 20px; }
         .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 14px 18px; border: 1px solid #cfdfd3; border-radius: 40px; font-family: inherit; font-size: 1rem; background: #fefefe; }
         .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: #2c6e49; box-shadow: 0 0 0 2px rgba(44,110,73,0.2); }
+        /* 地址自动补全 */
+        .addr-autocomplete-wrap { position: relative; }
+        .addr-autocomplete-item { padding: 10px 16px; cursor: pointer; font-size: 0.95rem; font-family: inherit; color: #1e293b; transition: background 0.15s; border-radius: 8px; margin: 2px 4px; }
+        .addr-autocomplete-item:hover, .addr-autocomplete-item.active { background: #f0f7f1; color: #1f4f2d; }
+        .addr-autocomplete-item.registered { color: #94a3b8; cursor: not-allowed; }
+        .addr-autocomplete-item.registered:hover { background: transparent; color: #94a3b8; }
+        .addr-autocomplete-empty { padding: 12px 16px; color: #94a3b8; font-size: 0.9rem; text-align: center; }
+        .addr-autocomplete-loading { padding: 12px 16px; color: #94a3b8; font-size: 0.9rem; text-align: center; }
+        #modalRegAddressInput:focus, #regAddressInput:focus { border-color: #2c6e49; box-shadow: 0 0 0 2px rgba(44,110,73,0.2); }
         .btn { background: #2c6e49; color: white; border: none; padding: 12px 28px; border-radius: 40px; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 1rem; }
         .btn:hover { background: #1f553a; transform: scale(0.97); }
         .btn-secondary { background: #e2e8f0; color: #1e293b; }
@@ -310,9 +319,16 @@
         </div>
         <div class="form-group">
             <label style="font-weight:600; font-size:0.9rem; color:#1e293b; display:block; margin-bottom:6px;">房产地址 <span style="color:#c2410c;">*</span></label>
-            <select id="modalRegAddress" style="width:100%; padding:10px 14px; border-radius:24px; border:1px solid #cfdfd3; font-family:inherit;">
-                <option value="">-- 请选择房产地址 --</option>
-            </select>
+            <div class="addr-autocomplete-wrap" id="modalRegAddressWrap">
+                <div style="position:relative;">
+                    <i class="fas fa-search" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:0.85rem;pointer-events:none;z-index:2;"></i>
+                    <input type="text" id="modalRegAddressInput" autocomplete="off"
+                        placeholder="输入关键词搜索地址（如：2座、201）"
+                        style="width:100%;padding:10px 14px 10px 38px;border:1px solid #cfdfd3;border-radius:24px;font-family:inherit;font-size:0.95rem;background:#fefefe;outline:none;transition:border-color 0.2s;box-sizing:border-box;">
+                    <input type="hidden" id="modalRegAddress">
+                </div>
+                <div id="modalRegAddressDropdown" style="display:none;position:absolute;left:0;right:0;background:#fff;border:1px solid #cfdfd3;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.10);z-index:9999;max-height:220px;overflow-y:auto;margin-top:4px;"></div>
+            </div>
             <div id="modalRegAddressMsg" style="font-size:0.8rem; margin-top:4px;"></div>
         </div>
         <div style="display:flex; gap:10px; margin-top:20px;">
@@ -1044,111 +1060,134 @@
         return true;
     }
 
-    // 加载房产地址下拉列表（注册页面和模态框共用）
-    // 支持关键词搜索过滤，保持原有分组和禁用状态
-    let __addrCache = {}; // 缓存地址数据供搜索使用
+    // ===== 房产地址智能搜索自动补全 =====
+    // 缓存地址数据（避免重复请求）
+    let __addrDataCache = null;
 
-    async function loadRegAddressDropdown(selectId = 'regAddress') {
-        const addrSelect = document.getElementById(selectId);
-        if (!addrSelect) return;
-        addrSelect.innerHTML = '<option value="">加载中...</option>';
+    async function loadAddressData() {
+        if (__addrDataCache) return __addrDataCache;
         try {
             if (USE_SUPABASE) {
                 const [addrs, users] = await Promise.all([
                     db.propertyAddresses.getAll() || [],
                     db.registeredUsers.getAll() || []
                 ]);
-                const registeredAddrSet = new Set(users.map(u => u.property_address).filter(Boolean));
-                const available = addrs.filter(a => !registeredAddrSet.has(a.address));
-                const registered = addrs.filter(a => registeredAddrSet.has(a.address));
-
-                // 缓存数据供搜索使用
-                __addrCache[selectId] = { available, registered };
-
-                renderAddressOptions(addrSelect, available, registered, '');
-                setupAddressSearch(selectId);
+                const registeredSet = new Set(users.map(u => u.property_address).filter(Boolean));
+                __addrDataCache = {
+                    available: addrs.filter(a => !registeredSet.has(a.address)),
+                    registered: addrs.filter(a => registeredSet.has(a.address))
+                };
+                return __addrDataCache;
             }
         } catch(e) {
-            console.error('Failed to load addresses:', e);
-            addrSelect.innerHTML = '<option value="">加载地址失败，请刷新重试</option>';
+            console.error('Failed to load address data:', e);
         }
+        return { available: [], registered: [] };
     }
 
-    // 渲染地址选项（支持过滤关键词）
-    function renderAddressOptions(selectEl, available, registered, keyword) {
-        const k = keyword.trim().toLowerCase();
-        const filteredAvailable = k ? available.filter(a => a.address.toLowerCase().includes(k)) : available;
-        const filteredRegistered = k ? registered.filter(a => a.address.toLowerCase().includes(k)) : registered;
+    // 初始化地址自动补全
+    // inputId: 文本输入框id, hiddenId: 隐藏域id（存实际值）, dropdownId: 候选列表容器id
+    async function initAddressAutocomplete(inputId, hiddenId, dropdownId) {
+        const inputEl = document.getElementById(inputId);
+        const hiddenEl = document.getElementById(hiddenId);
+        const dropdownEl = document.getElementById(dropdownId);
+        if (!inputEl || !hiddenEl || !dropdownEl) return;
 
-        if (filteredAvailable.length === 0 && filteredRegistered.length === 0) {
-            selectEl.innerHTML = '<option value="">无匹配地址</option>';
-            return;
+        // 标记是否已完成初始化（避免重复绑定）
+        if (inputEl.dataset.acInit === '1') return;
+        inputEl.dataset.acInit = '1';
+
+        // 预加载地址数据
+        dropdownEl.innerHTML = '<div class="addr-autocomplete-loading">地址加载中…</div>';
+        const addrData = await loadAddressData();
+
+        function showDropdown(items) {
+            if (!items || items.length === 0) {
+                dropdownEl.innerHTML = '<div class="addr-autocomplete-empty">未找到相关地址</div>';
+                dropdownEl.style.display = 'block';
+                return;
+            }
+            dropdownEl.innerHTML = items.map(item => {
+                if (item.disabled) {
+                    return `<div class="addr-autocomplete-item registered" title="该地址已被注册">${escapeHtml(item.address)} <span style="font-size:0.8em;color:#cbd5e1;">[已注册]</span></div>`;
+                }
+                return `<div class="addr-autocomplete-item" data-value="${escapeHtml(item.address)}">${escapeHtml(item.address)}</div>`;
+            }).join('');
+            dropdownEl.style.display = 'block';
+
+            // 绑定可选项点击
+            dropdownEl.querySelectorAll('.addr-autocomplete-item:not(.registered)').forEach(el => {
+                el.addEventListener('mousedown', (e) => {
+                    e.preventDefault(); // 防止 blur 先触发
+                    const val = el.dataset.value;
+                    inputEl.value = val;
+                    hiddenEl.value = val;
+                    dropdownEl.style.display = 'none';
+                    inputEl.style.borderColor = '#2c6e49';
+                    // 清除错误消息
+                    const msgEl = document.getElementById(hiddenId + 'Msg') || document.getElementById(dropdownId.replace('Dropdown', 'Msg'));
+                    if (msgEl) msgEl.textContent = '';
+                });
+            });
         }
 
-        let html = '<option value="">-- 请选择房产地址 --</option>';
-
-        if (filteredAvailable.length > 0) {
-            html += filteredAvailable.map(a =>
-                `<option value="${escapeHtml(a.address)}">${escapeHtml(a.address)} [可注册]</option>`
-            ).join('');
+        function hideDropdown() {
+            dropdownEl.style.display = 'none';
         }
 
-        if (filteredRegistered.length > 0) {
-            html += '<optgroup label="以下地址已被注册（不可选）">' +
-                filteredRegistered.map(a =>
-                    `<option value="${escapeHtml(a.address)}" disabled style="color:#999;">${escapeHtml(a.address)} [已注册]</option>`
-                ).join('') +
-                '</optgroup>';
+        function filterAndShow(keyword) {
+            const k = keyword.trim().toLowerCase();
+            if (k.length < 2) {
+                hideDropdown();
+                return;
+            }
+            const matchAvailable = addrData.available
+                .filter(a => a.address.toLowerCase().includes(k))
+                .map(a => ({ address: a.address, disabled: false }));
+            const matchRegistered = addrData.registered
+                .filter(a => a.address.toLowerCase().includes(k))
+                .map(a => ({ address: a.address, disabled: true }));
+            const combined = [...matchAvailable, ...matchRegistered];
+            showDropdown(combined);
         }
 
-        // 保留当前选中值
-        const currentValue = selectEl.value;
-        selectEl.innerHTML = html;
-        if (currentValue) {
-            const option = selectEl.querySelector(`option[value="${CSS.escape(currentValue)}"]`);
-            if (option && !option.disabled) selectEl.value = currentValue;
-        }
-    }
+        inputEl.addEventListener('input', () => {
+            // 输入时清空隐藏域（强制用户从列表选或确认输入）
+            hiddenEl.value = '';
+            filterAndShow(inputEl.value);
+        });
 
-    // 设置地址搜索功能
-    function setupAddressSearch(selectId) {
-        const selectEl = document.getElementById(selectId);
-        if (!selectEl) return;
-
-        // 检查是否已存在搜索框
-        const existingSearch = document.getElementById(selectId + '_search');
-        if (existingSearch) return; // 已初始化过
-
-        // 创建搜索输入框
-        const searchWrap = document.createElement('div');
-        searchWrap.className = 'addr-search-wrap';
-        searchWrap.style.cssText = 'position:relative;margin-bottom:8px;';
-        searchWrap.innerHTML = `
-            <input type="text" id="${selectId}_search" placeholder="输入关键词搜索地址（如：2座、201）" 
-                style="width:100%;padding:10px 14px 10px 36px;border:1px solid #cfdfd3;border-radius:40px;font-family:inherit;font-size:0.95rem;background:#fefefe;outline:none;transition:border-color 0.2s;">
-            <i class="fas fa-search" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:0.85rem;"></i>
-        `;
-
-        // 插入到 select 前面
-        selectEl.parentNode.insertBefore(searchWrap, selectEl);
-
-        // 绑定输入事件
-        const searchInput = document.getElementById(selectId + '_search');
-        searchInput.addEventListener('input', (e) => {
-            const keyword = e.target.value;
-            const cache = __addrCache[selectId];
-            if (cache) {
-                renderAddressOptions(selectEl, cache.available, cache.registered, keyword);
+        inputEl.addEventListener('focus', () => {
+            inputEl.style.borderColor = '#2c6e49';
+            if (inputEl.value.trim().length >= 2) {
+                filterAndShow(inputEl.value);
             }
         });
 
-        // 聚焦时展开下拉（可选体验优化）
-        searchInput.addEventListener('focus', () => {
-            searchInput.style.borderColor = '#2c6e49';
+        inputEl.addEventListener('blur', () => {
+            // 延迟隐藏，让 mousedown 的点击事件先执行
+            setTimeout(() => {
+                hideDropdown();
+                // 如果用户手动输入但未从列表选择，允许自由输入（隐藏域也同步）
+                if (inputEl.value.trim() && !hiddenEl.value) {
+                    hiddenEl.value = inputEl.value.trim();
+                }
+                inputEl.style.borderColor = '#cfdfd3';
+            }, 180);
         });
-        searchInput.addEventListener('blur', () => {
-            searchInput.style.borderColor = '#cfdfd3';
+
+        // 点击外部关闭
+        document.addEventListener('click', (e) => {
+            if (!inputEl.contains(e.target) && !dropdownEl.contains(e.target)) {
+                hideDropdown();
+            }
         });
+    }
+
+    // 旧函数保留兼容性（现在不再使用，但不删除防止其他引用）
+    async function loadRegAddressDropdown(selectId = 'regAddress') {
+        // 新版本使用 initAddressAutocomplete，此函数为空兼容层
+        console.log('loadRegAddressDropdown: replaced by initAddressAutocomplete');
     }
 
     // 用户注册页面
@@ -1188,18 +1227,25 @@
                 <div class="form-group"><label>确认密码</label><input type="password" id="regConfirmPassword" placeholder="请再次输入密码"></div>
                 <div class="form-group">
                     <label style="font-weight:600;color:#1e293b;display:block;margin-bottom:6px;">房产地址 *</label>
-                    <select id="regAddress" style="width:100%; padding:14px 18px; border:1px solid #cfdfd3; border-radius:40px; font-family:inherit; font-size:1rem; background:#fefefe;">
-                        <option value="">-- 请选择房产地址 --</option>
-                    </select>
-                    <small style="color:#6c7a91;display:block;margin-top:4px;">请从下拉列表中选择您的房产地址</small>
+                    <div class="addr-autocomplete-wrap" id="regAddressWrap">
+                        <div style="position:relative;">
+                            <i class="fas fa-search" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:0.85rem;pointer-events:none;z-index:2;"></i>
+                            <input type="text" id="regAddressInput" autocomplete="off"
+                                placeholder="输入关键词搜索地址（如：2座、201）"
+                                style="width:100%;padding:14px 18px 14px 42px;border:1px solid #cfdfd3;border-radius:40px;font-family:inherit;font-size:1rem;background:#fefefe;outline:none;transition:border-color 0.2s;box-sizing:border-box;">
+                            <input type="hidden" id="regAddress">
+                        </div>
+                        <div id="regAddressDropdown" style="display:none;position:absolute;left:0;right:0;background:#fff;border:1px solid #cfdfd3;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.10);z-index:9999;max-height:220px;overflow-y:auto;margin-top:4px;"></div>
+                    </div>
+                    <small style="color:#6c7a91;display:block;margin-top:4px;">输入关键词（楼栋/房号）搜索，点击选择您的房产地址</small>
                 </div>
                 <div class="form-group" style="margin-top:24px;">
                     <button class="btn" id="doRegisterBtn" style="width:100%;">完成注册</button>
                 </div>
             </div>`;
 
-        // 加载房产地址下拉列表
-        loadRegAddressDropdown();
+        // 加载房产地址自动补全
+        initAddressAutocomplete('regAddressInput', 'regAddress', 'regAddressDropdown');
 
         document.getElementById('doRegisterBtn').onclick = async () => {
             const phone = document.getElementById('regPhone').value.trim();
@@ -1364,8 +1410,13 @@ window.showRegisterModal = async function() {
     ['modalRegUsernameMsg','modalRegPhoneMsg','modalRegAddressMsg'].forEach(id => {
         document.getElementById(id).textContent = '';
     });
-    // 加载房产地址下拉列表
-    await loadRegAddressDropdown('modalRegAddress');
+    // 清空地址输入框
+    const addrInput = document.getElementById('modalRegAddressInput');
+    const addrHidden = document.getElementById('modalRegAddress');
+    if (addrInput) addrInput.value = '';
+    if (addrHidden) addrHidden.value = '';
+    // 初始化地址自动补全
+    await initAddressAutocomplete('modalRegAddressInput', 'modalRegAddress', 'modalRegAddressDropdown');
 };
 
 // 隐藏注册模态框
@@ -1523,20 +1574,11 @@ window.handleRegister = async function() {
     const phone = phoneEl ? phoneEl.value.trim() : '';
     const password = passwordEl ? passwordEl.value.trim() : '';
     const confirmPassword = confirmPasswordEl ? confirmPasswordEl.value.trim() : '';
-    const address = addressEl ? addressEl.value : '';  // select element - value is already trimmed by HTML
+    const address = addressEl ? addressEl.value.trim() : '';
     
-    // Check if selected option is disabled (already registered)
-    if (addressEl && addressEl.selectedOptions[0] && addressEl.selectedOptions[0].disabled) {
-        document.getElementById('modalRegAddressMsg').textContent = '该房产地址已被注册，请选择其他地址。';
-        document.getElementById('modalRegAddressMsg').style.color = '#c2410c';
-        return;
-    }
-    
-    // 调试：显示每个字段的值
-    console.log('注册调试：', { username, phone, password, confirmPassword, address });
-    
+    // 必填校验（address 是隐藏域，直接读取 value）
     if (!username || !phone || !password || !confirmPassword || !address) {
-        alert(`请完整填写所有必填项。\n用户名: ${username ? '✓' : '✗'}\n手机号: ${phone ? '✓' : '✗'}\n密码: ${password ? '✓' : '✗'}\n确认密码: ${confirmPassword ? '✓' : '✗'}\n房产地址: ${address ? '✓' : '✗'}`);
+        alert(`请完整填写所有必填项。\n用户名: ${username ? '✓' : '✗'}\n手机号: ${phone ? '✓' : '✗'}\n密码: ${password ? '✓' : '✗'}\n确认密码: ${confirmPassword ? '✓' : '✗'}\n房产地址: ${address ? '✓（已选择）' : '✗（请从下拉列表选择地址）'}`);
         return;
     }
     
